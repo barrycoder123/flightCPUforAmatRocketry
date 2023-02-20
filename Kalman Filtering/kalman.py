@@ -1,19 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Feb 15 19:56:02 2023
-
-@author: zrumm
-"""
-
 import numpy as np
-import csv
 
 class EKF:
-    def __init__(self, x0, P0, Q, R):
-        self.x = x0 # state estimate
-        self.P = P0 # state covariance
-        self.Q = Q # process noise covariance
-        self.R = R # measurement noise covariance
+    def __init__(self, x, P, Q, R, f, h, H):
+        self.x = x
+        self.P = P
+        self.Q = Q
+        self.R = R
+        self.f = f
+        self.h = h
+        self.H = H
 
     def predict(self, f, u, dt):
         # predict state estimate
@@ -33,77 +28,115 @@ class EKF:
         # update state covariance
         self.P = (np.eye(self.P.shape[0]) - K @ self.H) @ self.P
 
-def f_imu(x, u, dt):
-    # IMU dynamics model
-    # u = [ax, ay, az, gx, gy, gz]
-    p = x[0:3]
-    v = x[3:6]
-    q = x[6:10]
-    ax, ay, az = u[0:3]
-    gx, gy, gz = u[3:6]
-    # integrate velocity
-    v = v + np.array([ax, ay, az]) * dt
-    # integrate position
-    p = p + v * dt
-    # update attitude using quaternion kinematics
-    omega = np.array([gx, gy, gz]) * dt
-    dq = np.array([-0.5 * omega[0] * q[0] - 0.5 * omega[1] * q[1] - 0.5 * omega[2] * q[2],
-                  0.5 * omega[0] * q[1] - 0.5 * omega[1] * q[0] - 0.5 * omega[2] * q[3],
-                  0.5 * omega[0] * q[2] - 0.5 * omega[1] * q[3] - 0.5 * omega[2] * q[0],
-                  0.5 * omega[0] * q[3] - 0.5 * omega[1] * q[2] - 0.5 * omega[2] * q[1]])
-    q = q + dq * dt
-    return np.concatenate((p, v, q))
 
-def h_gps(x):
-    # GPS measurement model
-    return x[0:3]
+""" IMU CONVERSION EQUATION """
+def f(x, u, dt, imu_data):
+    # Unpack state variables
+    p, v, q = x[:3], x[3:6], x[6:]
 
-def h_baro(x):
-    # Barometer measurement model
-    return x[2]
+    # Unpack IMU data
+    acc, gyro = imu_data[:3], imu_data[3:]
 
+    # Compute body frame acceleration
+    acc_body = q_inv(q) @ (acc - u[:3])
+
+    # Compute new position and velocity
+    p_new = p + v * dt + 0.5 * acc_body * dt**2
+    v_new = v + acc_body * dt
+
+    # Compute new quaternion
+    q_dot = 0.5 * quat_multiply(q, np.hstack((0, gyro)))
+    q_new = q + q_dot * dt
+
+    # Normalize quaternion
+    q_new /= np.linalg.norm(q_new)
+
+    # Pack state variables into new state vector
+    x_new = np.hstack((p_new, v_new, q_new))
+
+    return x_new
+
+
+""" GPS CONVERSION EQUATION """
+def h(x, gps_data, baro_data):
+    # Unpack state variables
+    p, v, q = x[:3], x[3:6], x[6:]
+
+    # Unpack GPS data
+    gps = gps_data
+
+    # Unpack barometer data
+    baro = baro_data
+
+    # Convert position to GPS coordinates
+    lat, lon, alt = ecef2lla(p)
+
+    # Pack GPS and barometer measurements into measurement vector
+    z = np.hstack((lat, lon, alt, baro))
+
+    return z
+
+
+
+def H(x):
+    # unpack state
+    q = x[6:]
+
+    # calculate rotation matrix
+    C = quat2rotmat(q)
+
+    # calculate measurement Jacobian
+    H = np.zeros((3, 7))
+    H[:, :3] = np.eye(3)
+    H[:, 6] = C.T @ np.array([0, 0, 1])
+
+    return H
+
+
+def quat2rotmat(q):
+    """Convert quaternion to rotation matrix."""
+    q0, q1, q2, q3 = q
+    return np.array([
+        [1 - 2*q2**2 - 2*q3**2, 2*q1*q2 - 2*q0*q3, 2*q1*q3 + 2*q0*q2],
+        [2*q1*q2 + 2*q0*q3, 1 - 2*q1**2 - 2*q3**2, 2*q2*q3 - 2*q0*q1],
+        [2*q1*q3 - 2*q0*q2, 2*q2*q3 + 2*q0*q1, 1 - 2*q1**2 - 2*q2**2]
+    ])
 
 
 if __name__ == "__main__":
-    # initialize state estimate, state covariance, process noise covariance, measurement noise covariance
-    x0 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]) # [p, v, q]
-    P0 = np.eye(10) * 100.0
-    Q = np.eye(10) * 0.01
-    R_gps = np.eye(3) * 0.1
-    R_baro = np.array([0.1])
+    
+    # step 1 - state vector: [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, quat-e2bi, quat-e2bj, quat-e2bk, mag(quat)]
+    x = np.array([0, 0, 0, 0, 0, 0, 1, 0, 0, 0])
+    
+    # step 2 - measurement vector: [pos_x_imu, pos_y_imu, pos_z_imu, vel_x_imu, vel_y_imu, vel_z_imu, ..., altitude]
+    z = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    
+    
+    
 
-    # create an extended Kalman filter object
-    ekf = EKF(x0, P0, Q, R)
+    # # Define the state covariance matrix P
+    # P = np.diag([100, 100, 100, 10, 10, 10, 0.1, 0.1, 0.1, 0.1])**2
+    
+    # # Define the process noise covariance matrix Q
+    # Q = np.diag([1e-3, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2, 1e-5, 1e-5, 1e-5, 1e-5])**2
+    
+    # # Define the measurement noise covariance matrix R
+    # R_gps = np.diag([1e-5, 1e-5, 1])**2
+    # R_baro = np.array([1])**2
+    # R = np.block([[R_gps, np.zeros((3,1))],
+    #               [np.zeros((1,3)), R_baro]])
+    
+    # # Define inputs
+    # u = imu_data
+    # dt = time_delta
+    
+    # ekf = EKF(x, P, Q, R, f, )
 
-    # input data (GPS, IMU, barometer)
-    gps_data = np.loadtxt("gps_data.txt")
-    imu_data = np.loadtxt("imu_data.txt")
-    baro_data = np.loadtxt("baro_data.txt")
+    # # Predict state
+    # ekf.predict(f, u, dt, imu_data)
+    
+    # # Define measurements
+    # z = np.hstack((gps_data, baro_data))
 
-    # time step
-    dt = 1.0
-
-    # initialize time
-    t = 0.0
-
-    # initialize PVA
-    pva = []
-
-    # main loop
-    for i in range(len(gps_data)):
-        # predict
-        ekf.predict(f_imu, imu_data[i, :], dt)
-
-        # update with GPS
-        if gps_data[i, 0] > 0.0:
-            ekf.update(gps_data[i, 1:4], h_gps, R_gps)
-
-        # update with barometer
-        if baro_data[i, 0] > 0.0:
-            ekf.update(baro_data[i, 1:2], h_baro, R_baro)
-
-        # store PVA
-        pva.append(np.concatenate((ekf.x[0:3], ekf.x[3:6], ekf.x[6:10])))
-
-        # update time
-        t = t + dt
+    # # Update state
+    # ekf.update(z, h, gps_data, baro_data)
