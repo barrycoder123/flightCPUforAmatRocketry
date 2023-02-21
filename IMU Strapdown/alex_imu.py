@@ -10,22 +10,21 @@ def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
     WE = 7.2921151467e-05;
     omega = np.array([0, 0, WE]);
 
-    #position update
+    # Position Update
     r_ecef_new = r_ecef + dt * v_ecef;
 
-    
+    # Attitude Update
     q_bOld2bNew = deltaAngleToDeltaQuat(-dTh_b_imu)
     q_i2bNew = quatMultiply(q_bOld2bNew, q_e2b);
     q_e2i = q_e2i = deltaAngleToDeltaQuat(WE * dt * np.array([0, 0, 1]));
     q_e2b_new = quatMultiply(q_i2bNew, q_e2i);
 
-    #Velocity Update
+    # Velocity Update
     g = xyz2grav(r_ecef[0], r_ecef[1], r_ecef[2]);
     
     T_i2b = quat2dcm(q_e2b);
     dV_e_imu = np.dot(dV_b_imu, T_i2b.conj())
     
-
     acc_cor = np.cross(2 * omega, v_ecef);
     acc_cen = np.cross(omega, np.cross(omega, r_ecef));
     dV_e = dV_e_imu - (acc_cor + acc_cen - g) * dt;
@@ -34,15 +33,6 @@ def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
 
     return r_ecef_new, v_ecef_new, q_e2b_new;
 
-# normVec
-#
-# Single iteration of a 1st-Order IMU Strapdown
-def normVec(thetas):
-    mag = np.linalg.norm(thetas);
-    return thetas/mag
-
-def qAngle(thetas):
-    return np.linalg.norm(thetas)/2;
 
 # xyz2grav
 #
@@ -116,11 +106,11 @@ def quat2dcm(q):
     return np.array(dcm)
     
 
-# main fxn
-#
+# main
 if __name__ == "__main__":
     
     # Import and format data
+    print("Opening file...")
     data = genfromtxt('traj_raster_30mins_20221115_160156.csv', delimiter=',');
     data = data[1:][:] #remove NaN
     IMU_data = data[:, 11:17];
@@ -128,12 +118,14 @@ if __name__ == "__main__":
     PVA_truth = data[:, 1:11];
 
     # Initialize arrays
+    print("Initializing arrays...")
     PVA_est = np.zeros((data.shape[0], 10))
     x0 = PVA_truth[1, 0:11];
     x0 = x0[:]; # Force column vector
     PVA_est[0] = x0 # Store initial conditions in first col of estimate
 
     # Run the strapdown for all data
+    print("Running strapdown simulation...")
     for i in range(data.shape[0] - 1): #data.shape[0] - 1
     
         # Extract values from IMU
@@ -144,14 +136,15 @@ if __name__ == "__main__":
         v_ecef = PVA_est[i, 3:6]; # ECEF velocity [m/s]
         q_e2b = PVA_est[i, 6:10]; # ECEF-to-body Quaternion
     
-        # r correct, v incorrect, q not sure
+        # Run an iteration of the strapdown
         r_ecef_new, v_ecef_new, q_e2b_new = strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
+        # Write values back to estimation matrix
         PVA_est[i + 1, 0:3] = r_ecef_new;
         PVA_est[i + 1, 3:6] = v_ecef_new;
         PVA_est[i + 1, 6:10] = q_e2b_new;
     
-    print("DONE!")
+    print("Plotting results...")
     
     ## PLOT POSITION
     plt.figure()
