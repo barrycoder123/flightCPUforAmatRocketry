@@ -2,21 +2,10 @@
 import numpy as np
 from numpy import genfromtxt
 import matplotlib.pyplot as plt
-#from pyquaternion import Quaternion
 
-#import and format data
-data = genfromtxt('traj_raster_30mins_20221115_160156.csv', delimiter=',');
-data = data[1:][:] #remove NaN
-IMU_data = data[:, 11:17];
-dt = 0.1 #Manually setting this for now. Might need to change for RT implementation
-PVA_truth = data[:, 1:11];
-
-#Initialize arrays
-PVA_est = np.zeros((data.shape[0], 10))
-x0 = PVA_truth[1, 0:11];
-x0 = x0[:]; # Force column vector
-PVA_est[0] = x0 # Store initial conditions in first col of estimate
-
+# strapdown
+#
+# Single iteration of a 1st-Order IMU Strapdown
 def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
     WE = 7.2921151467e-05;
     omega = np.array([0, 0, WE]);
@@ -45,6 +34,9 @@ def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
 
     return r_ecef_new, v_ecef_new, q_e2b_new;
 
+# normVec
+#
+# Single iteration of a 1st-Order IMU Strapdown
 def normVec(thetas):
     mag = np.linalg.norm(thetas);
     return thetas/mag
@@ -52,7 +44,9 @@ def normVec(thetas):
 def qAngle(thetas):
     return np.linalg.norm(thetas)/2;
 
-# Ellipsoid earth model
+# xyz2grav
+#
+# Ellipsoid Earth gravity model
 def xyz2grav(x, y, z):
     j2 = 0.00108263
     mu = 3.986004418e14
@@ -69,36 +63,38 @@ def xyz2grav(x, y, z):
     g = g[:] #Force column
     return g
 
+
+# deltaAngleToDeltaQuat
+#
+# Converts a vector of rotations to a Quaternion
+#     Parameters
+#     ----------
+#     dTheta : (3,) vector
+#       delta angles [rad]
+#
+#     Returns
+#     -------
+#     q : (4,) vector
+#       Quaternion
 def deltaAngleToDeltaQuat(dTheta):
-# =============================================================================
-#     %DELTAANGLETODELTAQUAT Converts a vector of rotations to a Quaternion
-#     %
-#     % Parameters
-#     % ----------
-#     % dTheta : (3,) vector
-#     %   delta angles [rad]
-#     %
-#     % Returns
-#     % -------
-#     % q : (4,) vector
-#     %   Quaternion
-# =============================================================================
     
     mag = norm(dTheta); # norm
     axis = dTheta / mag; # axis of rotation
     
-    # See https://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
+    # See https://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.html
     theta = mag / 2; # by definition of Quaternion
     q = np.concatenate(([np.cos(theta)], np.sin(theta) * axis));
     
     return q
   
-    
 def norm(v):
     sum_squares = sum([vi**2 for vi in v])
     return np.sqrt(sum_squares)
 
-    
+
+# quatMultiply
+#
+# Multiply two quaternions  
 def quatMultiply(q1, q2):
     w1, x1, y1, z1 = q1
     w2, x2, y2, z2 = q2
@@ -109,6 +105,9 @@ def quatMultiply(q1, q2):
     
     return [w, x, y, z]
 
+# quat2dcm
+#
+# Convert quaternion to a 3x3 discrete cosine matrix (dcm)
 def quat2dcm(q):
     q0, q1, q2, q3 = q
     dcm = [[q0**2 + q1**2 - q2**2 - q3**2, 2*(q1*q2 - q0*q3), 2*(q1*q3 + q0*q2)],
@@ -117,79 +116,96 @@ def quat2dcm(q):
     return np.array(dcm)
     
 
-for i in range(data.shape[0] - 1): #data.shape[0] - 1
+# main fxn
+#
+if __name__ == "__main__":
+    
+    # Import and format data
+    data = genfromtxt('traj_raster_30mins_20221115_160156.csv', delimiter=',');
+    data = data[1:][:] #remove NaN
+    IMU_data = data[:, 11:17];
+    dt = 0.1 #Manually setting this for now. Might need to change for RT implementation
+    PVA_truth = data[:, 1:11];
 
-    # Extract values from IMU
-    dV_b_imu = dt * IMU_data[i, 0:3]; # measured delta-V in the body frame [m/s]
-    dTh_b_imu = dt * IMU_data[i, 3:6]; # measured delta-theta in the body frame [rad]
+    # Initialize arrays
+    PVA_est = np.zeros((data.shape[0], 10))
+    x0 = PVA_truth[1, 0:11];
+    x0 = x0[:]; # Force column vector
+    PVA_est[0] = x0 # Store initial conditions in first col of estimate
 
-    r_ecef = PVA_est[i, 0:3]; # ECEF position [m]
-    v_ecef = PVA_est[i, 3:6]; # ECEF velocity [m/s]
-    q_e2b = PVA_est[i, 6:10]; # ECEF-to-body Quaternion
-
-    # r correct, v incorrect, q not sure
-    r_ecef_new, v_ecef_new, q_e2b_new = strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
-
-    PVA_est[i + 1, 0:3] = r_ecef_new;
-    PVA_est[i + 1, 3:6] = v_ecef_new;
-    PVA_est[i + 1, 6:10] = q_e2b_new;
-
-#rint(PVA_est[:, 0:3])
-print("DONE!")
-
-## PLOT POSITION
-plt.figure()
-plt.plot(PVA_truth[:, 0])
-plt.plot(PVA_est[:, 0])
-plt.title("X POSITION")
-plt.legend(["Truth","Estimation"])
-plt.figure()
-plt.plot(PVA_truth[:, 1])
-plt.plot(PVA_est[:, 1])
-plt.title("Y POSITION")
-plt.legend(["Truth","Estimation"])
-plt.figure()
-plt.plot(PVA_truth[:, 2])
-plt.plot(PVA_est[:, 2])
-plt.title("Z POSITION")
-plt.legend(["Truth","Estimation"])
-
-
-## PLOT VELOCITY
-plt.figure()
-plt.plot(PVA_truth[:, 3])
-plt.plot(PVA_est[:, 3])
-plt.title("X VELOCITY")
-plt.legend(["Truth","Estimation"])
-plt.figure()
-plt.plot(PVA_truth[:, 4])
-plt.plot(PVA_est[:, 4])
-plt.title("Y VELOCITY")
-plt.legend(["Truth","Estimation"])
-plt.figure()
-plt.plot(PVA_truth[:, 5])
-plt.plot(PVA_est[:, 5])
-plt.title("Z VELOCITY")
-plt.legend(["Truth","Estimation"])
-
-## PLOT ATTITUDE
-plt.figure()
-plt.plot(PVA_truth[:, 6])
-plt.plot(PVA_est[:, 6])
-plt.title("SCALAR QUATERNION")
-plt.legend(["Truth","Estimation"])
-plt.figure()
-plt.plot(PVA_truth[:, 7])
-plt.plot(PVA_est[:, 7])
-plt.title("I QUATERNION")
-plt.legend(["Truth","Estimation"])
-plt.figure()
-plt.plot(PVA_truth[:, 8])
-plt.plot(PVA_est[:, 8])
-plt.title("J QUATERNION")
-plt.legend(["Truth","Estimation"])
-plt.figure()
-plt.plot(PVA_truth[:, 9])
-plt.plot(PVA_est[:, 9])
-plt.title("K QUATERNION")
-plt.legend(["Truth","Estimation"])
+    # Run the strapdown for all data
+    for i in range(data.shape[0] - 1): #data.shape[0] - 1
+    
+        # Extract values from IMU
+        dV_b_imu = dt * IMU_data[i, 0:3]; # measured delta-V in the body frame [m/s]
+        dTh_b_imu = dt * IMU_data[i, 3:6]; # measured delta-theta in the body frame [rad]
+    
+        r_ecef = PVA_est[i, 0:3]; # ECEF position [m]
+        v_ecef = PVA_est[i, 3:6]; # ECEF velocity [m/s]
+        q_e2b = PVA_est[i, 6:10]; # ECEF-to-body Quaternion
+    
+        # r correct, v incorrect, q not sure
+        r_ecef_new, v_ecef_new, q_e2b_new = strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
+    
+        PVA_est[i + 1, 0:3] = r_ecef_new;
+        PVA_est[i + 1, 3:6] = v_ecef_new;
+        PVA_est[i + 1, 6:10] = q_e2b_new;
+    
+    print("DONE!")
+    
+    ## PLOT POSITION
+    plt.figure()
+    plt.plot(PVA_truth[:, 0])
+    plt.plot(PVA_est[:, 0])
+    plt.title("X POSITION")
+    plt.legend(["Truth","Estimation"])
+    plt.figure()
+    plt.plot(PVA_truth[:, 1])
+    plt.plot(PVA_est[:, 1])
+    plt.title("Y POSITION")
+    plt.legend(["Truth","Estimation"])
+    plt.figure()
+    plt.plot(PVA_truth[:, 2])
+    plt.plot(PVA_est[:, 2])
+    plt.title("Z POSITION")
+    plt.legend(["Truth","Estimation"])
+    
+    
+    ## PLOT VELOCITY
+    plt.figure()
+    plt.plot(PVA_truth[:, 3])
+    plt.plot(PVA_est[:, 3])
+    plt.title("X VELOCITY")
+    plt.legend(["Truth","Estimation"])
+    plt.figure()
+    plt.plot(PVA_truth[:, 4])
+    plt.plot(PVA_est[:, 4])
+    plt.title("Y VELOCITY")
+    plt.legend(["Truth","Estimation"])
+    plt.figure()
+    plt.plot(PVA_truth[:, 5])
+    plt.plot(PVA_est[:, 5])
+    plt.title("Z VELOCITY")
+    plt.legend(["Truth","Estimation"])
+    
+    ## PLOT ATTITUDE
+    plt.figure()
+    plt.plot(PVA_truth[:, 6])
+    plt.plot(PVA_est[:, 6])
+    plt.title("SCALAR QUATERNION")
+    plt.legend(["Truth","Estimation"])
+    plt.figure()
+    plt.plot(PVA_truth[:, 7])
+    plt.plot(PVA_est[:, 7])
+    plt.title("I QUATERNION")
+    plt.legend(["Truth","Estimation"])
+    plt.figure()
+    plt.plot(PVA_truth[:, 8])
+    plt.plot(PVA_est[:, 8])
+    plt.title("J QUATERNION")
+    plt.legend(["Truth","Estimation"])
+    plt.figure()
+    plt.plot(PVA_truth[:, 9])
+    plt.plot(PVA_est[:, 9])
+    plt.title("K QUATERNION")
+    plt.legend(["Truth","Estimation"])
