@@ -110,8 +110,7 @@ if __name__ == "__main__":
     
     # step 2 - measurement vector: [pos_x_imu, pos_y_imu, pos_z_imu, vel_x_imu, vel_y_imu, vel_z_imu, ..., altitude]
     z = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    
-    
+
     
 
     # # Define the state covariance matrix P
