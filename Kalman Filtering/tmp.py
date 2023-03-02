@@ -1,3 +1,5 @@
+import numpy as np
+
 def lla_jacobian(r_ecef, HAE=True):
     """
     Computes the Jacobian of (lat, lon, alt) in [rad, rad, m (HAE)] w.r.t ECEF position in [meters]. This uses the Geodetic WGS-84 ellipsoid,
