@@ -1,11 +1,9 @@
 import sys
 import numpy as np
 
-sys.path.append('../IMU Strapdown')
-sys.path.append('../Test Data')
-
 import strapdown as sd
 import data_collection as dc
+import earth_model as em
 #import strapdown as sd
 
 
@@ -58,7 +56,7 @@ def h(x):
     p, v, q = x[:3], x[3:6], x[6:]
 
     # Convert position (xyz) to GPS coordinates (lla)
-    lat, lon, alt = ecef2lla(p) # TODO
+    lat, lon, alt = em.ecef2lla(p[0], p[1], p[2]) # TODO
 
     return np.array([lat, lon, alt])
 
