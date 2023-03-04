@@ -30,10 +30,3 @@ def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
     v_ecef_new = v_ecef + dV_e;
 
     return r_ecef_new, v_ecef_new, q_e2b_new;
-
-  
-def norm(v):
-    sum_squares = sum([vi**2 for vi in v])
-    return np.sqrt(sum_squares)
-
-    

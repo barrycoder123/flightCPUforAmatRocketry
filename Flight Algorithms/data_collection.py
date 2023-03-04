@@ -5,19 +5,15 @@ Created on Sat Mar  4 12:22:46 2023
 
 @author: zrummler
 """
-import sys
+
 import pandas as pd
 import numpy as np
-
-sys.path.append('../Data Generation')
 
 # code for simulation on PC
 
 imu_reading_number = 0
 gps_reading_number = 0
 last_time = 0
-
-GPS_UPDATE_TIME = 1
 
 # reading IMU data
 file_data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv")
@@ -57,7 +53,7 @@ def get_next_imu_reading():
     
 
 """ returns the next GPS reading (simulation) """
-def ping_gps_for_reading():
+def get_next_gps_reading():
     global gps_reading_number
     
     # extract the next lat, long, altitude
@@ -75,15 +71,15 @@ def ping_gps_for_reading():
    
     return lat, long, alt, dt
     
-""" how to check if the GPS is ready for next data """
-def gps_is_ready(running_time):
-    global last_time
+""" 
+ping the GPS, see if the next data is ready 
+GPS gets data every 1.0 seconds
+"""
+def gps_is_ready():
+    global gps_reading_number
     
-    if (running_time - last_time) >= GPS_UPDATE_TIME:
-        last_time = running_time
-        return True
+    if gps_lat[gps_reading_number] == np.nan:
+        gps_reading_number += 1
+        return False
     
-    last_time = running_time
-    return False
-    
-    
+    return True

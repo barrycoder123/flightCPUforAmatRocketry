@@ -1,10 +1,8 @@
-import sys
 import numpy as np
 
 import strapdown as sd
 import data_collection as dc
 import earth_model as em
-#import strapdown as sd
 
 
 class EKF:
@@ -22,7 +20,7 @@ class EKF:
         # predict state estimate
         self.x, dt = self.f(self.x)
         # predict state covariance
-        self.P = self.F * self.P * self.F.conv() + self.Q * dt
+        self.P = self.F * self.P * self.F.transpose() + self.Q * dt
         
         return dt
 
@@ -52,11 +50,11 @@ def f(x):
 
 """ GPS CONVERSION EQUATION """
 def h(x):
-    # Unpack state variables
-    p, v, q = x[:3], x[3:6], x[6:]
+    # Unpack state variables (position)
+    p = x[:3]
 
     # Convert position (xyz) to GPS coordinates (lla)
-    lat, lon, alt = em.ecef2lla(p[0], p[1], p[2]) # TODO
+    lat, lon, alt = em.ecef2lla(p[0], p[1], p[2])
 
     return np.array([lat, lon, alt])
 
@@ -127,21 +125,21 @@ def H(r_ecef, HAE=True):
     return J
 
 
+"""
 def quat2rotmat(q):
-    """Convert quaternion to rotation matrix."""
+    # Convert quaternion to rotation matrix.
     q0, q1, q2, q3 = q
     return np.array([
         [1 - 2*q2**2 - 2*q3**2, 2*q1*q2 - 2*q0*q3, 2*q1*q3 + 2*q0*q2],
         [2*q1*q2 + 2*q0*q3, 1 - 2*q1**2 - 2*q3**2, 2*q2*q3 - 2*q0*q1],
         [2*q1*q3 - 2*q0*q2, 2*q2*q3 + 2*q0*q1, 1 - 2*q1**2 - 2*q2**2]])
-
+"""
 
 if __name__ == "__main__":
-    WE = 7.2921151467e-05;
-    omega = np.array([0, 0, WE]);
-    omega_cross = np.vstack([[0, -omega[2], omega[1]],
-                   [omega[2], 0, -omega[0]],
-                   [-omega[1], omega[0], 0]])
+
+    omega_cross = np.vstack([[0, -em.omega[2], em.omega[1]],
+                   [em.omega[2], 0, -em.omega[0]],
+                   [-em.omega[1], em.omega[0], 0]])
     am_cross = omega_cross
     
     # step 1 - state vector: [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, quat-e2bi, quat-e2bj, quat-e2bk, mag(quat)]
@@ -155,28 +153,35 @@ if __name__ == "__main__":
     # Q: measurement noise matrix, 10x10, I * 0.001
     # R: 
     # F: 10x10, given by Tyler (add a row of 0's)
-
-    grav_gradient = np.zeros((3,3))
-    ang_rot_cross = np.zeros((3,3))
-    T_b2i = np.zeros((3,3))
     
-    drdr = np.zeros((3,3))
-    drdv = np.identity(3)
-    drdo = np.zeros((3,3))
-    dvdr = grav_gradient - np.square(omega_cross)
-    dvdv = -2 * omega_cross
-    dvdo = -T_b2i * am_cross
-    dodr = np.zeros((3,3))
-    dodv = np.zeros((3,3))
-    dodo = -ang_rot_cross
-
-    F = [np.hstack([drdr, drdv, drdo]),
-         np.hstack([dvdr, dvdv, dvdo]),
-         np.hstack([dodr, dodv, dodo])]
+    P = np.zeros((10,10))
+    Q = np.zeros((10,10))
+    R = np.zeros((10,10))
+    F = np.zeros((10,10))
     
-    F = np.ravel(F)
+# =============================================================================
+# 
+#     grav_gradient = np.zeros((3,3))
+#     ang_rot_cross = np.zeros((3,3))
+#     T_b2i = np.zeros((3,3))
+#     
+#     drdr = np.zeros((3,3))
+#     drdv = np.identity(3)
+#     drdo = np.zeros((3,3))
+#     dvdr = grav_gradient - np.square(omega_cross)
+#     dvdv = -2 * omega_cross
+#     dvdo = -T_b2i * am_cross
+#     dodr = np.zeros((3,3))
+#     dodv = np.zeros((3,3))
+#     dodo = -ang_rot_cross
+# 
+#     F = [np.hstack([drdr, drdv, drdo]),
+#          np.hstack([dvdr, dvdv, dvdo]),
+#          np.hstack([dodr, dodv, dodo])]
+#     
+#     F = np.ravel(F)
+# =============================================================================
     
-
     # Initialize EKF
     ekf = EKF(x, P, Q, R, f, F, h, H)
 

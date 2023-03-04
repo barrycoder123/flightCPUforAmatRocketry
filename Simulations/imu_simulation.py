@@ -6,17 +6,23 @@ Created on Tue Feb 21 12:46:07 2023
 @author: zrummler
 """
 
+import sys
 import numpy as np
 from numpy import genfromtxt
 import matplotlib.pyplot as plt
+
+sys.path.append('../Flight Algorithms')
+sys.path.append('../Data Generation')
+
 from strapdown import *
 
 # main
 if __name__ == "__main__":
     
     # Import and format data
+    print("Running IMU Simulation")
     print("Opening file...")
-    data = genfromtxt('traj_raster_30mins_20221115_160156.csv', delimiter=',');
+    data = genfromtxt('../Data Generation/traj_raster_30mins_20221115_160156.csv', delimiter=',');
     data = data[1:][:] #remove NaN
     IMU_data = data[:, 11:17];
     dt = 0.1 #Manually setting this for now. Might need to change for RT implementation

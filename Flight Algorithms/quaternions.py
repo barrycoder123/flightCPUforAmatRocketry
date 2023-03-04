@@ -8,6 +8,10 @@ Created on Sat Mar  4 18:11:53 2023
 
 import numpy as np
 
+def norm(v):
+    sum_squares = sum([vi**2 for vi in v])
+    return np.sqrt(sum_squares)
+
 # deltaAngleToDeltaQuat
 #
 # Converts a vector of rotations to a Quaternion
