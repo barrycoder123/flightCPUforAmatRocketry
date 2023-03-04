@@ -1,10 +1,17 @@
+import sys
 import numpy as np
+
+sys.path.append('../IMU Strapdown')
+sys.path.append('../Test Data')
+
+import strapdown as sd
+import data_collection as dc
 #import strapdown as sd
 
+
 class EKF:
-    def __init__(self, x, z, P, Q, R, f, F, h, H):
+    def __init__(self, x, P, Q, R, f, F, h, H):
         self.x = x
-        self.z = z
         self.P = P
         self.Q = Q
         self.R = R
@@ -13,11 +20,13 @@ class EKF:
         self.h = h
         self.H = H
 
-    def predict(self, f):
+    def predict(self):
         # predict state estimate
-        self.x, dt = f(self.x)
+        self.x, dt = self.f(self.x)
         # predict state covariance
         self.P = self.F * self.P * self.F.conv() + self.Q * dt
+        
+        return dt
 
     def update(self, z, h):
         # compute innovation
@@ -36,7 +45,7 @@ class EKF:
 def f(x):
     
     r_ecef, v_ecef, q_e2b = x[0:3], x[3:6], x[6:10]
-    dV_b_imu, dTh_b_imu, dt = get_next_imu_reading() # TODO
+    dV_b_imu, dTh_b_imu, dt = dc.get_next_imu_reading()
     
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
 
@@ -126,8 +135,7 @@ def quat2rotmat(q):
     return np.array([
         [1 - 2*q2**2 - 2*q3**2, 2*q1*q2 - 2*q0*q3, 2*q1*q3 + 2*q0*q2],
         [2*q1*q2 + 2*q0*q3, 1 - 2*q1**2 - 2*q3**2, 2*q2*q3 - 2*q0*q1],
-        [2*q1*q3 - 2*q0*q2, 2*q2*q3 + 2*q0*q1, 1 - 2*q1**2 - 2*q2**2]
-    ])
+        [2*q1*q3 - 2*q0*q2, 2*q2*q3 + 2*q0*q1, 1 - 2*q1**2 - 2*q2**2]])
 
 
 if __name__ == "__main__":
@@ -175,12 +183,10 @@ if __name__ == "__main__":
     ekf = EKF(x, P, Q, R, f, F, h, H)
 
     while 1:
-        
         # Predict state
-        ekf.predict(f)
-        
-        # get GPS data
-        z = ping_gps_for_reading() # TODO
+        ekf.predict()
         
         # If new GPS reading, update state
-        ekf.update(z, h) 
+        if dc.gps_is_ready():
+            lat, long, atti, dt = dc.get_next_gps_reading()
+            ekf.update(z, h) 
