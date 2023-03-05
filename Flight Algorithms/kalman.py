@@ -24,11 +24,12 @@ class EKF:
         
         return dt
 
-    def update(self, z, h):
+    def update(self, z):
         # compute innovation
-        y = z - h(self.x)
+        y = z - self.h(self.x)
         # compute innovation covariance
-        S = self.H @ self.P @ self.H.T + self.R
+        H = self.H(x[:3]) # compute H matrix
+        S = H @ self.P @ H.transpose() + self.R
         # compute Kalman gain
         K = self.P @ self.H.T @ np.linalg.inv(S)
         # update state estimate
@@ -41,7 +42,11 @@ class EKF:
 def f(x):
     
     r_ecef, v_ecef, q_e2b = x[0:3], x[3:6], x[6:10]
-    dV_b_imu, dTh_b_imu, dt = dc.get_next_imu_reading()
+    
+    # grab next IMU reading
+    accel, gyro, dt = dc.get_next_imu_reading()
+    dV_b_imu = accel * dt
+    dTh_b_imu = gyro * dt
     
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
 
@@ -56,84 +61,19 @@ def h(x):
     # Convert position (xyz) to GPS coordinates (lla)
     lat, lon, alt = em.ecef2lla(p[0], p[1], p[2])
 
-    return np.array([lat, lon, alt])
+    # TODO: Placeholders for when we add barometer
+    baro1 = 0
+    baro2 = 0
+    baro3 = 0 
+
+    return np.array([lat, lon, alt, baro1, baro2, baro3])
 
 
 """ H """
-def H(r_ecef, HAE=True):
-    """
-    Computes the Jacobian of (lat, lon, alt) in [rad, rad, m (HAE)] w.r.t ECEF position in [meters]. This uses the Geodetic WGS-84 ellipsoid,
-    which is the general standard defining lat/lon.
-
-    It may be useful to allow the altitude to be w.r.t standard pressure, but that has not been added at this point
-
-    The Jacobian is defined such that :math:`\\nabla_{ecef} f = \\nabla_{lla} f * J`
-
-    Parameters
-    ----------
-    r_ecef : (3,) array-like
-        ECEF position vector in meters
-
-    HAE : bool, default=True
-        if True, the altitude will be the height above the elipsoid. If False, the height will be the radius from the center of the Earth or height above
-        mean sea level (the jacobian will be the same) todo:
-
-    Returns
-    -------
-    J : (3, 3) ndarray
-        Jacobian of (lat, lon, alt) in [rad, rad, m (HAE)] w.r.t ECEF position
-
-    Notes
-    -----
-    The partials were verified by sweeping over random ECEF coordinates and taking the numerical derivative
-    The phase shifts arctan2 were omitted as they didn't seem to matter
-
-    Derived by Tyler Klein, 06/2022
-    """
+def H(x):
     
-    x = r_ecef[0]
-    y = r_ecef[1]
-    z = r_ecef[2]
+    return em.lla_jacobian(x[:3], HAE=True)
 
-    # looking at eceftolla, we can calculate the partials
-    grad_lon = np.array([[-y, x, 0]]) / (x * x + y * y)  # gradient of longitude w.r.t (x,y,z)
-
-    b = np.sqrt((a ** 2) * (1 - e ** 2))
-    ep = np.sqrt((a ** 2 - b ** 2) / b ** 2)
-    p = np.sqrt(x ** 2 + y ** 2)
-    grad_p = np.array([x, y, 0]) / p
-
-    th = np.arctan2(a * z, b * p)
-    dth_dp_coeff = - a * z / (b * p * p)
-    grad_th = np.array([[dth_dp_coeff * grad_p[0], dth_dp_coeff * grad_p[1], a / (b * p)]]) / (1.0 + ((a * z) / (b * p)) ** 2)
-
-    # the latitude is a PAIN
-    num = z + ep ** 2 * b * np.sin(th) ** 3
-    grad_num = np.array([0, 0, 1.0]) + 3 * ep ** 2 * b * np.sin(th) ** 2 * np.cos(th) * grad_th
-    den = p - e ** 2 * a * np.cos(th) ** 3
-    grad_den = grad_p + 3 * e ** 2 * a * np.cos(th) ** 2 * np.sin(th) * grad_th
-    lat = np.arctan2(num, den)
-    grad_lat = ((1.0 / den) * grad_num - (num / den ** 2) * grad_den) * 1.0 / (1.0 + (num / den) ** 2)
-
-    if HAE:
-        grad_N = grad_lat * a * (e ** 2 * np.sin(lat) * np.cos(lat)) / (1 - (e ** 2) * np.sin(lat) ** 2) ** (3 / 2)
-        grad_alt = grad_p / np.cos(lat) + grad_lat * p * np.sin(lat) / np.cos(lat) ** 2 - grad_N
-    else:
-        raise NotImplementedError('Need to subtract out ellipsoid height')
-
-    J = np.vstack((grad_lat, grad_lon, grad_alt))
-    return J
-
-
-"""
-def quat2rotmat(q):
-    # Convert quaternion to rotation matrix.
-    q0, q1, q2, q3 = q
-    return np.array([
-        [1 - 2*q2**2 - 2*q3**2, 2*q1*q2 - 2*q0*q3, 2*q1*q3 + 2*q0*q2],
-        [2*q1*q2 + 2*q0*q3, 1 - 2*q1**2 - 2*q3**2, 2*q2*q3 - 2*q0*q1],
-        [2*q1*q3 - 2*q0*q2, 2*q2*q3 + 2*q0*q1, 1 - 2*q1**2 - 2*q2**2]])
-"""
 
 if __name__ == "__main__":
 
@@ -161,6 +101,7 @@ if __name__ == "__main__":
     
 # =============================================================================
 # 
+#     # TODO: DEFINE THE F MATRIX
 #     grav_gradient = np.zeros((3,3))
 #     ang_rot_cross = np.zeros((3,3))
 #     T_b2i = np.zeros((3,3))
@@ -192,4 +133,10 @@ if __name__ == "__main__":
         # If new GPS reading, update state
         if dc.gps_is_ready():
             lat, long, atti, dt = dc.get_next_gps_reading()
-            ekf.update(z, h) 
+            baro1, baro2, baro3 = dc.get_netx_barometer_reading() # TODO
+            
+            z = [lat, long, atti, baro1, baro2, baro3]
+            ekf.update(z) 
+            
+            
+            

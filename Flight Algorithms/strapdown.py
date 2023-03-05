@@ -6,6 +6,7 @@ import earth_model as em
 # strapdown
 #
 # Single iteration of a 1st-Order IMU Strapdown
+# Credit: Tyler Klein
 def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
 
     # Position Update

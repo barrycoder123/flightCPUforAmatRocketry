@@ -11,16 +11,17 @@ import numpy as np
 WE = 7.2921151467e-05;
 omega = np.array([0, 0, WE]);
 
-''' generate GPS Position '''
+a = 6378137.0 # semi-major axis of Earth, in meters
+b = 6356752.314245 # semi-minor axis of Earth, in meters
+e = 0.0818191908426 # eccentricity of Earth
+
+# ecef2lla
+#
 # generate GPS [lat, long, h] from ECEF (x, y, z)
 # https://stackoverflow.com/questions/56945401/converting-xyz-coordinates-to-longitutde-latitude-in-python
 def ecef2lla(x, y, z):
 
-    a = 6378137.0 #in meters
-    b = 6356752.314245 #in meters
-
     f = (a - b) / a
-    f_inv = 1.0 / f
 
     e_sq = f * (2 - f)                       
     eps = e_sq / (1.0 - e_sq)
@@ -46,7 +47,8 @@ def ecef2lla(x, y, z):
     return lat, lon, h
 
 
-''' generate GPS Diff '''
+# alt2pres
+#
 # determine pressure from altitude
 # https://pvlib-python.readthedocs.io/en/v0.2.2/_modules/pvlib/atmosphere.html
 def alt2pres(altitude):
@@ -108,3 +110,73 @@ def xyz2grav(x, y, z):
     g = np.array([gx, gy, gz]);
     g = g[:] #Force column
     return g
+
+
+# lla_jacobian
+#
+# Computes the Jacobian of (lat, lon, alt) in [rad, rad, m (HAE)] w.r.t ECEF position in [meters]
+# Used to implement our "h" function for Kalman Filtering
+# Credit: Tyler Klein
+def lla_jacobian(r_ecef, HAE=True):
+    """
+    Computes the Jacobian of (lat, lon, alt) in [rad, rad, m (HAE)] w.r.t ECEF position in [meters]. This uses the Geodetic WGS-84 ellipsoid,
+    which is the general standard defining lat/lon.
+
+    It may be useful to allow the altitude to be w.r.t standard pressure, but that has not been added at this point
+
+    The Jacobian is defined such that :math:`\\nabla_{ecef} f = \\nabla_{lla} f * J`
+
+    Parameters
+    ----------
+    r_ecef : (3,) array-like
+        ECEF position vector in meters
+
+    HAE : bool, default=True
+        if True, the altitude will be the height above the elipsoid. If False, the height will be the radius from the center of the Earth or height above
+        mean sea level (the jacobian will be the same) todo:
+
+    Returns
+    -------
+    J : (3, 3) ndarray
+        Jacobian of (lat, lon, alt) in [rad, rad, m (HAE)] w.r.t ECEF position
+
+    Notes
+    -----
+    The partials were verified by sweeping over random ECEF coordinates and taking the numerical derivative
+    The phase shifts arctan2 were omitted as they didn't seem to matter
+
+    Derived by Tyler Klein, 06/2022
+    """
+
+    x = r_ecef[0]
+    y = r_ecef[1]
+    z = r_ecef[2]
+
+    # looking at eceftolla, we can calculate the partials
+    grad_lon = np.array([[-y, x, 0]]) / (x * x + y * y)  # gradient of longitude w.r.t (x,y,z)
+
+    b = np.sqrt((a ** 2) * (1 - e ** 2))
+    ep = np.sqrt((a ** 2 - b ** 2) / b ** 2)
+    p = np.sqrt(x ** 2 + y ** 2)
+    grad_p = np.array([x, y, 0]) / p
+
+    th = np.arctan2(a * z, b * p)
+    dth_dp_coeff = - a * z / (b * p * p)
+    grad_th = np.array([[dth_dp_coeff * grad_p[0], dth_dp_coeff * grad_p[1], a / (b * p)]]) / (1.0 + ((a * z) / (b * p)) ** 2)
+
+    # the latitude is a PAIN
+    num = z + ep ** 2 * b * np.sin(th) ** 3
+    grad_num = np.array([0, 0, 1.0]) + 3 * ep ** 2 * b * np.sin(th) ** 2 * np.cos(th) * grad_th
+    den = p - e ** 2 * a * np.cos(th) ** 3
+    grad_den = grad_p + 3 * e ** 2 * a * np.cos(th) ** 2 * np.sin(th) * grad_th
+    lat = np.arctan2(num, den)
+    grad_lat = ((1.0 / den) * grad_num - (num / den ** 2) * grad_den) * 1.0 / (1.0 + (num / den) ** 2)
+
+    if HAE:
+        grad_N = grad_lat * a * (e ** 2 * np.sin(lat) * np.cos(lat)) / (1 - (e ** 2) * np.sin(lat) ** 2) ** (3 / 2)
+        grad_alt = grad_p / np.cos(lat) + grad_lat * p * np.sin(lat) / np.cos(lat) ** 2 - grad_N
+    else:
+        raise NotImplementedError('Need to subtract out ellipsoid height')
+
+    J = np.vstack((grad_lat, grad_lon, grad_alt))
+    return J

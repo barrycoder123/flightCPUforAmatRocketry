@@ -8,25 +8,32 @@ Created on Tue Feb 21 12:46:07 2023
 
 import sys
 import numpy as np
-from numpy import genfromtxt
+import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.append('../Flight Algorithms')
 sys.path.append('../Data Generation')
 
-from strapdown import *
+import strapdown as sd
+import data_collection as dc
+
+def not_equal(a1, a2, name):
+    
+    for i, j in zip(a1, a2):
+        if i != j:
+            print(name, i, j)
 
 # main
 if __name__ == "__main__":
     
+    dc.reset()
+    
     # Import and format data
     print("Running IMU Simulation")
     print("Opening file...")
-    data = genfromtxt('../Data Generation/traj_raster_30mins_20221115_160156.csv', delimiter=',');
-    data = data[1:][:] #remove NaN
-    IMU_data = data[:, 11:17];
-    dt = 0.1 #Manually setting this for now. Might need to change for RT implementation
+    data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy();    
     PVA_truth = data[:, 1:11];
+    dt = 0.1
 
     # Initialize arrays
     print("Initializing arrays...")
@@ -38,17 +45,19 @@ if __name__ == "__main__":
     # Run the strapdown for all data
     print("Running strapdown simulation...")
     for i in range(data.shape[0] - 1): #data.shape[0] - 1
-    
-        # Extract values from IMU
-        dV_b_imu = dt * IMU_data[i, 0:3]; # measured delta-V in the body frame [m/s]
-        dTh_b_imu = dt * IMU_data[i, 3:6]; # measured delta-theta in the body frame [rad]
-    
+        
+        # simulate getting the next IMU reading
+        accel, gyro, dt = dc.get_next_imu_reading()
+        dV_b_imu = accel * dt
+        dTh_b_imu = gyro * dt
+        
+        # grab our current PVA estimate
         r_ecef = PVA_est[i, 0:3]; # ECEF position [m]
         v_ecef = PVA_est[i, 3:6]; # ECEF velocity [m/s]
         q_e2b = PVA_est[i, 6:10]; # ECEF-to-body Quaternion
     
         # Run an iteration of the strapdown
-        r_ecef_new, v_ecef_new, q_e2b_new = strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
+        r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
         # Write values back to estimation matrix
         PVA_est[i + 1, 0:3] = r_ecef_new;
@@ -115,3 +124,5 @@ if __name__ == "__main__":
     plt.plot(PVA_est[:, 9])
     plt.title("K QUATERNION")
     plt.legend(["Truth","Estimation"])
+    
+    dc.reset()

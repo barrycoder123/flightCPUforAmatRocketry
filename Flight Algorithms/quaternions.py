@@ -4,6 +4,8 @@
 Created on Sat Mar  4 18:11:53 2023
 
 @author: zrummler
+
+Library for quaternions
 """
 
 import numpy as np
@@ -11,6 +13,7 @@ import numpy as np
 def norm(v):
     sum_squares = sum([vi**2 for vi in v])
     return np.sqrt(sum_squares)
+
 
 # deltaAngleToDeltaQuat
 #
@@ -24,6 +27,7 @@ def norm(v):
 #     -------
 #     q : (4,) vector
 #       Quaternion
+# Credit: Tyler Klein
 def deltaAngleToDeltaQuat(dTheta):
     
     mag = norm(dTheta); # norm
@@ -34,6 +38,7 @@ def deltaAngleToDeltaQuat(dTheta):
     q = np.concatenate(([np.cos(theta)], np.sin(theta) * axis));
     
     return q
+
 
 # quatMultiply
 #
@@ -48,6 +53,7 @@ def quatMultiply(q1, q2):
     
     return [w, x, y, z]
 
+
 # quat2dcm
 #
 # Convert quaternion to a 3x3 discrete cosine matrix (dcm)
@@ -57,3 +63,14 @@ def quat2dcm(q):
            [2*(q1*q2 + q0*q3), q0**2 - q1**2 + q2**2 - q3**2, 2*(q2*q3 - q0*q1)],
            [2*(q1*q3 - q0*q2), 2*(q2*q3 + q0*q1), q0**2 - q1**2 - q2**2 + q3**2]]
     return np.array(dcm)
+
+
+# quat2rotmatrix
+#
+# Convert quaternion to rotation matrix.
+def quat2rotmat(q):
+    q0, q1, q2, q3 = q
+    return np.array([
+        [1 - 2*q2**2 - 2*q3**2, 2*q1*q2 - 2*q0*q3, 2*q1*q3 + 2*q0*q2],
+        [2*q1*q2 + 2*q0*q3, 1 - 2*q1**2 - 2*q3**2, 2*q2*q3 - 2*q0*q1],
+        [2*q1*q3 - 2*q0*q2, 2*q2*q3 + 2*q0*q1, 1 - 2*q1**2 - 2*q2**2]])
