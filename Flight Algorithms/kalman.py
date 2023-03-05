@@ -48,6 +48,7 @@ def f(x):
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
     
+    # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
 
     return np.concatenate((r_ecef_new, v_ecef_new, q_e2b_new)), dt
@@ -72,6 +73,7 @@ def h(x):
 """ H """
 def H(x):
     
+    # TODO: This may need some barometer stuff
     return em.lla_jacobian(x[:3], HAE=True)
 
 
@@ -82,18 +84,17 @@ if __name__ == "__main__":
                    [-em.omega[1], em.omega[0], 0]])
     am_cross = omega_cross
     
-    # step 1 - state vector: [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, quat-e2bi, quat-e2bj, quat-e2bk, mag(quat)]
+    # state vector: [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, quat-e2bi, quat-e2bj, quat-e2bk, mag(quat)]
     x = np.array([0, 0, 0, 0, 0, 0, 1, 0, 0, 0])
     
-    # step 2 - measurement vector holds GPS measurement (and evnetually barometer)
-    z = np.array([0, 0, 0, 0, 0, 0]) # [lat, lon, atti, baro1, baro2, baro3]
+    # smeasurement vector: [lat, lon, atti, baro1, baro2, baro3]
+    z = np.array([0, 0, 0, 0, 0, 0])
 
     # Initialize P, Q, R
     # P: predicted covariance matrix, can be random, 10x10, maybe I * .1
     # Q: measurement noise matrix, 10x10, I * 0.001
     # R: 
     # F: 10x10, given by Tyler (add a row of 0's)
-    
     P = np.zeros((10,10))
     Q = np.zeros((10,10))
     R = np.zeros((10,10))

@@ -31,7 +31,7 @@ elif DEVICE == DEVICES[1]:
     IMU_t_sec = file_data[:, 0]
         
     # reading GPS data
-    file_data = pd.read_csv("../Data Generation/gps_and_barometer.csv").to_numpy();
+    file_data = pd.read_csv("../Data Generation/gps_and_barometer_data.csv").to_numpy();
     GPS_data = file_data[:, 1:4]
     GPS_t_sec = file_data[:, 0]
     

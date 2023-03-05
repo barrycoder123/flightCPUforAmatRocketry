@@ -7,11 +7,11 @@ Created on Thu Jan 26 11:13:09 2023
 '''
 
 import sys
-from pandas import *
+import csv # for writing to CSV
 import numpy as np
+import pandas as pd # for reading CSV
 import matplotlib.pyplot as plt
-import math
-import csv
+
 
 sys.path.append('../Flight Algorithms')
 
@@ -30,7 +30,7 @@ def add_noise(arr, noise):
 if __name__ == "__main__":
 
     # open file and extract necessary data
-    file_data = read_csv("traj_raster_30mins_20221115_160156.csv")
+    file_data = pd.read_csv("traj_raster_30mins_20221115_160156.csv")
     t_sec = np.array(file_data["t [sec]"])
     dt = np.average(np.diff(t_sec))
     print(dt)
@@ -81,7 +81,6 @@ if __name__ == "__main__":
     plt.title("GPS Altitude (m)")
     plt.xlabel("Samples")
     plt.ylabel("Meters")
-    
     
     # add noise to barometer data ?
     #add_noise(pressure)
