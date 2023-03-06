@@ -7,10 +7,13 @@ Created on Sat Mar  4 17:54:05 2023
 """
 
 import numpy as np
+import pandas as pd
+import data_collection as dc
 
-WE = 7.2921151467e-05;
+WE = 7.2921151467e-05; # rad/sec
 omega = np.array([0, 0, WE]);
 
+# Define the WGS84 ellipsoid parameters
 a = 6378137.0 # semi-major axis of Earth, in meters
 b = 6356752.314245 # semi-minor axis of Earth, in meters
 e = 0.0818191908426 # eccentricity of Earth
@@ -18,6 +21,7 @@ e = 0.0818191908426 # eccentricity of Earth
 # ecef2lla
 #
 # generate GPS [lat, long, h] from ECEF (x, y, z)
+# h is height above sea level
 # https://stackoverflow.com/questions/56945401/converting-xyz-coordinates-to-longitutde-latitude-in-python
 def ecef2lla(x, y, z):
 
@@ -45,6 +49,31 @@ def ecef2lla(x, y, z):
     lon = np.degrees(lam)
     
     return lat, lon, h
+
+# lla2ecef
+#
+# generate ECEF xyz from GPS (lat, long, h)
+# where h is height above sea level
+def lla2ecef(lat, lon, h):
+    
+    f = (a - b) / a
+
+    e_sq = f * (2 - f)
+    eps = e_sq / (1.0 - e_sq)
+
+    # Convert latitude and longitude to radians
+    phi = np.radians(lat)
+    lam = np.radians(lon)
+
+    # Compute geocentric latitude
+    sin_phi = np.sin(phi)
+    cos_phi = np.cos(phi)
+    N = a / np.sqrt(1 - e_sq * sin_phi**2)
+    x = (N + h) * cos_phi * np.cos(lam)
+    y = (N + h) * cos_phi * np.sin(lam)
+    z = (N * (1 - e_sq) + h) * sin_phi
+
+    return x, y, z
 
 
 # alt2pres
@@ -110,6 +139,34 @@ def xyz2grav(x, y, z):
     g = np.array([gx, gy, gz]);
     g = g[:] #Force column
     return g
+
+
+# lla2quat
+#
+# Compute the quaternion of a body pointing straight upwards
+# Used to initialize the rocket's quaternion
+def lla2quat(lat, lon, alt):
+    # Convert LLA coordinates to ECEF coordinates
+    x, y, z = lla2ecef(lat, lon, alt)
+
+    # Calculate the gravitational acceleration vector in the ECEF frame
+    grav = xyz2grav(x, y, z)
+
+    # Assume that the body is pointing straight away from the gravity vector
+    # Body-frame x-axis is aligned with negative gravity vector in ECEF frame
+    body_x = -grav / np.linalg.norm(grav)
+    ecef_x = np.array([1, 0, 0])  # ECEF x-axis
+
+    # Calculate the rotation axis and angle between ECEF x-axis and body x-axis
+    axis = np.cross(ecef_x, body_x)
+    angle = np.arccos(np.dot(ecef_x, body_x))
+
+    # Construct the quaternion that rotates ECEF x-axis to body x-axis
+    s = np.cos(angle / 2)
+    v = np.sin(angle / 2) * axis
+    quat = np.array([s, v[0], v[1], v[2]])
+
+    return quat
 
 
 # lla_jacobian
@@ -180,3 +237,16 @@ def lla_jacobian(r_ecef, HAE=True):
 
     J = np.vstack((grad_lat, grad_lon, grad_alt))
     return J
+
+
+if __name__ == "__main__":
+    
+    file_data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy()
+    
+    gps_data, dt = dc.get_next_gps_reading()
+    first_quat = file_data[0, 7:11]
+    
+    test_quat = lla2quat(gps_data[0], gps_data[1], gps_data[2])
+    
+    print(first_quat, test_quat)
+    
