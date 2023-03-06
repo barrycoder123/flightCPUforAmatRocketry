@@ -23,10 +23,10 @@ import data_collection as dc
 
 
 class EKF:
-    def __init__(self, x, q_true, P, Q, R, f, F, h, H):
+    def __init__(self, x, global_quaternion, P, Q, R, f, F, h, H):
         
         self.x = x # state vector, 9x9
-        self.q_true = q_true # global "truth" quaternion, 4x1
+        self.global_quaternion = global_quaternion # global "truth" quaternion, 4x1
         self.P = P # predicted coviarnace matrix, 9x9
         self.Q = Q # measurement noise matrix, 9x9
         self.R = R # 
@@ -39,12 +39,12 @@ class EKF:
     # predict step of Kalman filtering
     def predict(self):
         # predict state estimate
-        self.x, self.q_true = self.f(self.x, self.q_true)
+        self.x, self.global_quaternion = self.f(self.x, self.global_quaternion)
         
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
         
-        #self.P, self.Q, self.R, self.F = initialize_ekf_matrices(self.x, self.q_true)
+        #self.P, self.Q, self.R, self.F = initialize_ekf_matrices(self.x, self.global_quaternion)
 
 
     # update step of Kalman filtering
@@ -68,13 +68,16 @@ class EKF:
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
         
         # Tyler: apply attitude error to truth quaternion
-        self.q_true = qt.atti2quat(self.x[-3:], self.q_true)
+        q_err = qt.atti2quat(self.x[6:9])
+        self.global_quaternion = qt.quatMultiply(q_err, self.global_quaternion)
+    
+        
         self.x[-3:] = [0, 0, 0] # reset attitude error (Tyler)
         
 
 
 # IMU CONVERSION EQUATION
-def f(x, q_true):
+def f(x, global_quaternion):
     
     r_ecef, v_ecef, atti_error = x[0:3], x[3:6], x[6:9]
     
@@ -83,16 +86,31 @@ def f(x, q_true):
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
     
-    # 
-    q_e2b = q_true # qt.atti2quat(atti_error, q_true)
+    # pass global quaternion into 
+    q_e2b = global_quaternion
     
     # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
-    #q_true = 
-
+    # convert predicted quaternion to rotation matrix
+    R_e2b_new = qt.quat2rotmat(q_e2b_new)
+    
+    # convert global quaternion to rotation matrix
+    R_e2b = qt.quat2rotmat(global_quaternion)
+    
+    # compute predicted attitude error as rotation matrix
+    R_err = np.dot(R_e2b_new, R_e2b.T)
+    
+    # convert predicted attitude error to quaternion
+    q_err = qt.rotmat2quat(R_err)
+    
+    # update global quaternion with predicted attitude error
+    global_quaternion = qt.quatMultiply(q_err, global_quaternion)
+    
     # convert quaternion to attitude error
-    atti_error_new = qt.quat2atti(q_e2b_new, q_true)
+    atti_error_new = qt.quat2atti(q_e2b_new, global_quaternion)
+    
+    #print(atti_error_new)
 
     return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), q_e2b_new
 
@@ -164,37 +182,36 @@ def initialize_ekf_state_vector():
 def initialize_global_quaternion():
     
     # get GPS reading and convert to quaternion
-    q_true = dc.get_first_quaternion()
+    global_quaternion = dc.get_first_quaternion()
     
-    return q_true
+    return global_quaternion
 
 
 # initializes the P, Q, R, and F matrices
 # TODO: probably don't want to initialize these with identity matrices
-def initialize_ekf_matrices(x, q_true):
+def initialize_ekf_matrices(x, global_quaternion):
     
-    # P: predicted covariance matrix, can be random, 9x9, maybe I * .1
-    # Initialize the P matrix with non-zero values to reflect initial uncertainty
-    #P = np.diag([10.0, 10.0, 10.0, 1.0, 1.0, 1.0, 0.1, 0.1, 0.1])
-    P = np.eye((9)) * 0.1
+    # P: predicted covariance matrix (9 x 9), can be random (reflects initial uncertainty)
+    P = np.eye((9)) * 0.1 # does not matter what this is
 
     # Q: measurement noise matrix, 10x10, I * 0.001
     # Initialize the Q matrix to reflect the uncertainty in the system dynamics
     #Q = np.diag([1.0, 1.0, 1.0, 0.1, 0.1, 0.1, 0.01, 0.01, 0.01])
-    Q = np.eye((9)) * 0.001
+    Q = np.eye((9)) * 0.01
     
     # R: 6x6, uncertain how to initialize
     # Initialize the R matrix to reflect the uncertainty in the sensor measurements
-    R = np.diag([2.5, 2.5, 2.5, 0.01, 0.01, 0.01])
+    # GPS has noise of 2.5 meters ?
+    R = np.diag([2.5, 2.5, .25, 0.01, 0.01, 0.01])
     #R = np.eye((6)) * 2.5
     
-    # F: state propagation matrix, 9x9
+    # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
+    omega_cross = skew(em.omega)
+    r_ecef = x[:3]
+    T_b2i = np.linalg.inv(qt.quat2dcm(global_quaternion))
     
     # Read IMU to determine accel and angular gyro
     accel, gyro, dt = dc.get_next_imu_reading(advance=False)
-    r_ecef = x[:3]
-    omega_cross = skew(em.omega)
-    T_b2i = np.linalg.inv(qt.quat2dcm(q_true))
     
     # Credit: Tyler's email
     drdr = np.zeros((3,3))
