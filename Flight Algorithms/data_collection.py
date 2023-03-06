@@ -82,10 +82,12 @@ elif DEVICE == DEVICES[1]:
     def gps_is_ready():
         global gps_reading_number
         
-        if GPS_data[gps_reading_number, 0] == np.nan:
+        if np.isnan(GPS_data[gps_reading_number, 0]):
             gps_reading_number += 1
+            #print("FALSE")
             return False
         
+        #print("TRUE")
         return True
     
     # get_next_gps_reading()
@@ -104,7 +106,7 @@ elif DEVICE == DEVICES[1]:
             dt = GPS_t_sec[imu_reading_number] - GPS_t_sec[imu_reading_number-10]
         
         if advance: # only increment counter if desired
-            gps_reading_number += 10    
+            gps_reading_number += 1
        
         return reading, dt
     
@@ -135,8 +137,9 @@ elif DEVICE == DEVICES[1]:
     #
     # return True if there are no more points to read
     def done():
-        
+        #print(gps_reading_number)
         if (imu_reading_number >= num_points) or (gps_reading_number >= num_points):
+            #print("EXITING!!")
             return True
         
         return False

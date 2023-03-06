@@ -8,8 +8,7 @@ Created on Sat Mar  4 12:22:46 2023
 
 PURPOSE: Library for Kalman filtering
 
-
-FCLASS: EKF
+CLASS: EKF
 
 METHODS: EKF.predict(), EKF.update(z)
     

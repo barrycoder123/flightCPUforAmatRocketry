@@ -45,12 +45,14 @@ if __name__ == "__main__":
     add_noise(real_Z, GPS_POS_NOISE)
     
     # generate GPS position
-    [lat_p, long_p, h_p] = em.ecef2lla(real_X, real_Y, real_Z)
+    [lat_p, long_p, h_p] = em.ecef2lla(np.array([real_X, real_Y, real_Z]))
     
     # delete entries that aren't multiples of 10
+
     lat_p[~(np.arange(len(lat_p)) % 10 == 0)] = np.nan
     long_p[~(np.arange(len(long_p)) % 10 == 0)] = np.nan
     h_p[~(np.arange(len(h_p)) % 10 == 0)] = np.nan
+
     
     # # generate GPS velocity
     # [lat_v, long_v, h_v] = generateGPSDiff(lat_p, long_p, h_p)
@@ -77,8 +79,18 @@ if __name__ == "__main__":
     
     # plot altitude (above sea level) for sanity check
     plt.figure()
-    plt.plot(h_p)
+    plt.plot(lat_p)
     plt.title("GPS Altitude (m)")
+    plt.xlabel("Samples")
+    plt.ylabel("Meters")
+    
+    
+    plt.figure()
+    [x, y, z] = em.lla2ecef([lat_p, long_p, h_p])
+    plt.plot(x)
+    plt.plot(y)
+    plt.plot(z)
+    plt.title("X Altitude (m)")
     plt.xlabel("Samples")
     plt.ylabel("Meters")
     

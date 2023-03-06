@@ -270,6 +270,7 @@ def lla_jacobian(r_ecef, HAE=True):
 
 if __name__ == "__main__":
     
+    """
     file_data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy()
     
     gps_data, dt = dc.get_next_gps_reading()
@@ -278,4 +279,13 @@ if __name__ == "__main__":
     test_quat = lla2quat(gps_data[0], gps_data[1], gps_data[2])
     
     print(first_quat, test_quat)
+    """
+    
+    """
+    xyz = [6000000, 6100000, 6200000]
+    lla = ecef2lla(xyz)
+    print(lla)
+    back = lla2ecef(lla)
+    print(xyz,back)
+    """
     
