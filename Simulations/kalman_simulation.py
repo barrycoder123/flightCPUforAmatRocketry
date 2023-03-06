@@ -47,12 +47,14 @@ if __name__ == "__main__":
         # Predict state
         ekf.predict()
         
-        # If new GPS reading, update state
+        
         if dc.gps_is_ready():
-            lla, dt = dc.get_next_gps_reading()
             
+            # read GPS and barometer
+            lla, dt = dc.get_next_gps_reading()
             baro = dc.get_next_barometer_reading() # TODO: implement
             
+            # Update state
             z = np.concatenate((lla, baro))
             ekf.update(z) 
         
@@ -61,7 +63,7 @@ if __name__ == "__main__":
         #print(lla)
         xyz = em.lla2ecef(lla)
         r_gps[i, :] = xyz
-        #r_filtered[i, :] = ekf.x[0:3]
+        r_filtered[i, :] = ekf.x[0:3]
         i += 1
         
         
@@ -70,22 +72,17 @@ if __name__ == "__main__":
     ## PLOT POSITION
     plt.figure()
     plt.plot(r_gps[:, 0])
-    #plt.plot(r_filtered[:, 0])
+    plt.plot(r_filtered[:, 0])
     plt.title("X POSITION")
     plt.legend(["GPS","Filtered"])
     plt.figure()
     plt.plot(r_gps[:, 1])
-    #plt.plot(r_filtered[:, 1])
+    plt.plot(r_filtered[:, 1])
     plt.title("Y POSITION")
     plt.legend(["GPS","Filtered"])
     plt.figure()
     plt.plot(r_gps[:, 2])
-    #plt.plot(r_filtered[:, 2])
+    plt.plot(r_filtered[:, 2])
     plt.title("Z POSITION")
     plt.legend(["GPS","Filtered"])
-    
-    # IMU: accel, angular rotation
-    # GPS: position
-    # 
-    
-            
+           

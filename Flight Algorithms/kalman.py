@@ -54,7 +54,7 @@ class EKF:
         S = H @ self.P @ H.T + self.R
         
         # compute Kalman gain (9 x 6)
-        K = self.P @ H.T @ S # np.linalg.inv(S)
+        K = self.P @ H.T @ np.linalg.inv(S)
         
         # update state estimate (9,)
         self.x = self.x + K @ y
@@ -64,7 +64,7 @@ class EKF:
         
         # Tyler: apply attitude error to truth quaternion
         self.q_true = qt.atti2quat(self.x[-3:], self.q_true)
-        self.x[-3:] = [0, 0, 0] # reset error (Tyler)
+        self.x[-3:] = [0, 0, 0] # reset attitude error (Tyler)
 
 
 # IMU CONVERSION EQUATION
@@ -101,12 +101,26 @@ def h(x):
 
 # H 
 #
-# Should be 6x9
+# Construct the 6x9 H matrix
 def H(x):
-    # TODO: May need to add some barometer stuff
-    return np.zeros((6,9))
-    #return em.lla_jacobian(x[:3], HAE=True)
 
+    # GPS
+    r_to_lla = em.lla_jacobian(x[:3], HAE=True)
+    v_to_lla = np.zeros((3,3)) # TODO: figure these out tonight
+    a_to_lla = np.zeros((3,3)) # TODO: figure these out tonight
+    
+    # TODO: Add some barometer stuff later
+    r_to_baro = np.zeros((3,3))
+    v_to_baro = np.zeros((3,3))
+    a_to_baro = np.zeros((3,3))
+    
+    
+    H_mat = np.vstack([
+        np.hstack([r_to_lla, v_to_lla, a_to_lla]),
+        np.hstack([r_to_baro, v_to_baro, a_to_baro])
+        ])
+    
+    return H_mat
 
 
 def skew(M):
@@ -139,18 +153,19 @@ def initialize_global_quaternion():
     return q_true
 
 # initializes the P, Q, R, and F matrices
+# TODO: probably don't want to initialize these with identity matrices
 def initialize_ekf_matrices(x, q_true):
     
     # P: predicted covariance matrix, can be random, 9x9, maybe I * .1
-    P = np.eye((9)) * 0.1
+    P = np.eye((9)) #* 0.1
     
     # Q: measurement noise matrix, 10x10, I * 0.001
-    Q = np.eye((9)) * 0.001
+    Q = np.eye((9)) #* 0.001
     
     # R: 6x6, uncertain how to initialize
-    R = np.zeros((6,6))
+    R = np.eye((6)) #* 0.001
     
-    # F: 9x9, given by Tyler (add a row of 0's)    
+    # F: state propagation matrix, 9x9
     
     # Read IMU to determine accel and angular gyro
     accel, gyro, dt = dc.get_next_imu_reading(advance=False)
