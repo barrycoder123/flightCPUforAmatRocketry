@@ -68,10 +68,9 @@ class EKF:
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
         
         # Tyler: apply attitude error to truth quaternion
-        q_err = qt.atti2quat(self.x[6:9])
-        self.global_quaternion = qt.quatMultiply(q_err, self.global_quaternion)
+        #self.global_quaternion = qt.atti2quat2(self.x[6:9], self.global_quaternion)
+        #self.global_quaternion = qt.quatMultiply(q_err, self.global_quaternion)
     
-        
         self.x[-3:] = [0, 0, 0] # reset attitude error (Tyler)
         
 
@@ -92,27 +91,37 @@ def f(x, global_quaternion):
     # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
-    # convert predicted quaternion to rotation matrix
-    R_e2b_new = qt.quat2rotmat(q_e2b_new)
     
-    # convert global quaternion to rotation matrix
-    R_e2b = qt.quat2rotmat(global_quaternion)
+    atti_error_new = qt.quat2atti(global_quaternion, q_e2b_new)
     
-    # compute predicted attitude error as rotation matrix
-    R_err = np.dot(R_e2b_new, R_e2b.T)
+    print(atti_error_new)
     
-    # convert predicted attitude error to quaternion
-    q_err = qt.rotmat2quat(R_err)
+    """
+    # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
+    omega_cross = skew(em.omega)
+    r_ecef = x[:3]
+    T_b2i = np.linalg.inv(qt.quat2dcm(global_quaternion))
     
-    # update global quaternion with predicted attitude error
-    global_quaternion = qt.quatMultiply(q_err, global_quaternion)
-    
-    # convert quaternion to attitude error
-    atti_error_new = qt.quat2atti(q_e2b_new, global_quaternion)
-    
-    #print(atti_error_new)
+    # Credit: Tyler's email
+    drdr = np.zeros((3,3))
+    drdv = np.eye(3)
+    drdo = np.zeros((3,3))
+    dvdr = em.grav_gradient(r_ecef) - np.square(omega_cross)
+    dvdv = -2 * omega_cross
+    dvdo = -T_b2i * skew(accel)
+    dodr = np.zeros((3,3))
+    dodv = np.zeros((3,3))
+    dodo = -skew(gyro)
 
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), q_e2b_new
+    F = np.vstack([
+            np.hstack([drdr, drdv, drdo]),
+            np.hstack([dvdr, dvdv, dvdo]),
+            np.hstack([dodr, dodv, dodo])
+          ])
+    """
+    
+    
+    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), q_e2b_new #, F
 
 
 # GPS CONVERSION EQUATION
