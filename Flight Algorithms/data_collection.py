@@ -56,7 +56,7 @@ elif DEVICE == DEVICES[1]:
     # get_next_imu_reading()
     #
     # returns the next IMU reading (simulation) """
-    def get_next_imu_reading():
+    def get_next_imu_reading(advance=True):
         global imu_reading_number
         
         # extract the next acceleration and angular rotation
@@ -69,7 +69,8 @@ elif DEVICE == DEVICES[1]:
         else:
             dt = IMU_t_sec[imu_reading_number] - IMU_t_sec[imu_reading_number-1]
             
-        imu_reading_number += 1    
+        if advance:
+            imu_reading_number += 1    
         
         return accel_xyz, gyro_xyz, dt
      

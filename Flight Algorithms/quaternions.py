@@ -101,6 +101,7 @@ def quat2rotmat(q):
 # quat2atti
 #
 # Determine the attitude error between two quaternions
+# Format: [roll_error, pitch_error, yaw_error]
 def quat2atti(q_e2b, q_true):
     
     q_error = quatMultiply(quat_inv(q_true), q_e2b)

@@ -19,7 +19,8 @@ def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
     q_e2b_new = qt.quatMultiply(q_i2bNew, q_e2i);
 
     # Velocity Update
-    g = em.xyz2grav(r_ecef[0], r_ecef[1], r_ecef[2]);
+    x, y, z = r_ecef
+    g = em.xyz2grav(x, y, z);
     
     T_i2b = qt.quat2dcm(q_e2b);
     dV_e_imu = np.dot(dV_b_imu, T_i2b.conj())

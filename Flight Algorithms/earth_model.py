@@ -5,7 +5,6 @@ Created on Sat Mar  4 17:54:05 2023
 
 @author: zrummler
 
-
 PURPOSE: Library for ellipsoid Earth model and refernce frames
 
 FUNCTIONS:
@@ -141,6 +140,7 @@ def alt2pres(altitude):
 #
 # Ellipsoid Earth gravity model
 def xyz2grav(x, y, z):
+
     j2 = 0.00108263
     mu = 3.986004418e14
     R = 6378137
@@ -156,6 +156,19 @@ def xyz2grav(x, y, z):
     g = g[:] #Force column
     return g
 
+def grav_gradient(r_ecef, eps=1e-6):
+    
+    x, y, z = r_ecef
+    
+    # Initialize the gradient vector
+    gradient = np.zeros((3,3))
+
+    # Compute the partial derivatives using finite differences
+    gradient[:, 0] = (xyz2grav(x + eps, y, z) - xyz2grav(x - eps, y, z)) / (2 * eps)
+    gradient[:, 1] = (xyz2grav(x, y + eps, z) - xyz2grav(x, y - eps, z)) / (2 * eps)
+    gradient[:, 2] = (xyz2grav(x, y, z + eps) - xyz2grav(x, y, z - eps)) / (2 * eps)
+
+    return gradient
 
 # lla2quat
 #

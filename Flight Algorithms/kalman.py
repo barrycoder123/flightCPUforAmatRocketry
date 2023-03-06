@@ -49,7 +49,7 @@ class EKF:
         y = z - self.h(self.x)
         
         # get H matrix (6 x 9)
-        H = self.H(x[:3])
+        H = self.H(self.x[:3])
         
         # compute innovation covariance (6 x 6)
         S = H @ self.P @ H.T + self.R
@@ -108,6 +108,10 @@ def H(x):
     return np.zeros((6,9))
     #return em.lla_jacobian(x[:3], HAE=True)
 
+
+
+def skew(M):
+    return np.cross(np.eye(3), M)
 # initializes the 9x9 EKF state matrix """
 # state vector: [pos_x, 
 #                pos_y, 
@@ -136,44 +140,35 @@ def initialize_global_quaternion():
     return q_true
 
 # initializes the P, Q, R, and F matrices
-def initialize_ekf_matrices():
+def initialize_ekf_matrices(x, q_true):
     
-    omega_cross = np.vstack([[0, -em.omega[2], em.omega[1]],
-                   [em.omega[2], 0, -em.omega[0]],
-                   [-em.omega[1], em.omega[0], 0]])
-    am_cross = omega_cross
-    
-    
-    x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    
-    # measurement vector: [lat, lon, atti, baro1, baro2, baro3]
-    z = np.array([0, 0, 0, 0, 0, 0])
-
-    # Initialize P, Q, R
     # P: predicted covariance matrix, can be random, 9x9, maybe I * .1
+    P = np.eye((9)) * 0.1
+    
     # Q: measurement noise matrix, 10x10, I * 0.001
-    # R: 6x6
-    # F: 10x10, given by Tyler (add a row of 0's)
-    P = np.zeros((9,9))
-    Q = np.zeros((9,9))
+    Q = np.eye((9)) * 0.001
+    
+    # R: 6x6, uncertain how to initialize
     R = np.zeros((6,6))
-    F = np.zeros((9,9))
     
-
-    # TODO: DEFINE THE F MATRIX
-    grav_gradient = np.zeros((3,3))
-    ang_rot_cross = np.zeros((3,3))
-    T_b2i = np.zeros((3,3))
+    # F: 9x9, given by Tyler (add a row of 0's)    
     
+    # Read IMU to determine accel and angular gyro
+    accel, gyro, dt = dc.get_next_imu_reading(advance=False)
+    r_ecef = x[:3]
+    omega_cross = skew(em.omega)
+    T_b2i = np.linalg.inv(qt.quat2dcm(q_true))
+    
+    # Per Tyler's email
     drdr = np.zeros((3,3))
-    drdv = np.identity(3)
+    drdv = np.eye(3)
     drdo = np.zeros((3,3))
-    dvdr = grav_gradient - np.square(omega_cross)
+    dvdr = em.grav_gradient(r_ecef) - np.square(omega_cross)
     dvdv = -2 * omega_cross
-    dvdo = -T_b2i * am_cross
+    dvdo = -T_b2i * skew(accel)
     dodr = np.zeros((3,3))
     dodv = np.zeros((3,3))
-    dodo = -ang_rot_cross
+    dodo = -skew(gyro)
 
     F = np.vstack([
             np.hstack([drdr, drdv, drdo]),
@@ -182,39 +177,4 @@ def initialize_ekf_matrices():
           ])
     
     return P, Q, R, F
-    
-
-if __name__ == "__main__":
-    
-    # initialize state vectors and matrices
-    dc.reset()
-    x = initialize_ekf_state_vector()
-    q_true = initialize_global_quaternion()
-    P, Q, R, F = initialize_ekf_matrices()
-    
-    # Initialize EKF
-    ekf = EKF(x, q_true, P, Q, R, f, F, h, H)
-
-    # EKF loop
-    print("RUNNING EKF")
-    while 1:
-        if dc.done():
-            break
-        
-        # Predict state
-        ekf.predict()
-        
-        # If new GPS reading, update state
-        if dc.gps_is_ready():
-            lla, dt = dc.get_next_gps_reading()
-            baro = dc.get_next_barometer_reading() # TODO: implement
-            
-            z = np.concatenate((lla, baro))
-            ekf.update(z) 
-            
-        
-        
-    print("DONE WITH KALMAN FILTERING")
-            
-            
             

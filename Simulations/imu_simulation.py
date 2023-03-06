@@ -32,7 +32,7 @@ if __name__ == "__main__":
     
     # Import and format data
     print("Running IMU Simulation")
-    print("Opening file...")
+    print("Opening file for truth data...")
     data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy();    
     PVA_truth = data[:, 1:11];
     dt = 0.1
