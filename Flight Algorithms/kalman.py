@@ -35,14 +35,19 @@ class EKF:
         self.h = h # GPS conversion
         self.H = H # jacobian of lla
 
+
     # predict step of Kalman filtering
     def predict(self):
         # predict state estimate
-        self.x, dt = self.f(self.x, self.q_true)
+        self.x, self.q_true = self.f(self.x, self.q_true)
         
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
+        
+        #self.P, self.Q, self.R, self.F = initialize_ekf_matrices(self.x, self.q_true)
 
+
+    # update step of Kalman filtering
     def update(self, z):
         # compute innovation
         y = z - self.h(self.x)
@@ -65,6 +70,7 @@ class EKF:
         # Tyler: apply attitude error to truth quaternion
         self.q_true = qt.atti2quat(self.x[-3:], self.q_true)
         self.x[-3:] = [0, 0, 0] # reset attitude error (Tyler)
+        
 
 
 # IMU CONVERSION EQUATION
@@ -77,15 +83,18 @@ def f(x, q_true):
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
     
-    q_e2b = qt.atti2quat(atti_error, q_true)
+    # 
+    q_e2b = q_true # qt.atti2quat(atti_error, q_true)
     
     # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
+    
+    #q_true = 
 
     # convert quaternion to attitude error
     atti_error_new = qt.quat2atti(q_e2b_new, q_true)
 
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), dt
+    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), q_e2b_new
 
 
 # GPS CONVERSION EQUATION
@@ -122,9 +131,13 @@ def H(x):
     
     return H_mat
 
-
+# skew
+#
+# compute the skew matrix of a 3-element vector
 def skew(M):
     return np.cross(np.eye(3), M)
+
+
 # initializes the 9x9 EKF state matrix """
 # state vector: [pos_x, 
 #                pos_y, 
@@ -137,14 +150,17 @@ def skew(M):
 #                yaw_error]
 def initialize_ekf_state_vector():
     
-    # get GPS reading and convert to ECEF
+    # get current GPS reading and convert to ECEF
     gps_data, dt = dc.get_next_gps_reading(advance=False) 
     x, y, z = em.lla2ecef(gps_data) 
+    vec = [1527850.153, -4464959.009, 4276353.59, 3.784561502,	1.295026731, -1.11E-16, 0, 0, 0]
     
     # velocity and attitude error are initially 0
-    return np.array([x, y, z, 0, 0, 0, 0, 0, 0])
+    return np.array(vec)
+    #return np.array([x, y, z, 0, 0, 0, 0, 0, 0])
 
-# initializes the 4x1 global quaternion
+
+# initializes the 4x1 global "truth" quaternion
 def initialize_global_quaternion():
     
     # get GPS reading and convert to quaternion
@@ -152,18 +168,25 @@ def initialize_global_quaternion():
     
     return q_true
 
+
 # initializes the P, Q, R, and F matrices
 # TODO: probably don't want to initialize these with identity matrices
 def initialize_ekf_matrices(x, q_true):
     
     # P: predicted covariance matrix, can be random, 9x9, maybe I * .1
-    P = np.eye((9)) #* 0.1
-    
+    # Initialize the P matrix with non-zero values to reflect initial uncertainty
+    #P = np.diag([10.0, 10.0, 10.0, 1.0, 1.0, 1.0, 0.1, 0.1, 0.1])
+    P = np.eye((9)) * 0.1
+
     # Q: measurement noise matrix, 10x10, I * 0.001
-    Q = np.eye((9)) #* 0.001
+    # Initialize the Q matrix to reflect the uncertainty in the system dynamics
+    #Q = np.diag([1.0, 1.0, 1.0, 0.1, 0.1, 0.1, 0.01, 0.01, 0.01])
+    Q = np.eye((9)) * 0.001
     
     # R: 6x6, uncertain how to initialize
-    R = np.eye((6)) #* 0.001
+    # Initialize the R matrix to reflect the uncertainty in the sensor measurements
+    R = np.diag([2.5, 2.5, 2.5, 0.01, 0.01, 0.01])
+    #R = np.eye((6)) * 2.5
     
     # F: state propagation matrix, 9x9
     
@@ -173,7 +196,7 @@ def initialize_ekf_matrices(x, q_true):
     omega_cross = skew(em.omega)
     T_b2i = np.linalg.inv(qt.quat2dcm(q_true))
     
-    # Per Tyler's email
+    # Credit: Tyler's email
     drdr = np.zeros((3,3))
     drdv = np.eye(3)
     drdo = np.zeros((3,3))
@@ -190,5 +213,4 @@ def initialize_ekf_matrices(x, q_true):
             np.hstack([dodr, dodv, dodo])
           ])
     
-    return P, Q, R, F
-            
+    return P, Q, R, F       

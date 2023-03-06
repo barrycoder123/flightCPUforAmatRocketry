@@ -47,20 +47,17 @@ if __name__ == "__main__":
         # Predict state
         ekf.predict()
         
-        
         if dc.gps_is_ready():
-            
             # read GPS and barometer
             lla, dt = dc.get_next_gps_reading()
             baro = dc.get_next_barometer_reading() # TODO: implement
             
             # Update state
             z = np.concatenate((lla, baro))
-            ekf.update(z) 
+            #ekf.update(z) 
         
             
         # update results vectors
-        #print(lla)
         xyz = em.lla2ecef(lla)
         r_gps[i, :] = xyz
         r_filtered[i, :] = ekf.x[0:3]

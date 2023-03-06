@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # Initialize arrays
     print("Initializing arrays...")
     PVA_est = np.zeros((data.shape[0], 10))
-    x0 = PVA_truth[1, 0:11];
+    x0 = PVA_truth[0, 0:11];
     x0 = x0[:]; # Force column vector
     PVA_est[0] = x0 # Store initial conditions in first col of estimate
 
