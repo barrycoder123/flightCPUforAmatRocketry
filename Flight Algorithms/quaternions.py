@@ -5,21 +5,27 @@ Created on Sat Mar  4 18:11:53 2023
 
 @author: zrummler
 
-Library for quaternions
+PURPOSE: Library for quaternions
 
-Quaternion Format: [scalar, i, j, k]
+DATA REPRESENTATION:
+    [q_scalar, q_i, q_j, q_k]
+    numpy arrays
+
+FUNCTIONS:
+    deltaAngleToDeltaQuat
+    quat_inv
+    quatMultiply
+    quat2dcm
+    quat2rotmat
+    quat2atti
+    atti2quat
 
 """
-
 
 import numpy as np
 import pandas as pd
 import earth_model as em
 import data_collection as dc
-
-def norm(v):
-    sum_squares = sum([vi**2 for vi in v])
-    return np.sqrt(sum_squares)
 
 
 # deltaAngleToDeltaQuat
@@ -37,7 +43,7 @@ def norm(v):
 # Credit: Tyler Klein
 def deltaAngleToDeltaQuat(dTheta):
     
-    mag = norm(dTheta); # norm
+    mag = np.linalg.norm(dTheta); # norm
     axis = dTheta / mag; # axis of rotation
     
     # See https://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.html
@@ -46,6 +52,9 @@ def deltaAngleToDeltaQuat(dTheta):
     
     return q
 
+# quat_inv
+#
+# Takes the inverse of a quaternion
 def quat_inv(q):
     q_conj = np.array([q[0], -q[1], -q[2], -q[3]])
     q_norm = np.linalg.norm(q)
@@ -64,7 +73,7 @@ def quatMultiply(q1, q2):
     y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2
     z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
     
-    return [w, x, y, z]
+    return np.array([w, x, y, z])
 
 
 # quat2dcm
@@ -89,7 +98,6 @@ def quat2rotmat(q):
         [2*q1*q3 - 2*q0*q2, 2*q2*q3 + 2*q0*q1, 1 - 2*q1**2 - 2*q2**2]])
 
 
-""" HAVE NOT TESTED """
 # quat2atti
 #
 # Determine the attitude error between two quaternions
@@ -101,11 +109,11 @@ def quat2atti(q_e2b, q_true):
     pitch_error = np.arcsin(2*q_error[0]*q_error[2] - 2*q_error[1]*q_error[3])
     yaw_error = np.arctan2(2*q_error[0]*q_error[3] + 2*q_error[1]*q_error[2], 1 - 2*q_error[2]*q_error[2] - 2*q_error[3]*q_error[3])
 
-    atti_error = np.array([roll_error, pitch_error, yaw_error])
+    atti_error = [roll_error, pitch_error, yaw_error]
     
-    return atti_error
+    return np.array(atti_error)
 
-""" HAVE NOT TESTED """
+
 # atti2quat
 #
 # Determine true quaternion from attitude error and measured quaternion

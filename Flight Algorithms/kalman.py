@@ -1,3 +1,20 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar  4 12:22:46 2023
+
+@author: zrummler
+
+
+PURPOSE: Library for Kalman filtering
+
+
+FCLASS: EKF
+
+METHODS: EKF.predict(), EKF.update(z)
+    
+"""
+
 import numpy as np
 
 import strapdown as sd
@@ -10,7 +27,7 @@ class EKF:
     def __init__(self, x, q_true, P, Q, R, f, F, h, H):
         
         self.x = x # state vector, 9x9
-        self.q_true # global "truth" quaternion, 4x1
+        self.q_true = q_true # global "truth" quaternion, 4x1
         self.P = P # predicted coviarnace matrix, 9x9
         self.Q = Q # measurement noise matrix, 9x9
         self.R = R # 
@@ -23,27 +40,38 @@ class EKF:
     def predict(self):
         # predict state estimate
         self.x, dt = self.f(self.x, self.q_true)
+        
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
 
     def update(self, z):
         # compute innovation
         y = z - self.h(self.x)
-        # compute innovation covariance
-        H = self.H(x[:3]) # compute H matrix
-        S = H @ self.P @ H.transpose() + self.R
-        # compute Kalman gain
-        K = self.P @ self.H.T @ np.linalg.inv(S)
-        # update state estimate
+        
+        # get H matrix (6 x 9)
+        H = self.H(x[:3])
+        
+        # compute innovation covariance (6 x 6)
+        S = H @ self.P @ H.T + self.R
+        
+        # compute Kalman gain (9 x 6)
+        K = self.P @ H.T @ S # np.linalg.inv(S)
+        
+        # update state estimate (9,)
         self.x = self.x + K @ y
-        # update state covariance
-        self.P = (np.eye(self.P.shape[0]) - K @ self.H) @ self.P
+        
+        # update state covariance (9 x 9)
+        self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
+        
+        # Tyler: apply attitude error to truth quaternion
+        self.q_true = qt.atti2quat(self.x[-3:], self.q_true)
+        self.x[-3:] = [0, 0, 0] # reset error (Tyler)
 
 
 # IMU CONVERSION EQUATION
 def f(x, q_true):
     
-    r_ecef, v_ecef, atti_error = x[0:3], x[3:6], x[6:10]
+    r_ecef, v_ecef, atti_error = x[0:3], x[3:6], x[6:9]
     
     # grab next IMU reading
     accel, gyro, dt = dc.get_next_imu_reading()
@@ -67,20 +95,18 @@ def h(x):
     p = x[:3]
 
     # Convert position (xyz) to GPS coordinates (lla)
-    lat, lon, alt = em.ecef2lla(p[0], p[1], p[2])
+    gps_data = em.ecef2lla(p)
 
-    # TODO: Placeholders for when we add barometer
-    baro1 = 0
-    baro2 = 0
-    baro3 = 0 
-
-    return np.array([lat, lon, alt, baro1, baro2, baro3])
+    return np.concatenate((gps_data, [0, 0, 0]))
 
 
 # H 
+#
+# Should be 6x9
 def H(x):
     # TODO: May need to add some barometer stuff
-    return em.lla_jacobian(x[:3], HAE=True)
+    return np.zeros((6,9))
+    #return em.lla_jacobian(x[:3], HAE=True)
 
 # initializes the 9x9 EKF state matrix """
 # state vector: [pos_x, 
@@ -96,7 +122,7 @@ def initialize_ekf_state_vector():
     
     # get GPS reading and convert to ECEF
     gps_data, dt = dc.get_next_gps_reading(advance=False) 
-    x, y, z = em.lla2ecef(gps_data[0], gps_data[1], gps_data[2]) 
+    x, y, z = em.lla2ecef(gps_data) 
     
     # velocity and attitude error are initially 0
     return np.array([x, y, z, 0, 0, 0, 0, 0, 0])
@@ -106,7 +132,6 @@ def initialize_global_quaternion():
     
     # get GPS reading and convert to quaternion
     q_true = dc.get_first_quaternion()
-    print(q_true)
     
     return q_true
 
@@ -125,14 +150,14 @@ def initialize_ekf_matrices():
     z = np.array([0, 0, 0, 0, 0, 0])
 
     # Initialize P, Q, R
-    # P: predicted covariance matrix, can be random, 10x10, maybe I * .1
+    # P: predicted covariance matrix, can be random, 9x9, maybe I * .1
     # Q: measurement noise matrix, 10x10, I * 0.001
-    # R: 
+    # R: 6x6
     # F: 10x10, given by Tyler (add a row of 0's)
-    P = np.zeros((10,10))
-    Q = np.zeros((10,10))
-    R = np.zeros((10,10))
-    F = np.zeros((10,10))
+    P = np.zeros((9,9))
+    Q = np.zeros((9,9))
+    R = np.zeros((6,6))
+    F = np.zeros((9,9))
     
 
     # TODO: DEFINE THE F MATRIX
@@ -162,6 +187,7 @@ def initialize_ekf_matrices():
 if __name__ == "__main__":
     
     # initialize state vectors and matrices
+    dc.reset()
     x = initialize_ekf_state_vector()
     q_true = initialize_global_quaternion()
     P, Q, R, F = initialize_ekf_matrices()
@@ -170,20 +196,25 @@ if __name__ == "__main__":
     ekf = EKF(x, q_true, P, Q, R, f, F, h, H)
 
     # EKF loop
+    print("RUNNING EKF")
     while 1:
+        if dc.done():
+            break
+        
         # Predict state
         ekf.predict()
         
         # If new GPS reading, update state
         if dc.gps_is_ready():
-            lat, long, atti, dt = dc.get_next_gps_reading()
-            baro1, baro2, baro3 = dc.get_next_barometer_reading() # TODO: implement
+            lla, dt = dc.get_next_gps_reading()
+            baro = dc.get_next_barometer_reading() # TODO: implement
             
-            z = [lat, long, atti, baro1, baro2, baro3]
+            z = np.concatenate((lla, baro))
             ekf.update(z) 
             
-            # TODO: apply atti error to true quaternion
-            # TODO: reset error to 0
+        
+        
+    print("DONE WITH KALMAN FILTERING")
             
             
             

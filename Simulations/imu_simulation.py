@@ -4,6 +4,8 @@
 Created on Tue Feb 21 12:46:07 2023
 
 @author: zrummler
+
+PURPOSE: Test code for IMU simulation
 """
 
 import sys

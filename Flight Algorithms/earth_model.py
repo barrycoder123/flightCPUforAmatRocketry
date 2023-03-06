@@ -4,6 +4,18 @@
 Created on Sat Mar  4 17:54:05 2023
 
 @author: zrummler
+
+
+PURPOSE: Library for ellipsoid Earth model and refernce frames
+
+FUNCTIONS:
+    ecef2lla
+    lla2ecef
+    alt2pres
+    xyz2grav
+    lla2quat
+    lla_jacobian
+
 """
 
 import numpy as np
@@ -23,7 +35,9 @@ e = 0.0818191908426 # eccentricity of Earth
 # generate GPS [lat, long, h] from ECEF (x, y, z)
 # h is height above sea level
 # https://stackoverflow.com/questions/56945401/converting-xyz-coordinates-to-longitutde-latitude-in-python
-def ecef2lla(x, y, z):
+def ecef2lla(xyz):
+
+    x, y, z = xyz    
 
     f = (a - b) / a
 
@@ -48,13 +62,15 @@ def ecef2lla(x, y, z):
     lat = np.degrees(phi)
     lon = np.degrees(lam)
     
-    return lat, lon, h
+    return np.array([lat, lon, h])
 
 # lla2ecef
 #
 # generate ECEF xyz from GPS (lat, long, h)
 # where h is height above sea level
-def lla2ecef(lat, lon, h):
+def lla2ecef(lla):
+    
+    lat, lon, h = lla
     
     f = (a - b) / a
 
@@ -73,7 +89,7 @@ def lla2ecef(lat, lon, h):
     y = (N + h) * cos_phi * np.sin(lam)
     z = (N * (1 - e_sq) + h) * sin_phi
 
-    return x, y, z
+    return np.array([x, y, z])
 
 
 # alt2pres

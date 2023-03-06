@@ -4,6 +4,18 @@
 Created on Sat Mar  4 12:22:46 2023
 
 @author: zrummler
+
+
+PURPOSE: Library for data collection from hardware sensors
+
+
+FUNCTIONS:
+    get_next_imu_reading()
+    gps_is_ready() - bool
+    get_next_gps_reading()
+    get_next_barometer_reading
+    get_first_quaternion()
+    
 """
 
 import pandas as pd
@@ -16,9 +28,12 @@ platform.processor()
 DEVICES = ["BEAGLEBONE", "TESTING ON PC"]
 DEVICE = DEVICES[1]
 
+""" code for running on the Raspberry Pi or Beaglebone AI """
 if DEVICE == DEVICES[0]:
     print("Running on the BeagleBone AI")
     
+    
+    ''' code for simulation on your PC '''
 elif DEVICE == DEVICES[1]:
     
     # code for simulation on PC
@@ -35,8 +50,12 @@ elif DEVICE == DEVICES[1]:
     GPS_data = gps_file_data[:, 1:4]
     GPS_t_sec = gps_file_data[:, 0]
     
+    # determine number of data points to read so we don't overflow end of array
+    num_points = min(imu_file_data.shape[0], gps_file_data.shape[0])
     
-    """ returns the next IMU reading (simulation) """
+    # get_next_imu_reading()
+    #
+    # returns the next IMU reading (simulation) """
     def get_next_imu_reading():
         global imu_reading_number
         
@@ -54,10 +73,11 @@ elif DEVICE == DEVICES[1]:
         
         return accel_xyz, gyro_xyz, dt
      
-    """ 
-    ping the GPS, see if the next data is ready 
-    GPS gets data every 1.0 seconds
-    """
+    # gps_is_ready()
+    #
+    # ping the GPS, see if the next data is ready 
+    # returns True if ready, False if not
+    # in simulation, GPS gets data every 1.0 seconds
     def gps_is_ready():
         global gps_reading_number
         
@@ -67,32 +87,55 @@ elif DEVICE == DEVICES[1]:
         
         return True
     
-    """ returns the next GPS reading (simulation) """
+    # get_next_gps_reading()
+    #
+    # returns the next GPS reading (simulation) """
     def get_next_gps_reading(advance=True):
         global gps_reading_number
+        
+        # read from the GPS    
+        reading = GPS_data[gps_reading_number, 0:3]
         
         # time step computation (dt)
         if gps_reading_number == 0:
             dt = GPS_t_sec[10] - GPS_t_sec[0]
         else:
             dt = GPS_t_sec[imu_reading_number] - GPS_t_sec[imu_reading_number-10]
-       
+        
         if advance: # only increment counter if desired
             gps_reading_number += 10    
        
-        return GPS_data[gps_reading_number, 0:3], dt
-        
-    """ returns the next barometer reading (simulation) """
+        return reading, dt
+    
+    # get_next_barometer_reading()    
+    #
+    # returns the next barometer reading (simulation) """
     def get_next_barometer_reading():
-        return 0, 0, 0 # TODO
+        baro = [0, 0, 0]
+        return np.array(baro) # TODO
     
-    
-    # in real life, this will be implemented with em.lla2quat
+    # get_first_quaternion()
+    # 
+    # determine the initial quaternion of the body, assuming pointing straight up
+    # for real-time, this will be implemented with em.lla2quat
     def get_first_quaternion():
         
         return imu_file_data[0, 7:11]
     
+    # reset()
+    #
+    # reset data collection variables
     def reset():
         global imu_reading_number, gps_reading_number
         imu_reading_number = 0
         gps_reading_number = 0
+        
+    # done()
+    #
+    # return True if there are no more points to read
+    def done():
+        
+        if (imu_reading_number >= num_points) or (gps_reading_number >= num_points):
+            return True
+        
+        return False
