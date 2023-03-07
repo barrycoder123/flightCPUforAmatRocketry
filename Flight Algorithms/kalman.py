@@ -52,7 +52,7 @@ class EKF:
         # This is just for debugging purposes
         #print(plot_vector[i]) # why is this value so large on the 2nd iteration?
         plot_vector[i] = self.P[0,0]
-        i += 1
+        #i += 1
 
 
     # update step of Kalman filtering
@@ -79,7 +79,7 @@ class EKF:
         atti_error = self.x[6:9]
         q_error = qt.atti2quat(atti_error)
         self.q_global = qt.quatMultiply(q_error, self.q_global)
-        
+    
         # reset attitude error
         self.x[6:9] = [0, 0, 0] 
         
@@ -98,24 +98,24 @@ def f(x, q_global):
     accel, gyro, dt = dc.get_next_imu_reading()
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
-    
+
     q_e2b = q_global
     
-    # iterate a strapdown
+    # iRun IMU strapdown, get predictions including attitude (q_e2b_new)
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
-    atti_error_new = np.array([0, 0, 0])
     
-    '''
-    # TODO: compute attitude error
-    q_error_new = qt.quat_error(q_global, q_e2b_new)
-    atti_error_new = qt.quat2atti(q_error_new)
-    print(atti_error_new)
-    '''
+    #R_predict = qt.quat2rotmat(q_e2b_new)
+    #R_global = qt.quat2rotmat(q_global)
+    #R_error = R_predict @ R_global.T
+    #q_error = qt.rotmat2quat(R_error)
     
-    q_global = q_e2b_new
+    q_error = qt.quatMultiply(qt.quat_inv(q_global), q_e2b_new)
+    atti_error_new = qt.quat2atti(q_error)
+    atti_error_new += atti_error
+
+    x_new = np.concatenate((r_ecef_new, v_ecef_new, atti_error_new))
     
-    
-    # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
+    # update F matrix (9 x 9)
     omega_cross = skew(em.omega)
     r_ecef = x[:3]
     T_b2i = np.linalg.inv(qt.quat2dcm(q_global))
@@ -137,8 +137,7 @@ def f(x, q_global):
             np.hstack([dodr, dodv, dodo])
           ])
 
-    
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), q_global, F
+    return x_new, q_global, F
 
 
 # h
@@ -260,3 +259,31 @@ def initialize_ekf_matrices(x, q_global):
     #F = F + np.square(F)
     
     return P, Q, R, F       
+
+
+
+    '''
+    # TODO: compute attitude error
+    q_error_new = qt.quat_error(q_global, q_e2b_new)
+    atti_error_new = qt.quat2atti(q_error_new)
+    print(atti_error_new)
+    '''
+    
+    '''
+    q_predict = q_e2b_new
+    R_predict = qt.quat2rotmat(q_predict)
+    R_global = qt.quat2rotmat(q_global)
+    R_error = R_predict @ R_global.T
+    q_error = qt.rotmat2quat(R_error)
+    
+    q = q_error
+    qw, qx, qy, qz = q
+
+    # Calculate the roll, pitch, and yaw angles in radians
+    roll = np.arctan2(2*(qw*qx + qy*qz), 1 - 2*(qx**2 + qy**2))
+    pitch = np.arcsin(2*(qw*qy - qz*qx))
+    yaw = np.arctan2(2*(qw*qz + qx*qy), 1 - 2*(qy**2 + qz**2))
+
+    atti_error_new = np.array([roll, pitch, yaw])
+    #atti_error_new = qt.quat2atti(q_error)
+    '''
