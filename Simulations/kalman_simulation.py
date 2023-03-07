@@ -42,10 +42,7 @@ if __name__ == "__main__":
 
     print("Running Extended Kalman Filter...")
     i = 0
-    while 1:
-        if dc.done():
-            #print(i)
-            break
+    while not dc.done():
         
         # Prediction
         ekf.predict()
@@ -56,6 +53,7 @@ if __name__ == "__main__":
             baro = dc.get_next_barometer_reading() # TODO: implement
             
             # Update state
+            print("UPDATING")
             z = np.concatenate((lla, baro))
             ekf.update(z) 
         
@@ -63,6 +61,9 @@ if __name__ == "__main__":
         PVA_est[i, 0:3] = ekf.x[0:3]
         i += 1
         
+        
+    plt.figure()
+    plt.plot(range(18000),kf.plot_vector)
         
     print("Plotting results...")
     ## PLOT POSITION

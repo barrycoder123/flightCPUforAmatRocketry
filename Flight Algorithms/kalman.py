@@ -22,6 +22,9 @@ import earth_model as em
 import data_collection as dc
 
 
+plot_vector = np.zeros((18000,1))
+i = 0
+
 class EKF:
     def __init__(self, x, global_quaternion, P, Q, R, f, F, h, H):
         
@@ -38,11 +41,16 @@ class EKF:
 
     # predict step of Kalman filtering
     def predict(self):
+        global plot_vector, i
         # predict state estimate
-        self.x, self.global_quaternion = self.f(self.x, self.global_quaternion)
+        self.x, self.global_quaternion, self.F = self.f(self.x, self.global_quaternion)
         
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
+        
+        plot_vector[i] = self.P[1,1]
+        print(plot_vector[i]) # why is this value so large on the 2nd iteration?
+        i += 1
 
 
     # update step of Kalman filtering
@@ -82,16 +90,15 @@ def f(x, global_quaternion):
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
     
-    # pass global quaternion into 
     q_e2b = global_quaternion
     
     # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
+    # TODO: do some attitude error stuff here
     global_quaternion = q_e2b_new
     atti_error_new = np.array([0, 0, 0])
     
-    """
     # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
     omega_cross = skew(em.omega)
     r_ecef = x[:3]
@@ -113,9 +120,9 @@ def f(x, global_quaternion):
             np.hstack([dvdr, dvdv, dvdo]),
             np.hstack([dodr, dodv, dodo])
           ])
-    """
+
     
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), global_quaternion
+    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), global_quaternion, F
 
 
 # GPS CONVERSION EQUATION
@@ -131,7 +138,7 @@ def h(x):
 
 # H 
 #
-# Construct the 6x9 H matrix
+# Construct the 6 x 9 H matrix
 def H(x):
 
     # GPS
@@ -143,7 +150,6 @@ def H(x):
     r_to_baro = np.zeros((3,3))
     v_to_baro = np.zeros((3,3))
     a_to_baro = np.zeros((3,3))
-    
     
     H_mat = np.vstack([
         np.hstack([r_to_lla, v_to_lla, a_to_lla]),
@@ -172,7 +178,7 @@ def skew(M):
 def initialize_ekf_state_vector():
     
     # get current GPS reading and convert to ECEF
-    gps_data, dt = dc.get_next_gps_reading(advance=False) 
+    gps_data, dt = dc.get_next_gps_reading(advance=True) 
     x, y, z = em.lla2ecef(gps_data) 
     vec = [1527850.153, -4464959.009, 4276353.59, 3.784561502,	1.295026731, -1.11E-16, 0, 0, 0]
     
@@ -200,13 +206,12 @@ def initialize_ekf_matrices(x, global_quaternion):
     # Q: measurement noise matrix, 10x10, I * 0.001
     # Initialize the Q matrix to reflect the uncertainty in the system dynamics
     #Q = np.diag([1.0, 1.0, 1.0, 0.1, 0.1, 0.1, 0.01, 0.01, 0.01])
-    Q = np.eye((9)) * 0.01
+    Q = np.eye((9)) * 0.0001
     
     # R: 6x6, uncertain how to initialize
     # Initialize the R matrix to reflect the uncertainty in the sensor measurements
     # GPS has noise of 2.5 meters ?
-    R = np.diag([2.5, 2.5, .25, 0.01, 0.01, 0.01])
-    #R = np.eye((6)) * 2.5
+    R = np.diag([1, 1, 1, 0.01, 0.01, 0.01])
     
     # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
     omega_cross = skew(em.omega)
@@ -232,5 +237,8 @@ def initialize_ekf_matrices(x, global_quaternion):
             np.hstack([dvdr, dvdv, dvdo]),
             np.hstack([dodr, dodv, dodo])
           ])
+    
+    
+    #F = F + np.square(F)
     
     return P, Q, R, F       

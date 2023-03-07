@@ -156,6 +156,9 @@ def xyz2grav(x, y, z):
     g = g[:] #Force column
     return g
 
+# grav_gradient
+#
+# Calculate the 3x3 gradient of gravity
 def grav_gradient(r_ecef, eps=1e-6):
     
     x, y, z = r_ecef
@@ -169,6 +172,7 @@ def grav_gradient(r_ecef, eps=1e-6):
     gradient[:, 2] = (xyz2grav(x, y, z + eps) - xyz2grav(x, y, z - eps)) / (2 * eps)
 
     return gradient
+
 
 # lla2quat
 #
