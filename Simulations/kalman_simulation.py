@@ -59,7 +59,6 @@ if __name__ == "__main__":
             z = np.concatenate((lla, baro))
             ekf.update(z) 
         
-         
         # FOR SIMULATION ONLY: write to results vector
         PVA_est[i, 0:3] = ekf.x[0:3]
         i += 1

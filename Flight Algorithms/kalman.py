@@ -39,12 +39,10 @@ class EKF:
     # predict step of Kalman filtering
     def predict(self):
         # predict state estimate
-        self.x, self.global_quaternion = self.f(self.x, self.global_quaternion)
+        self.x, self.global_quaternion, self.F = self.f(self.x, self.global_quaternion)
         
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
-        
-        #self.P, self.Q, self.R, self.F = initialize_ekf_matrices(self.x, self.global_quaternion)
 
 
     # update step of Kalman filtering
@@ -67,10 +65,9 @@ class EKF:
         # update state covariance (9 x 9)
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
         
-        # Tyler: apply attitude error to truth quaternion
-        #self.global_quaternion = qt.atti2quat2(self.x[6:9], self.global_quaternion)
+        # update global quaternion with predicted attitude error
+        #q_err = qt.atti2quat(self.x[-3:])
         #self.global_quaternion = qt.quatMultiply(q_err, self.global_quaternion)
-    
         self.x[-3:] = [0, 0, 0] # reset attitude error (Tyler)
         
 
@@ -91,10 +88,8 @@ def f(x, global_quaternion):
     # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
-    
-    atti_error_new = qt.quat2atti(global_quaternion, q_e2b_new)
-    
-    print(atti_error_new)
+    global_quaternion = q_e2b_new
+    atti_error_new = np.array([0, 0, 0])
     
     """
     # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
@@ -120,8 +115,7 @@ def f(x, global_quaternion):
           ])
     """
     
-    
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), q_e2b_new #, F
+    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), global_quaternion, F
 
 
 # GPS CONVERSION EQUATION
