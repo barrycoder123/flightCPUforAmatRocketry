@@ -49,8 +49,9 @@ class EKF:
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
         
-        plot_vector[i] = self.P[1,1]
+        # This is just for debugging purposes
         #print(plot_vector[i]) # why is this value so large on the 2nd iteration?
+        plot_vector[i] = self.P[0,0]
         i += 1
 
 
@@ -74,12 +75,10 @@ class EKF:
         # update state covariance (9 x 9)
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
         
-        # Compute quaternion error from attitude error
+        # Update the global quaternion from attitude error
         atti_error = self.x[6:9]
         q_error = qt.atti2quat(atti_error)
-        
-        # Update global quaternion with that quaternion error
-        self.q_global = qt.quat_error_rev(q_error, self.q_global)
+        self.q_global = qt.quatMultiply(q_error, self.q_global)
         
         # reset attitude error
         self.x[6:9] = [0, 0, 0] 
@@ -104,16 +103,15 @@ def f(x, q_global):
     
     # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
+    atti_error_new = np.array([0, 0, 0])
     
-    # compute error between quaternions
+    '''
+    # TODO: compute attitude error
     q_error_new = qt.quat_error(q_global, q_e2b_new)
-   # print(q_error_new)
-    
-    # covert quaternion error to attitude error
     atti_error_new = qt.quat2atti(q_error_new)
+    print(atti_error_new)
+    '''
     
-    #print(atti_error_new)
-    #atti_error_new = np.array([0, 0, 0])
     q_global = q_e2b_new
     
     

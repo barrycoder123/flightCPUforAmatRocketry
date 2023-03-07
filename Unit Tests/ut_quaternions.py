@@ -37,19 +37,28 @@ def unit_test_quat2atti():
     
 def unit_test_quat_error():
     
-    print("Testing quat_error")
-    
-    # Test quaternion error [0.3, 0.4, 0.5, 0.6]
-    for i in range(len(q_inputs)):
-        for j in range(len(q_inputs)):
-            q1 = np.array(q_inputs[i])
-            q2 = np.array(q_inputs[j])
-            q_error = qt.quat_error(q1, q2)
-            #print(q1, q2)
-            #print("error: ", q_error)
-            q2_reconstructed = qt.quat_error_rev(q_error, q1)
-            #print(q2, q2_reconstructed)
-            assert np.allclose(q2, q2_reconstructed)
+    # Test case 1: q1 and q2 are identical
+    q1 = np.array([1, 0, 0, 0])
+    q2 = np.array([1, 0, 0, 0])
+    q_error_expected = np.array([0, 0, 0, 0])
+    q_error = qt.quat_error(q1, q2)
+    assert np.allclose(q_error, q_error_expected)
+
+    # Test case 2: q1 and q2 differ by 90-degree rotation about Z-axis
+    q1 = np.array([1, 0, 0, 0])
+    q2 = np.array([np.sqrt(2)/2, 0, 0, np.sqrt(2)/2])
+    q_error_expected = np.array([0, 0, 0, np.sqrt(2)])
+    q_error = qt.quat_error(q1, q2)
+    print(q_error)
+    assert np.allclose(q_error, q_error_expected)
+
+    # Test case 3: Convert error quaternion back to original quaternion
+    q1 = np.array([1, 0, 0, 0])
+    q_error = np.array([0, 0, 0, np.sqrt(2)])
+    q2_expected = np.array([np.sqrt(2)/2, 0, 0, np.sqrt(2)/2])
+    q2 = qt.quat_from_err(q1, q_error)
+    assert np.allclose(q2, q2_expected)
+
     
     
     print("All unit tests passed.")

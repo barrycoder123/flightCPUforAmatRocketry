@@ -64,6 +64,7 @@ if __name__ == "__main__":
         
     plt.figure()
     plt.plot(range(18000),kf.plot_vector)
+    plt.title("Diagonal of P matrix (P[0,0])")
         
     print("Plotting results...")
     ## PLOT POSITION

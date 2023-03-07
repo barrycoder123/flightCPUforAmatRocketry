@@ -184,25 +184,16 @@ def quat_error(q1, q2):
     
     return quatMultiply(q2, quat_inv(q1))
 
-    """
-    if np.abs(q_error[0] - 1.0) < 1e-6:
-        # Quaternions are very close, so return [0, 0, 0, 0]
-        q_error = np.array([0.0, 0.0, 0.0, 0.0])
-    """ 
-    """
-    else:
-        # Compute the angle and axis of the quaternion error
-        angle = 2.0 * np.arccos(q_error[0])
-        axis = q_error[1:] / np.sqrt(1.0 - q_error[0]**2)
-        
-        # Convert the axis-angle representation to a quaternion
-        axis = axis / np.linalg.norm(axis)
-    
-        # Compute quaternion
-        s = np.sin(angle/2)
-        q_error = np.array([np.cos(angle/2), axis[0]*s, axis[1]*s, axis[2]*s])
-        
-    """
+    # R1 = quat2rotmat(q1)
+    # R2 = quat2rotmat(q2)
+    # R12 = np.dot(R1, R2.T)
+    # tr = np.trace(R12)
+    # costh = (tr - 1.0) / 2.0
+    # sinth = np.sqrt(1.0 - costh**2)
+    # sinth = np.maximum(sinth, np.finfo(float).eps)
+    # theta = np.arccos(costh) * 2.0
+    # q_error = np.array([np.sin(theta / 2.0), 0.0, 0.0, np.cos(theta / 2.0)])
+    # return q_error
 
     # Scale the error vector by 2 to obtain the error between q1 and q2
 
@@ -213,6 +204,10 @@ def quat_error_rev(q_error, q1):
         return q1
     
     return quatMultiply(q_error, q1)
+    
+    # q_error_conj = np.array([q_error[0], -q_error[1], -q_error[2], -q_error[3]])
+    # q2 = quatMultiply(q1, q_error_conj)
+    # return q2
 
 
 
