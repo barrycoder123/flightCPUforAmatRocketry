@@ -39,7 +39,7 @@ class EKF:
     # predict step of Kalman filtering
     def predict(self):
         # predict state estimate
-        self.x, self.global_quaternion, self.F = self.f(self.x, self.global_quaternion)
+        self.x, self.global_quaternion = self.f(self.x, self.global_quaternion)
         
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
@@ -115,7 +115,7 @@ def f(x, global_quaternion):
           ])
     """
     
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), global_quaternion, F
+    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), global_quaternion
 
 
 # GPS CONVERSION EQUATION
