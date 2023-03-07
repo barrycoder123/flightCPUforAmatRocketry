@@ -5,7 +5,7 @@ Created on Sat Mar  4 18:11:53 2023
 
 @author: zrummler
 
-PURPOSE: Library for quaternions
+PURPOSE: Library for quaternions. I'd rather implement than use a pre-made quaternion library.
 
 DATA REPRESENTATION:
     [q_scalar, q_i, q_j, q_k]
@@ -19,30 +19,29 @@ FUNCTIONS:
     quat2rotmat
     quat2atti
     atti2quat
+    
+SOURCE:
+    ChatGPT was instrumental in making this library work
 
 """
 
 import numpy as np
-import pandas as pd
 import earth_model as em
 import data_collection as dc
 
 
-# deltaAngleToDeltaQuat
-#
-# Converts a vector of rotations to a Quaternion
-#     Parameters
-#     ----------
-#     dTheta : (3,) vector
-#       delta angles [rad]
-#
-#     Returns
-#     -------
-#     q : (4,) vector
-#       Quaternion
-# Credit: Tyler Klein
 def deltaAngleToDeltaQuat(dTheta):
+    """
+    Converts a vector of rotations to a Quaternion
+
+    Args:
+    - dTheta: 3-dimensional vector, delta angles, in radians
+
+    Returns:
+    - q_inv: 4-dimensional quaternion [qs, qi, qj, qk]
     
+    Credit: Tyler Klein
+    """
     mag = np.linalg.norm(dTheta); # norm
     axis = dTheta / mag; # axis of rotation
     
@@ -52,20 +51,33 @@ def deltaAngleToDeltaQuat(dTheta):
     
     return q
 
-# quat_inv
-#
-# Takes the inverse of a quaternion
+
 def quat_inv(q):
+    """
+    Takes the inverse of a quaternion
+
+    Args:
+    - q: 4-dimensional quaternion [qs, qi, qj, qk]
+
+    Returns:
+    - q_inv: 4-dimensional quaternion [qs, qi, qj, qk]
+    """
     q_conj = np.array([q[0], -q[1], -q[2], -q[3]])
     q_norm = np.linalg.norm(q)
     q_inv = q_conj / q_norm**2
     return q_inv
 
 
-# quatMultiply
-#
-# Multiply two quaternions  
 def quatMultiply(q1, q2):
+    """
+    Multiplies two quaternions together
+
+    Args:
+    - q1, q2: two 4-dimensional quaternion [qs, qi, qj, qk]
+
+    Returns:
+    - q: 4-dimensional quaternion [qs, qi, qj, qk]
+    """
     w1, x1, y1, z1 = q1
     w2, x2, y2, z2 = q2
     w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
@@ -76,10 +88,16 @@ def quatMultiply(q1, q2):
     return np.array([w, x, y, z])
 
 
-# quat2dcm
-#
-# Convert quaternion to a 3x3 discrete cosine matrix (dcm)
 def quat2dcm(q):
+    """
+    Converts a quaternion to a 3x3 discrete cosine matrix (dcm)
+
+    Args:
+    - q: 4-dimensional quaternion [qs, qi, qj, qk]
+
+    Returns:
+     - R: 3x3 dcm matrix  
+    """
     q0, q1, q2, q3 = q
     dcm = [[q0**2 + q1**2 - q2**2 - q3**2, 2*(q1*q2 - q0*q3), 2*(q1*q3 + q0*q2)],
            [2*(q1*q2 + q0*q3), q0**2 - q1**2 + q2**2 - q3**2, 2*(q2*q3 - q0*q1)],
@@ -87,10 +105,16 @@ def quat2dcm(q):
     return np.array(dcm)
 
 
-# quat2rotmatrix
-#
-# Convert quaternion to rotation matrix.
 def quat2rotmat(q):
+    """
+    Converts a quaternion to a 3x3 rotation matrix
+
+    Args:
+    - q: 4-dimensional quaternion [qs, qi, qj, qk]
+
+    Returns:
+     - R: 3x3 rotation matrix   
+    """
     q0, q1, q2, q3 = q
     return np.array([
         [1 - 2*q2**2 - 2*q3**2, 2*q1*q2 - 2*q0*q3, 2*q1*q3 + 2*q0*q2],
@@ -106,9 +130,8 @@ def rotmat2quat(R):
     - R: 3x3 rotation matrix
 
     Returns:
-    - q: 4-dimensional quaternion [q0, q1, q2, q3]
+    - q: 4-dimensional quaternion [qs, qi, qj, qk]
     """
-
     q = np.zeros(4)
 
     tr = np.trace(R)
@@ -145,43 +168,110 @@ def rotmat2quat(R):
     return q
 
 
+def quat_error(q1, q2):
+    """
+    Computes the error between two quaternions
+
+    Args:
+    - q1, q2: 4-dimensional quaternions [qs, qi, qj, qk]
+
+    Returns:
+    - q: 4-dimensional quaternion [qs, qi, qj, qk]
+    """
+    
+    if np.allclose(q1, q2):
+        return np.array([0, 0, 0, 0])
+    
+    return quatMultiply(q2, quat_inv(q1))
+
+    """
+    if np.abs(q_error[0] - 1.0) < 1e-6:
+        # Quaternions are very close, so return [0, 0, 0, 0]
+        q_error = np.array([0.0, 0.0, 0.0, 0.0])
+    """ 
+    """
+    else:
+        # Compute the angle and axis of the quaternion error
+        angle = 2.0 * np.arccos(q_error[0])
+        axis = q_error[1:] / np.sqrt(1.0 - q_error[0]**2)
+        
+        # Convert the axis-angle representation to a quaternion
+        axis = axis / np.linalg.norm(axis)
+    
+        # Compute quaternion
+        s = np.sin(angle/2)
+        q_error = np.array([np.cos(angle/2), axis[0]*s, axis[1]*s, axis[2]*s])
+        
+    """
+
+    # Scale the error vector by 2 to obtain the error between q1 and q2
+
+def quat_error_rev(q_error, q1):
+    
+    if np.allclose(q_error, np.array([0, 0, 0, 0])):
+        print("HERE")
+        return q1
+    
+    return quatMultiply(q_error, q1)
+
+
+
 # quat2atti
 #
-# Determine the attitude error between two quaternions
+# Determine the attitude error from a quaternion error
 # Format: [roll_error, pitch_error, yaw_error]
-def quat2atti(q_e2b, q_true):
-    
-    q_error = quatMultiply(quat_inv(q_true), q_e2b)
-    
-    roll_error = np.arctan2(2*q_error[0]*q_error[1] + 2*q_error[2]*q_error[3], 1 - 2*q_error[1]*q_error[1] - 2*q_error[2]*q_error[2])
-    pitch_error = np.arcsin(2*q_error[0]*q_error[2] - 2*q_error[1]*q_error[3])
-    yaw_error = np.arctan2(2*q_error[0]*q_error[3] + 2*q_error[1]*q_error[2], 1 - 2*q_error[2]*q_error[2] - 2*q_error[3]*q_error[3])
+def quat2atti(q_error):
+    """
+    Computes attitude error from quaternion error
 
-    atti_error = [roll_error, pitch_error, yaw_error]
+    Args:
+    - q_error, 4-dimensional quaternion error [qs, qi, qj, qk]
+
+    Returns:
+    - atti_error: 3-dimensional attitude error [roll, pitch, yaw]
+    """
+    if np.allclose(q_error, np.array([0, 0, 0, 0])):
+        return np.array([0, 0, 0])
     
-    return np.array(atti_error)
+    q_error /= np.linalg.norm(q_error)
+    
+    # Compute roll, pitch, and yaw from the quaternion
+    sinr_cosp = 2.0 * (q_error[0] * q_error[1] + q_error[2] * q_error[3])
+    cosr_cosp = 1.0 - 2.0 * (q_error[1] * q_error[1] + q_error[2] * q_error[2])
+    roll_error = np.arctan2(sinr_cosp, cosr_cosp)
+    
+    sinp = 2.0 * (q_error[0] * q_error[2] - q_error[3] * q_error[1])
+    if np.abs(sinp) >= 1:
+        pitch_error = np.sign(sinp) * np.pi / 2.0
+    else:
+        pitch_error = np.arcsin(sinp)
+    
+    siny_cosp = 2.0 * (q_error[0] * q_error[3] + q_error[1] * q_error[2])
+    cosy_cosp = 1.0 - 2.0 * (q_error[2] * q_error[2] + q_error[3] * q_error[3])
+    yaw_error = np.arctan2(siny_cosp, cosy_cosp)
+    
+    # Combine roll, pitch, and yaw into a numpy array
+    atti_error = np.array([roll_error, pitch_error, yaw_error])
+    
+    return atti_error
 
 
 # atti2quat
 #
-# Determine true quaternion from attitude error and measured quaternion
-def atti2quat2(atti_error, q_true):
-    roll_error, pitch_error, yaw_error = atti_error
-    sin_roll = np.sin(roll_error / 2)
-    cos_roll = np.cos(roll_error / 2)
-    sin_pitch = np.sin(pitch_error / 2)
-    cos_pitch = np.cos(pitch_error / 2)
-    sin_yaw = np.sin(yaw_error / 2)
-    cos_yaw = np.cos(yaw_error / 2)
-    q_error = np.array([cos_roll*cos_pitch*cos_yaw + sin_roll*sin_pitch*sin_yaw,
-                        sin_roll*cos_pitch*cos_yaw - cos_roll*sin_pitch*sin_yaw,
-                        cos_roll*sin_pitch*cos_yaw + sin_roll*cos_pitch*sin_yaw,
-                        cos_roll*cos_pitch*sin_yaw - sin_roll*sin_pitch*cos_yaw])
-    q_est = quatMultiply(q_error, q_true)
-    return q_est
-
+# Convert attitude error into a normalized quaternion error
 def atti2quat(atti):
+    """
+    Computes quaternion error from attitude error
+
+    Args:
+    - atti_error: 3-dimensional attitude error [roll, pitch, yaw]
+
+    Returns:
+    - q_error, 4-dimensional quaternion error [qs, qi, qj, qk]
+    """
     roll, pitch, yaw = atti
+    
+    # Compute half angles
     cy = np.cos(yaw*0.5)
     sy = np.sin(yaw*0.5)
     cp = np.cos(pitch*0.5)
@@ -194,16 +284,9 @@ def atti2quat(atti):
     qy = sy*cp*sr + cy*sp*cr
     qz = sy*cp*cr - cy*sp*sr
     
-    return np.array([qw, qx, qy, qz])
+    # Combine into a numpy array and normalize
+    q_error = np.array([qw, qx, qy, qz])
+    q_error /= np.linalg.norm(q_error)
+    
+    return q_error
 
-
-if __name__ == "__main__":
-    
-    q_true = np.array([-1 , 120231, 234, 2342])
-    
-    rot = quat2rotmat(q_true)
-    q_2 = rotmat2quat(rot)
-    
-    print(q_true, q_2)
-    
-    

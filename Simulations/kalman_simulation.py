@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # Initialize state vectors and matrices
     dc.reset()
     x = kf.initialize_ekf_state_vector()
-    q_true = kf.initialize_global_quaternion()
+    q_true = kf.initialize_q_global()
     P, Q, R, F = kf.initialize_ekf_matrices(x, q_true)
     ekf = kf.EKF(x, q_true, P, Q, R, kf.f, F, kf.h, kf.H)
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
             baro = dc.get_next_barometer_reading() # TODO: implement
             
             # Update state
-            print("UPDATING")
+            #print("UPDATING")
             z = np.concatenate((lla, baro))
             ekf.update(z) 
         

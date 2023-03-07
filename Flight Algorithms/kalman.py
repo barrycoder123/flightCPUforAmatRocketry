@@ -26,10 +26,10 @@ plot_vector = np.zeros((18000,1))
 i = 0
 
 class EKF:
-    def __init__(self, x, global_quaternion, P, Q, R, f, F, h, H):
+    def __init__(self, x, q_global, P, Q, R, f, F, h, H):
         
         self.x = x # state vector, 9x9
-        self.global_quaternion = global_quaternion # global "truth" quaternion, 4x1
+        self.q_global = q_global # global "truth" quaternion, 4x1
         self.P = P # predicted coviarnace matrix, 9x9
         self.Q = Q # measurement noise matrix, 9x9
         self.R = R # 
@@ -42,14 +42,15 @@ class EKF:
     # predict step of Kalman filtering
     def predict(self):
         global plot_vector, i
+        
         # predict state estimate
-        self.x, self.global_quaternion, self.F = self.f(self.x, self.global_quaternion)
+        self.x, self.q_global, self.F = self.f(self.x, self.q_global)
         
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
         
         plot_vector[i] = self.P[1,1]
-        print(plot_vector[i]) # why is this value so large on the 2nd iteration?
+        #print(plot_vector[i]) # why is this value so large on the 2nd iteration?
         i += 1
 
 
@@ -73,15 +74,24 @@ class EKF:
         # update state covariance (9 x 9)
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
         
-        # update global quaternion with predicted attitude error
-        #q_err = qt.atti2quat(self.x[-3:])
-        #self.global_quaternion = qt.quatMultiply(q_err, self.global_quaternion)
-        self.x[-3:] = [0, 0, 0] # reset attitude error (Tyler)
+        # Compute quaternion error from attitude error
+        atti_error = self.x[6:9]
+        q_error = qt.atti2quat(atti_error)
+        
+        # Update global quaternion with that quaternion error
+        self.q_global = qt.quat_error_rev(q_error, self.q_global)
+        
+        # reset attitude error
+        self.x[6:9] = [0, 0, 0] 
         
 
 
-# IMU CONVERSION EQUATION
-def f(x, global_quaternion):
+# f
+#
+# does the IMU strapdown 
+# updates F matrix
+# TODO: computes attitude_error
+def f(x, q_global):
     
     r_ecef, v_ecef, atti_error = x[0:3], x[3:6], x[6:9]
     
@@ -90,19 +100,27 @@ def f(x, global_quaternion):
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
     
-    q_e2b = global_quaternion
+    q_e2b = q_global
     
     # iterate a strapdown
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
-    # TODO: do some attitude error stuff here
-    global_quaternion = q_e2b_new
-    atti_error_new = np.array([0, 0, 0])
+    # compute error between quaternions
+    q_error_new = qt.quat_error(q_global, q_e2b_new)
+   # print(q_error_new)
+    
+    # covert quaternion error to attitude error
+    atti_error_new = qt.quat2atti(q_error_new)
+    
+    #print(atti_error_new)
+    #atti_error_new = np.array([0, 0, 0])
+    q_global = q_e2b_new
+    
     
     # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
     omega_cross = skew(em.omega)
     r_ecef = x[:3]
-    T_b2i = np.linalg.inv(qt.quat2dcm(global_quaternion))
+    T_b2i = np.linalg.inv(qt.quat2dcm(q_global))
     
     # Credit: Tyler's email
     drdr = np.zeros((3,3))
@@ -122,9 +140,11 @@ def f(x, global_quaternion):
           ])
 
     
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), global_quaternion, F
+    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), q_global, F
 
 
+# h
+#
 # GPS CONVERSION EQUATION
 def h(x):
     # Unpack state variables (position)
@@ -178,7 +198,7 @@ def skew(M):
 def initialize_ekf_state_vector():
     
     # get current GPS reading and convert to ECEF
-    gps_data, dt = dc.get_next_gps_reading(advance=True) 
+    gps_data, dt = dc.get_next_gps_reading(advance=False) 
     x, y, z = em.lla2ecef(gps_data) 
     vec = [1527850.153, -4464959.009, 4276353.59, 3.784561502,	1.295026731, -1.11E-16, 0, 0, 0]
     
@@ -188,17 +208,17 @@ def initialize_ekf_state_vector():
 
 
 # initializes the 4x1 global "truth" quaternion
-def initialize_global_quaternion():
+def initialize_q_global():
     
     # get GPS reading and convert to quaternion
-    global_quaternion = dc.get_first_quaternion()
+    q_global = dc.get_first_quaternion()
     
-    return global_quaternion
+    return q_global
 
 
 # initializes the P, Q, R, and F matrices
 # TODO: probably don't want to initialize these with identity matrices
-def initialize_ekf_matrices(x, global_quaternion):
+def initialize_ekf_matrices(x, q_global):
     
     # P: predicted covariance matrix (9 x 9), can be random (reflects initial uncertainty)
     P = np.eye((9)) * 0.1 # does not matter what this is
@@ -216,7 +236,7 @@ def initialize_ekf_matrices(x, global_quaternion):
     # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
     omega_cross = skew(em.omega)
     r_ecef = x[:3]
-    T_b2i = np.linalg.inv(qt.quat2dcm(global_quaternion))
+    T_b2i = np.linalg.inv(qt.quat2dcm(q_global))
     
     # Read IMU to determine accel and angular gyro
     accel, gyro, dt = dc.get_next_imu_reading(advance=False)
