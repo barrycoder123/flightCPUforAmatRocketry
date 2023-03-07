@@ -52,7 +52,7 @@ class EKF:
         # This is just for debugging purposes
         #print(plot_vector[i]) # why is this value so large on the 2nd iteration?
         plot_vector[i] = self.P[0,0]
-        #i += 1
+        i += 1
 
 
     # update step of Kalman filtering
@@ -78,10 +78,10 @@ class EKF:
         # Update the global quaternion from attitude error
         atti_error = self.x[6:9]
         q_error = qt.atti2quat(atti_error)
-        self.q_global = qt.quatMultiply(q_error, self.q_global)
+        self.q_global = qt.quat_error_rev(q_error, self.q_global)
     
         # reset attitude error
-        self.x[6:9] = [0, 0, 0] 
+        self.x[6:9] = np.array([0, 0, 0])
         
 
 
@@ -101,18 +101,18 @@ def f(x, q_global):
 
     q_e2b = q_global
     
-    # iRun IMU strapdown, get predictions including attitude (q_e2b_new)
+    # Run IMU strapdown, get predictions including attitude (q_e2b_new)
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
-    #R_predict = qt.quat2rotmat(q_e2b_new)
-    #R_global = qt.quat2rotmat(q_global)
-    #R_error = R_predict @ R_global.T
-    #q_error = qt.rotmat2quat(R_error)
-    
-    q_error = qt.quatMultiply(qt.quat_inv(q_global), q_e2b_new)
+    # Compute attitude error
+    q_error = qt.quat_error(q_global, q_e2b_new)
     atti_error_new = qt.quat2atti(q_error)
-    atti_error_new += atti_error
-
+    
+    # Add new attitude error to current error
+    atti_error_new = atti_error_new + atti_error
+    atti_error_new = np.array([0, 0, 0])
+    
+    # Update state matrix
     x_new = np.concatenate((r_ecef_new, v_ecef_new, atti_error_new))
     
     # update F matrix (9 x 9)
