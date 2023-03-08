@@ -5,7 +5,9 @@ Created on Tue Feb 21 12:46:07 2023
 
 @author: zrummler
 
-PURPOSE: Test code for Kalman Filter simulation
+PURPOSE: Runs a Kalman Filtering simulation with Draper's test data
+
+SEE KALMAN.PY FOR DOCUMENTATION ON THE KALMAN FILTERING IMPLEMENTATION
 
 """
 
@@ -22,9 +24,14 @@ import earth_model as em
 import data_collection as dc
 
 if __name__ == "__main__":
+    '''
+    1. Imports test data
+    2. Runs Kalman Filtering on the data
+    3. Compares results of Kalman Filter to truth data (run the code and see plots)
+    '''
+    print("Kalman Filtering Simulation")
     
     # Import and format data
-    print("Kalman Filtering Simulation")
     print("Opening file for truth data...")
     data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy();    
     PVA_truth = data[:, 1:11];
@@ -47,13 +54,11 @@ if __name__ == "__main__":
         # Prediction
         ekf.predict()
         
-        if dc.gps_is_ready():
-            # read GPS and barometer
+        if dc.gps_is_ready(): # read GPS and barometer when ready
             lla, dt = dc.get_next_gps_reading()
-            baro = dc.get_next_barometer_reading() # TODO: implement
+            baro = dc.get_next_barometer_reading()
             
             # Update state
-            #print("UPDATING")
             z = np.concatenate((lla, baro))
             ekf.update(z) 
         
@@ -62,7 +67,7 @@ if __name__ == "__main__":
         i += 1
         
     
-    # plot the P[0,0] value over time
+    # DEBUGGING ONLY: plot the P[0,0] value over time
     plt.figure()
     plt.plot(range(18000),kf.plot_vector)
     plt.title("Diagonal of P matrix (P[0,0])")
