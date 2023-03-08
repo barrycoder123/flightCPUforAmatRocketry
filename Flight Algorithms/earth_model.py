@@ -35,7 +35,16 @@ e = 0.0818191908426 # eccentricity of Earth
 # h is height above sea level
 # https://stackoverflow.com/questions/56945401/converting-xyz-coordinates-to-longitutde-latitude-in-python
 def ecef2lla(xyz):
+    """
+    Converts xyz position to GPS position
 
+    Args:
+    - xyz: 3-dimensional ECEF xyz position [x, y, z]
+
+    Returns:
+    - lla: 3-dimensional GPS lla position [lat, long, atti]
+    - atti is height above sea level, as opposed to center of earth
+    """
     x, y, z = xyz    
 
     f = (a - b) / a
@@ -63,11 +72,18 @@ def ecef2lla(xyz):
     
     return np.array([lat, lon, h])
 
-# lla2ecef
-#
-# generate ECEF xyz from GPS (lat, long, h)
-# where h is height above sea level
+
 def lla2ecef(lla):
+    """
+    Converts xyz position to GPS position
+
+    Args:
+    - lla: 3-dimensional GPS lla position [lat, long, atti]
+    - atti is height above sea level, as opposed to center of earth
+
+    Returns:
+    - xyz: 3-dimensional ECEF xyz position [x, y, z]
+    """
     
     lat, lon, h = lla
     
@@ -94,7 +110,7 @@ def lla2ecef(lla):
 # alt2pres
 #
 # determine pressure from altitude
-# https://pvlib-python.readthedocs.io/en/v0.2.2/_modules/pvlib/atmosphere.html
+
 def alt2pres(altitude):
     '''
     Determine site pressure from altitude.
@@ -127,8 +143,10 @@ def alt2pres(altitude):
     References
     -----------
 
-    "A Quick Derivation relating altitude to air pressure" from Portland
+    1. "A Quick Derivation relating altitude to air pressure" from Portland
     State Aerospace Society, Version 1.03, 12/22/2004.
+    
+    2. https://pvlib-python.readthedocs.io/en/v0.2.2/_modules/pvlib/atmosphere.html
     '''
 
     press = 100 * ((44331.514 - altitude) / 11880.516) ** (1 / 0.1902632)
@@ -136,10 +154,17 @@ def alt2pres(altitude):
     return press
 
 
-# xyz2grav
-#
-# Ellipsoid Earth gravity model
-def xyz2grav(x, y, z):
+
+def xyz2grav(x, y, z):    
+    """
+    Ellipsoid Earth gravity model
+
+    Args:
+    - x, y, z: three dimensional ECEF position
+    
+    Returns:
+    - g: gravity vector [gx, gy, gz]
+    """
 
     j2 = 0.00108263
     mu = 3.986004418e14
@@ -160,6 +185,15 @@ def xyz2grav(x, y, z):
 #
 # Calculate the 3x3 gradient of gravity
 def grav_gradient(r_ecef, eps=1e-6):
+    """
+    Ellipsoid Earth gravity model
+
+    Args:
+    - r_ecef: 3-D ECEF position, [x, y, z]
+    
+    Returns:
+    - gradient: 3-D gravity gradient [gx, gy, gz]
+    """
     
     x, y, z = r_ecef
     
@@ -179,6 +213,16 @@ def grav_gradient(r_ecef, eps=1e-6):
 # Compute the quaternion of a body pointing straight upwards
 # Used to initialize the rocket's quaternion
 def lla2quat(lat, lon, alt):
+    """
+    Convert GPS position to a quaternion of a body pointing straight up
+
+    Args:
+    - lat, lon, atti: 3 GPS coordinates
+    
+    Returns:
+    - quat: 4-dimensional quaternion, [qs, qi, qj, qk]
+    """
+    
     # Convert LLA coordinates to ECEF coordinates
     x, y, z = lla2ecef(lat, lon, alt)
 
@@ -273,6 +317,7 @@ def lla_jacobian(r_ecef, HAE=True):
 
 
 if __name__ == "__main__":
+    print("MAIN")
     
     """
     file_data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy()

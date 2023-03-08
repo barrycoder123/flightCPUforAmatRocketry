@@ -5,12 +5,13 @@ Created on Sat Mar  4 12:22:46 2023
 
 @author: zrummler
 
+PURPOSE: Implements Extended Kalman Filtering for our Amateur Rocketry Flight Computer
 
-PURPOSE: Library for Kalman filtering
-
-CLASS: EKF
+OBJECTS: EKF(x, q, P, Q, R, f, F, h, H)
 
 METHODS: EKF.predict(), EKF.update(z)
+
+SEE BELOW FOR MORE DOCUMENTATION
     
 """
 
@@ -26,35 +27,85 @@ plot_vector = np.zeros((18000,1))
 i = 0
 
 class EKF:
-    def __init__(self, x, global_quaternion, P, Q, R, f, F, h, H):
+    '''
+    Extended Kalman Filter Implementation
+    
+    See __init__ for initialization
+    
+    See predict() and update() for information on running the filter
+    '''
+    
+    def __init__(self, x, q, P, Q, R, f, F, h, H):
+        '''
+        Initializes the EKF object
         
-        self.x = x # state vector, 9x9
-        self.global_quaternion = global_quaternion # global "truth" quaternion, 4x1
-        self.P = P # predicted coviarnace matrix, 9x9
-        self.Q = Q # measurement noise matrix, 9x9
-        self.R = R # 
-        self.f = f # IMU strapdown
-        self.F = F # linearizeds state transition matrix
-        self.h = h # GPS conversion
-        self.H = H # jacobian of lla
+        Arguments:
+            - x: state vector, 9 x 9, [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll_error, pitch_error, yaw_error]
+            - q: initial best estimate of quaternion, 4 x 1, 
+            - P: predicted coviarnace matrix, 9 x 9, identity matrix
+            - Q: measurement noise matrix, 9 x 9, identity matrix
+            - R: 6 x 6 identitry matrix
+            - f: see f() functon below
+            - F: linearizeds state transition matrix, 9 x 9
+            - h: see h() function below
+            - H: see H() function below ... returns a 6 x 9 matrix
+        '''
+        
+        self.x = x 
+        self.q_global = q
+        self.P = P
+        self.Q = Q
+        self.R = R
+        self.f = f
+        self.F = F
+        self.h = h
+        self.H = H 
 
-
-    # predict step of Kalman filtering
     def predict(self):
-        global plot_vector, i
+        '''
+        prediction step of Kalman filter - run this as frequently as possible
+        
+        Arguments:
+            - none
+            
+        Returns:
+            - none
+            
+        Notes:
+            - Requires an initialized EKF object
+        '''
+        
         # predict state estimate
-        self.x, self.global_quaternion, self.F = self.f(self.x, self.global_quaternion)
+        self.x, self.q_global, self.F = self.f(self.x, self.q_global)
         
         # predict state covariance
         self.P = self.F @ self.P @ self.F.T + self.Q
         
-        plot_vector[i] = self.P[1,1]
-        print(plot_vector[i]) # why is this value so large on the 2nd iteration?
+        # This is just for debugging purposes
+        #print(plot_vector[i]) # why is this value so large on the 2nd iteration?
+        global plot_vector, i
+        plot_vector[i] = self.P[0,0]
         i += 1
 
 
-    # update step of Kalman filtering
     def update(self, z):
+        '''
+        prediction step of Kalman filter - run this when you have a new GPS or Barometer measurement
+        Currently the global quaternion update from attitude error is not working
+        
+        Arguments:
+            - z: measurement vector, 6x1
+            
+        Returns:
+            - none
+            
+        Notes:
+            - Requires an initialized EKF object
+            
+        Notes for Tyler: 
+            - Currently, quaternion update via attitude error is not working, see commented sections below
+        '''
+        
         # compute innovation
         y = z - self.h(self.x)
         
@@ -73,15 +124,33 @@ class EKF:
         # update state covariance (9 x 9)
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
         
-        # update global quaternion with predicted attitude error
-        #q_err = qt.atti2quat(self.x[-3:])
-        #self.global_quaternion = qt.quatMultiply(q_err, self.global_quaternion)
-        self.x[-3:] = [0, 0, 0] # reset attitude error (Tyler)
+        '''
+        Tyler: This is NOT working, but we think it should be
+        # Update the global quaternion from attitude error
+        atti_error = self.x[6:9]
+        q_error = qt.atti2quat(atti_error)
+        self.q_global = qt.quat_error_rev(q_error, self.q_global)
+    
+        # reset attitude error
+        self.x[6:9] = np.array([0, 0, 0])
+        '''
         
 
+def f(x, q_global):
+    '''
+    This function runs IMU strapdown, and should predict the attitude error from the quaternion
+    
+    Arguments:
+        - x: state vector, 9 x 1, [pos_x, ... vel_x, ... roll_error, ...]
+        - q: best quaternion estimate, 4 x 1, [qs, qi, qj, qk]
 
-# IMU CONVERSION EQUATION
-def f(x, global_quaternion):
+    Returns:
+        - x_new: new state vector, 9 x 1
+        - q_new: new quaternion estimate
+        - F: updated state propagation matrix, 9 x 9, see F() functon
+        
+    Notes: for Tyler: Currently, attidude error prediction is not working, see commented sections below
+    '''
     
     r_ecef, v_ecef, atti_error = x[0:3], x[3:6], x[6:9]
     
@@ -89,44 +158,46 @@ def f(x, global_quaternion):
     accel, gyro, dt = dc.get_next_imu_reading()
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
+
     
-    q_e2b = global_quaternion
-    
-    # iterate a strapdown
+    # Run the IMU strapdown, get predictions including attitude (q_e2b_new)
+    q_e2b = q_global
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
     
-    # TODO: do some attitude error stuff here
-    global_quaternion = q_e2b_new
+    '''
+    Tyler: This is NOT working, but we think it should be
+    # Compute attitude error
+    q_error = qt.quat_error(q_global, q_e2b_new)
+    atti_error_new = qt.quat2atti(q_error)
+    
+    # Add new attitude error to current error
+    atti_error_new = atti_error_new + atti_error
+    '''
+    
+    ''' 
+    Tyler: this is NOT correct, but it's giving us good results 
+    '''
     atti_error_new = np.array([0, 0, 0])
+    q_global = q_e2b_new
     
-    # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
-    omega_cross = skew(em.omega)
-    r_ecef = x[:3]
-    T_b2i = np.linalg.inv(qt.quat2dcm(global_quaternion))
-    
-    # Credit: Tyler's email
-    drdr = np.zeros((3,3))
-    drdv = np.eye(3)
-    drdo = np.zeros((3,3))
-    dvdr = em.grav_gradient(r_ecef) - np.square(omega_cross)
-    dvdv = -2 * omega_cross
-    dvdo = -T_b2i * skew(accel)
-    dodr = np.zeros((3,3))
-    dodv = np.zeros((3,3))
-    dodo = -skew(gyro)
+    # Update state matrix
+    x_new = np.concatenate((r_ecef_new, v_ecef_new, atti_error_new))
 
-    F = np.vstack([
-            np.hstack([drdr, drdv, drdo]),
-            np.hstack([dvdr, dvdv, dvdo]),
-            np.hstack([dodr, dodv, dodo])
-          ])
-
-    
-    return np.concatenate((r_ecef_new, v_ecef_new, atti_error_new)), global_quaternion, F
+    return x_new, q_global, F(x, q_global, accel, gyro)
 
 
-# GPS CONVERSION EQUATION
 def h(x):
+    '''
+    This function converts xyz to lla to subtract from the measurement matrix
+    Will eventually do this for barometer too, but we're not ready yet
+    
+    Arguments:
+        x: state vector, 9 x 1
+        
+    Returns:
+        a 6 x 1 vector of measurement prediction, [lat, lon, atti, baro1, baro2, baro3]
+    '''
+    
     # Unpack state variables (position)
     p = x[:3]
 
@@ -136,17 +207,24 @@ def h(x):
     return np.concatenate((gps_data, [0, 0, 0]))
 
 
-# H 
-#
-# Construct the 6 x 9 H matrix
 def H(x):
-
-    # GPS
+    '''
+    This function constructs the 6 x 9 H matrix
+    Currently we have only constructed a smaller 3x3 matrix within the 6x9
+    
+    Arguments:
+        x: state vector
+        
+    Returns:
+        H: a 6 x 9 matrix
+    '''
+    
+    # GPS to PVA
     r_to_lla = em.lla_jacobian(x[:3], HAE=True)
     v_to_lla = np.zeros((3,3)) # TODO: figure these out tonight
     a_to_lla = np.zeros((3,3)) # TODO: figure these out tonight
     
-    # TODO: Add some barometer stuff later
+    # TODO: Barometer to PVA
     r_to_baro = np.zeros((3,3))
     v_to_baro = np.zeros((3,3))
     a_to_baro = np.zeros((3,3))
@@ -158,70 +236,31 @@ def H(x):
     
     return H_mat
 
-# skew
-#
-# compute the skew matrix of a 3-element vector
-def skew(M):
-    return np.cross(np.eye(3), M)
 
-
-# initializes the 9x9 EKF state matrix """
-# state vector: [pos_x, 
-#                pos_y, 
-#                pos_z, 
-#                vel_x, 
-#                vel_y, 
-#                vel_z, 
-#                roll_error, 
-#                pitch_error, 
-#                yaw_error]
-def initialize_ekf_state_vector():
+def F(x, q, accel, gyro):
+    '''
+    This function constructs the 9 x 9 F matrix
     
-    # get current GPS reading and convert to ECEF
-    gps_data, dt = dc.get_next_gps_reading(advance=True) 
-    x, y, z = em.lla2ecef(gps_data) 
-    vec = [1527850.153, -4464959.009, 4276353.59, 3.784561502,	1.295026731, -1.11E-16, 0, 0, 0]
+    Arguments:
+        x: state vector, 9 x 9, [pos_x, pos_y, pos_x, vel_x, ... ]
+        q: best quaternion estimate, 4 x 1, [qs, qi, qj, qk]
+        accel: IMU acceleration, 3 x 1, [accel_x, accel_y, accel_z], m/s^2
+        gyro: IMU angular rotation, 3 x 1, [gyro_x, gyro_y, gyro_z], rad/sec
+        
+    Returns:
+        F: a 9 x 9 matrix
+    '''
     
-    # velocity and attitude error are initially 0
-    return np.array(vec)
-    #return np.array([x, y, z, 0, 0, 0, 0, 0, 0])
-
-
-# initializes the 4x1 global "truth" quaternion
-def initialize_global_quaternion():
-    
-    # get GPS reading and convert to quaternion
-    global_quaternion = dc.get_first_quaternion()
-    
-    return global_quaternion
-
-
-# initializes the P, Q, R, and F matrices
-# TODO: probably don't want to initialize these with identity matrices
-def initialize_ekf_matrices(x, global_quaternion):
-    
-    # P: predicted covariance matrix (9 x 9), can be random (reflects initial uncertainty)
-    P = np.eye((9)) * 0.1 # does not matter what this is
-
-    # Q: measurement noise matrix, 10x10, I * 0.001
-    # Initialize the Q matrix to reflect the uncertainty in the system dynamics
-    #Q = np.diag([1.0, 1.0, 1.0, 0.1, 0.1, 0.1, 0.01, 0.01, 0.01])
-    Q = np.eye((9)) * 0.0001
-    
-    # R: 6x6, uncertain how to initialize
-    # Initialize the R matrix to reflect the uncertainty in the sensor measurements
-    # GPS has noise of 2.5 meters ?
-    R = np.diag([1, 1, 1, 0.01, 0.01, 0.01])
-    
-    # F: state propagation matrix, 9x9 ... Credit: Tyler's Email
-    omega_cross = skew(em.omega)
+    # unpack position
     r_ecef = x[:3]
-    T_b2i = np.linalg.inv(qt.quat2dcm(global_quaternion))
     
-    # Read IMU to determine accel and angular gyro
-    accel, gyro, dt = dc.get_next_imu_reading(advance=False)
+    # determine rotation matrix and such
+    T_b2i = np.linalg.inv(qt.quat2dcm(q))
     
-    # Credit: Tyler's email
+    # determine cross of omega    
+    omega_cross = skew(em.omega)
+
+    # Compute each 3 x 3 submatrix ... Credit: Tyler's email
     drdr = np.zeros((3,3))
     drdv = np.eye(3)
     drdo = np.zeros((3,3))
@@ -232,13 +271,86 @@ def initialize_ekf_matrices(x, global_quaternion):
     dodv = np.zeros((3,3))
     dodo = -skew(gyro)
 
+    # pack F matrix
     F = np.vstack([
             np.hstack([drdr, drdv, drdo]),
             np.hstack([dvdr, dvdv, dvdo]),
             np.hstack([dodr, dodv, dodo])
           ])
     
+    return F
+
+
+def skew(M):
+    '''
+    Computes the skew-symmetric matrix of a 3-element vector
     
-    #F = F + np.square(F)
+    Arguments:
+        - M: 3 x 1 vector
+        
+    Returns:
+        - M x: 3 x 3 skew-symmetric matrix
+    '''
+    return np.cross(np.eye(3), M)
+
+
+def initialize_ekf_state_vector():
+    '''
+    Initializes and returns the 9 x 9 EKF state matrix """
     
-    return P, Q, R, F       
+    Returns:
+        - x: state vector, 9 x 9 [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll_error, pitch_error, yaw_error]
+    '''
+    
+    # Position and velocity are initialized from the test file
+    # TODO: read the test file instead of hard-coding these values
+    vec = [1527850.153, -4464959.009, 4276353.59, 3.784561502,	1.295026731, -1.11E-16, 0, 0, 0]
+    
+    
+    return np.array(vec)
+
+
+def initialize_q_global():
+    '''
+    Initializes and returns the 4x1 global "truth" quaternion
+    
+    Returns:
+        - q: initial quaternion estimate, 4 x 1, [qs, qi, qj, qk]
+    '''
+    
+    # get GPS reading and convert to quaternion
+    q_global = dc.get_first_quaternion()
+    
+    return q_global
+
+
+def initialize_ekf_matrices(x, q):
+    '''
+    Initializes the P, Q, R, and F matrices
+    
+    Arguments:
+        - x: state vector, 9 x 9, [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll_error, pitch_error, yaw_error]
+        - q: best quaternion estimate, 4 x 1, [qs, qi, qj, qk]
+        
+    Returns:
+        - P: 9 x 9
+        - Q: 9 x 9
+        - R: 6 x 6
+        - F: 9 x 9 
+    '''
+    
+    # P: predicted covariance matrix, 9 x 9, can be random (reflects initial uncertainty)
+    P = np.eye((9)) * 0.1 # does not matter what this is
+
+    # Q: measurement noise matrix, 9 x 9, I * 0.001
+    Q = np.eye((9)) * 0.0001
+    
+    # R: 6 x 6, 
+    # currently uncertain how to initialize
+    R = np.diag([1, 1, 1, 0.01, 0.01, 0.01])
+    
+    # F: state propagation matrix, 9 x 9
+    accel, gyro, dt = dc.get_next_imu_reading(advance=False)
+    F_mat = F(x, q, accel, gyro) # we continuously update F so we have a function for it
+
+    return P, Q, R, F_mat

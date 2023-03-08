@@ -25,16 +25,24 @@ import platform
 platform.processor()
 
 
+'''
+IMPORTANT: Set DEVICE variable to DEVICES[1] if running simulation, or DEVICES[0] if running on the actual rocket
+'''
 DEVICES = ["BEAGLEBONE", "TESTING ON PC"]
 DEVICE = DEVICES[1]
 
-""" code for running on the Raspberry Pi or Beaglebone AI """
 if DEVICE == DEVICES[0]:
+    '''
+    All the code that falls in this if statement is for the real-time flight computer. As we get our sensors working, we will add the data here
+    '''
+    
     print("Running on the BeagleBone AI")
     
-    
-    ''' code for simulation on your PC '''
+
 elif DEVICE == DEVICES[1]:
+    '''
+    All the code that falls below this else statement is for simulation purposes only. Instead of getting data from sensors, the simulation gets data from the datafiles
+    '''
     
     # code for simulation on PC
     imu_reading_number = 0
@@ -53,10 +61,19 @@ elif DEVICE == DEVICES[1]:
     # determine number of data points to read so we don't overflow end of array
     num_points = min(imu_file_data.shape[0], gps_file_data.shape[0])
     
-    # get_next_imu_reading()
-    #
-    # returns the next IMU reading (simulation) """
+
     def get_next_imu_reading(advance=True):
+        '''
+        gets the next IMU reading 
+        
+        Arguments:
+            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
+            
+        Returns:
+            - accel_xyz: 3 x 1 Numpy array
+            - gyro_xyz: 3 x 1 Numpy array
+            - dt: time step
+        '''
         global imu_reading_number
         
         # extract the next acceleration and angular rotation
@@ -74,12 +91,12 @@ elif DEVICE == DEVICES[1]:
         
         return accel_xyz, gyro_xyz, dt
      
-    # gps_is_ready()
-    #
-    # ping the GPS, see if the next data is ready 
-    # returns True if ready, False if not
-    # in simulation, GPS gets data every 1.0 seconds
+
     def gps_is_ready():
+        '''
+        returns True if the GPS has a new data value to return, or False if not
+        for simulation purposes, GPS gets data every 1.0 seconds
+        '''
         global gps_reading_number
         
         if np.isnan(GPS_data[gps_reading_number, 0]):
@@ -93,7 +110,17 @@ elif DEVICE == DEVICES[1]:
     # get_next_gps_reading()
     #
     # returns the next GPS reading (simulation) """
-    def get_next_gps_reading(advance=True):
+    def get_next_gps_reading(advance=True):        
+        '''
+        gets the next GPS reading 
+        
+        Arguments:
+            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
+            
+        Returns:
+            - reading: 3 x 1 Numpy array [lat, long, atti]
+            - dt: time step
+        '''
         global gps_reading_number
         
         # read from the GPS    
@@ -110,36 +137,44 @@ elif DEVICE == DEVICES[1]:
        
         return reading, dt
     
-    # get_next_barometer_reading()    
-    #
-    # returns the next barometer reading (simulation) """
+
     def get_next_barometer_reading():
+        '''
+        TODO
+        '''
         baro = [0, 0, 0]
         return np.array(baro) # TODO
     
-    # get_first_quaternion()
-    # 
-    # determine the initial quaternion of the body, assuming pointing straight up
-    # for real-time, this will be implemented with em.lla2quat
+
     def get_first_quaternion():
+        '''
+        returns the initial state of the Quaternion
         
+        Returns:
+            - a 4 x 1 quaternion, in the form [qs, qi, qj, qk]
+        '''
         return imu_file_data[0, 7:11]
     
-    # reset()
-    #
-    # reset data collection variables
+
     def reset():
+        '''
+        resets data collection variables and counters
+        
+        Returns:
+            - a 4 x 1 quaternion, in the form [qs, qi, qj, qk]
+        '''
         global imu_reading_number, gps_reading_number
         imu_reading_number = 0
         gps_reading_number = 0
         
-    # done()
-    #
-    # return True if there are no more points to read
+
     def done():
-        #print(gps_reading_number)
+        '''
+        return True if there is no more data to read, False if not
+        for simulation only
+
+        '''
         if (imu_reading_number >= num_points) or (gps_reading_number >= num_points):
-            #print("EXITING!!")
             return True
         
         return False
