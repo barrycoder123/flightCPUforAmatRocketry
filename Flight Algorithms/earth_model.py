@@ -110,7 +110,7 @@ def lla2ecef(lla):
 # alt2pres
 #
 # determine pressure from altitude
-# https://pvlib-python.readthedocs.io/en/v0.2.2/_modules/pvlib/atmosphere.html
+
 def alt2pres(altitude):
     '''
     Determine site pressure from altitude.
@@ -143,8 +143,10 @@ def alt2pres(altitude):
     References
     -----------
 
-    "A Quick Derivation relating altitude to air pressure" from Portland
+    1. "A Quick Derivation relating altitude to air pressure" from Portland
     State Aerospace Society, Version 1.03, 12/22/2004.
+    
+    2. https://pvlib-python.readthedocs.io/en/v0.2.2/_modules/pvlib/atmosphere.html
     '''
 
     press = 100 * ((44331.514 - altitude) / 11880.516) ** (1 / 0.1902632)

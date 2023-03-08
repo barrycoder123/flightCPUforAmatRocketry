@@ -68,16 +68,3 @@ if __name__ == "__main__":
     #unit_test_quat2atti()
     
     unit_test_quat_error()
-    
-    q1 = np.array([1, 0, 0, 0])
-    q2 = np.array([-1, 0, 0, 0])
-    # Compute the error between q1 and q2
-    q_error = np.multiply(q2, q1.conj())
-    
-    # Compute the norm of the error vector
-    error_norm = np.linalg.norm(q_error)
-    
-    # Scale the error vector by 2 to obtain the error between q1 and q2
-    q_error_scaled = 2 * q_error
-    
-    print(q_error_scaled)

@@ -61,11 +61,13 @@ if __name__ == "__main__":
         PVA_est[i, 0:3] = ekf.x[0:3]
         i += 1
         
-        
+    
+    # plot the P[0,0] value over time
     plt.figure()
     plt.plot(range(18000),kf.plot_vector)
     plt.title("Diagonal of P matrix (P[0,0])")
         
+    # plot position (XYZ)
     print("Plotting results...")
     ## PLOT POSITION
     plt.figure()
