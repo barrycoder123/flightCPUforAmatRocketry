@@ -29,9 +29,7 @@ a = 6378137.0 # semi-major axis of Earth, in meters
 b = 6356752.314245 # semi-minor axis of Earth, in meters
 e = 0.0818191908426 # eccentricity of Earth
 
-# ecef2lla
-#
-# generate GPS [lat, long, h] from ECEF (x, y, z)
+
 # h is height above sea level
 # https://stackoverflow.com/questions/56945401/converting-xyz-coordinates-to-longitutde-latitude-in-python
 def ecef2lla(xyz):
@@ -43,7 +41,7 @@ def ecef2lla(xyz):
 
     Returns:
     - lla: 3-dimensional GPS lla position [lat, long, atti]
-    - atti is height above sea level, as opposed to center of earth
+    - atti is height above center of earth
     """
     x, y, z = xyz    
 
@@ -99,17 +97,15 @@ def lla2ecef(lla):
     # Compute geocentric latitude
     sin_phi = np.sin(phi)
     cos_phi = np.cos(phi)
+    
     N = a / np.sqrt(1 - e_sq * sin_phi**2)
+    #N = 0
     x = (N + h) * cos_phi * np.cos(lam)
     y = (N + h) * cos_phi * np.sin(lam)
     z = (N * (1 - e_sq) + h) * sin_phi
 
     return np.array([x, y, z])
 
-
-# alt2pres
-#
-# determine pressure from altitude
 
 def alt2pres(altitude):
     '''
@@ -154,7 +150,6 @@ def alt2pres(altitude):
     return press
 
 
-
 def xyz2grav(x, y, z):    
     """
     Ellipsoid Earth gravity model
@@ -181,12 +176,10 @@ def xyz2grav(x, y, z):
     g = g[:] #Force column
     return g
 
-# grav_gradient
-#
-# Calculate the 3x3 gradient of gravity
+
 def grav_gradient(r_ecef, eps=1e-6):
     """
-    Ellipsoid Earth gravity model
+    Gradient of gravity
 
     Args:
     - r_ecef: 3-D ECEF position, [x, y, z]

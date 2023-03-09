@@ -108,6 +108,7 @@ class EKF:
         
         # compute innovation
         y = z - self.h(self.x)
+        #print(y)
         
         # get H matrix (6 x 9)
         H = self.H(self.x[:3])
@@ -120,6 +121,7 @@ class EKF:
         
         # update state estimate (9,)
         self.x = self.x + K @ y
+        #print(K @ y)
         #print(self.x[6:9])
         
         # update state covariance (9 x 9)
@@ -133,7 +135,8 @@ class EKF:
         is small (on the order of 10e-14 to 10e-5) but apparently that's
         enough to make the results diverge? We think 10e-5 is too large
         
-        It must be 10e-9 or less, see the second commented line
+        It must be 10e-9 or less, otherwise the results diverge
+        See the second commented line
         '''
         
         # compute quaternion error from nonzero attitude error

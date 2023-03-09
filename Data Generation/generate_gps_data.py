@@ -40,12 +40,19 @@ if __name__ == "__main__":
     real_Z = np.array(file_data["r_ecef_Z"])
     
     # add noise to GPS data before conversion (since variance is in meters, not degrees)
-    add_noise(real_X, GPS_POS_NOISE)
-    add_noise(real_Y, GPS_POS_NOISE)
-    add_noise(real_Z, GPS_POS_NOISE)
+    #add_noise(real_X, GPS_POS_NOISE)
+    #add_noise(real_Y, GPS_POS_NOISE)
+    #add_noise(real_Z, GPS_POS_NOISE)
     
     # generate GPS position
     [lat_p, long_p, h_p] = em.ecef2lla(np.array([real_X, real_Y, real_Z]))
+    
+    # sanity check
+    [x, y, z] = em.lla2ecef(np.array([lat_p, long_p, h_p]))
+    
+    assert np.allclose(x, real_X)
+    assert np.allclose(y, real_Y)
+    assert np.allclose(z, real_Z)
     
     # delete entries that aren't multiples of 10
 
