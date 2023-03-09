@@ -20,7 +20,6 @@ sys.path.append('../Flight Algorithms')
 sys.path.append('../Data Generation')
 
 import kalman as kf
-import earth_model as em
 import data_collection as dc
 
 if __name__ == "__main__":

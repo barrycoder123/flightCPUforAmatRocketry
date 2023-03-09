@@ -91,7 +91,7 @@ class EKF:
     def update(self, z):
         '''
         prediction step of Kalman filter - run this when you have a new GPS or Barometer measurement
-        Currently the global quaternion update from attitude error is not working
+        Currently, the global quaternion update from attitude error is not working
         
         Arguments:
             - z: measurement vector, 6x1
@@ -126,7 +126,7 @@ class EKF:
         
         # update state covariance (9 x 9)
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
-        
+       
         '''
         Tyler: This is NOT working, but we think it should be
         Uncomment the first line #self.q_global = ... to see what we mean
@@ -174,7 +174,6 @@ def f(x, q_global):
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
 
-    
     # Run the IMU strapdown, get predictions including attitude (q_e2b_new)
     q_e2b = q_global
     r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt)
@@ -360,8 +359,7 @@ def initialize_ekf_matrices(x, q):
 
 '''
 via ChatGPT
-I'm pretty sure this can be accomplished with atti2quat, and quat_error_rev
-'''
+I'm pretty sure this can be accomplished with atti2quat, and quat_error_rev '''
 
 '''
 def update_quaternion(atti_error, q_global):
