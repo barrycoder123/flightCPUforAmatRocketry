@@ -120,20 +120,32 @@ class EKF:
         
         # update state estimate (9,)
         self.x = self.x + K @ y
+        #print(self.x[6:9])
         
         # update state covariance (9 x 9)
         self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
         
         '''
         Tyler: This is NOT working, but we think it should be
-        # Update the global quaternion from attitude error
-        atti_error = self.x[6:9]
-        q_error = qt.atti2quat(atti_error)
-        self.q_global = qt.quat_error_rev(q_error, self.q_global)
-    
-        # reset attitude error
-        self.x[6:9] = np.array([0, 0, 0])
+        Uncomment the first line #self.q_global = ... to see what we mean
+        
+        It's strange; the difference between q_global_new and self.q_global
+        is small (on the order of 10e-14 to 10e-5) but apparently that's
+        enough to make the results diverge? We think 10e-5 is too large
+        
+        It must be 10e-9 or less, see the second commented line
         '''
+        
+        # compute quaternion error from nonzero attitude error
+        atti_error = self.x[6:9] # attitude error, nonzero because of update
+        q_error = qt.atti2quat(atti_error) # quaternion error from attitude error
+        
+        # factor quaternion error into global quaternion
+        q_global_new = qt.quatMultiply(q_error, self.q_global)
+        #self.q_global = q_global_new # set global quaternion
+        #self.q_global = self.q_global + np.ones((4,)) * 10e-9 # TESTING: error cannot exceed 10e-9
+        
+        self.x[6:9] = np.array([0, 0, 0])
         
 
 def f(x, q_global):
@@ -162,26 +174,13 @@ def f(x, q_global):
     
     # Run the IMU strapdown, get predictions including attitude (q_e2b_new)
     q_e2b = q_global
-    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt);
+    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt)
     
-    '''
-    Tyler: This is NOT working, but we think it should be
-    # Compute attitude error
-    q_error = qt.quat_error(q_global, q_e2b_new)
-    atti_error_new = qt.quat2atti(q_error)
-    
-    # Add new attitude error to current error
-    atti_error_new = atti_error_new + atti_error
-    '''
-    
-    ''' 
-    Tyler: this is NOT correct, but it's giving us good results 
-    '''
-    atti_error_new = np.array([0, 0, 0])
+    #atti_error_new = np.array([0, 0, 0])
     q_global = q_e2b_new
     
     # Update state matrix
-    x_new = np.concatenate((r_ecef_new, v_ecef_new, atti_error_new))
+    x_new = np.concatenate((r_ecef_new, v_ecef_new, atti_error))
 
     return x_new, q_global, F(x, q_global, accel, gyro)
 
@@ -354,3 +353,54 @@ def initialize_ekf_matrices(x, q):
     F_mat = F(x, q, accel, gyro) # we continuously update F so we have a function for it
 
     return P, Q, R, F_mat
+
+
+'''
+via ChatGPT
+I'm pretty sure this can be accomplished with atti2quat, and quat_error_rev
+'''
+
+'''
+def update_quaternion(atti_error, q_global):
+    # Convert attitude error angles to rotation matrix
+    roll_error, pitch_error, yaw_error = atti_error
+    R_error_pitch = np.array([[np.cos(pitch_error), 0, np.sin(pitch_error)],
+                              [0, 1, 0],
+                              [-np.sin(pitch_error), 0, np.cos(pitch_error)]])
+    
+    R_error_roll = np.array([[1, 0, 0],
+                             [0, np.cos(roll_error), -np.sin(roll_error)],
+                             [0, np.sin(roll_error), np.cos(roll_error)]])
+    
+    R_error_yaw = np.array([[np.cos(yaw_error), -np.sin(yaw_error), 0],
+                            [np.sin(yaw_error), np.cos(yaw_error), 0],
+                            [0, 0, 1]])
+    
+    R_error = np.matmul(R_error_yaw, np.matmul(R_error_pitch, R_error_roll))
+
+    # Convert quaternion to rotation matrix
+    q_scalar, q_i, q_j, q_k = q_global
+    R = np.array([[1 - 2*q_j**2 - 2*q_k**2, 2*q_i*q_j - 2*q_k*q_scalar, 2*q_i*q_k + 2*q_j*q_scalar],
+                  [2*q_i*q_j + 2*q_k*q_scalar, 1 - 2*q_i**2 - 2*q_k**2, 2*q_j*q_k - 2*q_i*q_scalar],
+                  [2*q_i*q_k - 2*q_j*q_scalar, 2*q_j*q_k + 2*q_i*q_scalar, 1 - 2*q_i**2 - 2*q_j**2]])
+
+    # Multiply rotation matrices to get new rotation matrix
+    R_new = np.matmul(R_error, R)
+
+    # Convert new rotation matrix to quaternion
+    q_scalar_new = 1/2 * np.sqrt(np.trace(R_new) + 1)
+    q_i_new = (R_new[2, 1] - R_new[1, 2]) / (4 * q_scalar_new)
+    q_j_new = (R_new[0, 2] - R_new[2, 0]) / (4 * q_scalar_new)
+    q_k_new = (R_new[1, 0] - R_new[0, 1]) / (4 * q_scalar_new)
+
+    # Normalize quaternion
+    q_norm = np.sqrt(q_scalar_new**2 + q_i_new**2 + q_j_new**2 + q_k_new**2)
+    q_scalar_new /= q_norm
+    q_i_new /= q_norm
+    q_j_new /= q_norm
+    q_k_new /= q_norm
+
+    # Return updated quaternion
+    q_global_new = [q_scalar_new, q_i_new, q_j_new, q_k_new]
+    return q_global_new
+'''
