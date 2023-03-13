@@ -1,76 +1,65 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on Thu Jan 26 11:13:09 2023
 
 @author: zrummler
-'''
+"""
 
 import sys
-import csv # for writing to CSV
+import os
 import numpy as np
-import pandas as pd # for reading CSV
+import pandas as pd  # for reading CSV
 import matplotlib.pyplot as plt
+import argparse
 
-
-sys.path.append('../Flight Algorithms')
+sys.path.append(os.path.join('..', 'Flight Algorithms'))
+sys.path.append(os.path.join('..', 'Simulations'))
 
 import earth_model as em
+from misc import get_ecef_column_names  # for later user
 
-dt = 1 # GPS data arrives every second
-GPS_POS_NOISE = 2.5
-GPS_VEL_NOISE = 0.05
-GPS_ACCEL_NOISE = 0.05
-
-def add_noise(arr, noise):
-    
-    noise = np.random.uniform(low=-noise, high=noise, size=len(arr))
-    arr += noise
+dt = 1  # GPS data arrives every second
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('filename', help='trajectory .csv file')
+    parser.add_argument('-s', '--gps_sigma', help='position error standard deviation [m]', default=15, type=float)
+    args = parser.parse_args()
+
+    pos_cols, vel_cols, quat_cols = get_ecef_column_names()  # for later user
 
     # open file and extract necessary data
-    file_data = pd.read_csv("traj_raster_30mins_20221115_160156.csv")
-    t_sec = np.array(file_data["t [sec]"])
-    dt = np.average(np.diff(t_sec))
-    print(dt)
-    
-    real_X = np.array(file_data["r_ecef_X"])
-    real_Y = np.array(file_data["r_ecef_Y"])
-    real_Z = np.array(file_data["r_ecef_Z"])
-    
-    # add noise to GPS data before conversion (since variance is in meters, not degrees)
-    #add_noise(real_X, GPS_POS_NOISE)
-    #add_noise(real_Y, GPS_POS_NOISE)
-    #add_noise(real_Z, GPS_POS_NOISE)
-    
+    df = pd.read_csv(args.filename)
+
+    # extract ECEF position and convert to LLA
+    r_ecef = df[pos_cols].to_numpy().T
+
+    # NOTE: the noise generation should really go after the conversion, but it's easier like this even tho it's technically not correct
+    r_ecef_noisy = r_ecef + args.gps_sigma * np.random.randn(*r_ecef.shape)
+
     # generate GPS position
-    [lat_p, long_p, h_p] = em.ecef2lla(np.array([real_X, real_Y, real_Z]))
-    
-    # sanity check
-    [x, y, z] = em.lla2ecef(np.array([lat_p, long_p, h_p]))
-    
-    assert np.allclose(x, real_X)
-    assert np.allclose(y, real_Y)
-    assert np.allclose(z, real_Z)
-    
+    r_lla = em.ecef2lla(r_ecef_noisy)  # [deg, deg, m]
+
     # delete entries that aren't multiples of 10
+    # todo: this should be a parameter input
+    r_lla_modified = np.nan + np.ones(r_lla.shape)
+    r_lla_modified[:, ::10] = r_lla[:, ::10]
 
-    lat_p[~(np.arange(len(lat_p)) % 10 == 0)] = np.nan
-    long_p[~(np.arange(len(long_p)) % 10 == 0)] = np.nan
-    h_p[~(np.arange(len(h_p)) % 10 == 0)] = np.nan
-
-    
     # # generate GPS velocity
     # [lat_v, long_v, h_v] = generateGPSDiff(lat_p, long_p, h_p)
-    
+
     # # generate GPS accel
     # [lat_a, long_a, h_a] = generateGPSDiff(lat_v, long_v, h_v)
-    
+
     # generate barometric pressure
-    pressure = em.alt2pres(h_p)
-    
-    
+    pressure = em.alt2pres(r_lla[2, :]).reshape(-1, 1)
+
+    colnames = ["GPS_lat", "GPS_long", "GPS_alt", "Barometer_Pa"]
+    df_new = pd.DataFrame(np.hstack((r_lla_modified.T, pressure)), columns=colnames)
+    df_new.insert(0, 't [sec]', df["t [sec]"])
+    df_new.to_csv("gps_and_barometer_data.csv", index=False)
+
     # =========================================================================
     # # plot GPS for sanity check
     # BBox = ((min(long_p), max(long_p),      
@@ -83,15 +72,14 @@ if __name__ == "__main__":
     # map_image = plt.imread('map.png')
     # ax.imshow(map_image, zorder=0, extent=BBox, aspect= 'equal')
     # =========================================================================
-    
+
     # plot altitude (above sea level) for sanity check
     plt.figure()
     plt.plot(lat_p)
     plt.title("GPS Altitude (m)")
     plt.xlabel("Samples")
     plt.ylabel("Meters")
-    
-    
+
     plt.figure()
     [x, y, z] = em.lla2ecef([lat_p, long_p, h_p])
     plt.plot(x)
@@ -100,19 +88,3 @@ if __name__ == "__main__":
     plt.title("X Altitude (m)")
     plt.xlabel("Samples")
     plt.ylabel("Meters")
-    
-    # add noise to barometer data ?
-    #add_noise(pressure)
-    
-    with open("gps_and_barometer_data.csv", "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-    
-        # Write headers
-        writer.writerow(["t [sec]", "GPS_lat", "GPS_long", "GPS_alt", "Barometer_Pa"])
-    
-        # Write data
-        for i in range(len(lat_p)):
-            writer.writerow([t_sec[i], lat_p[i], long_p[i], h_p[i], pressure[i]])
-
-
-

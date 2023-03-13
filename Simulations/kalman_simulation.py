@@ -20,7 +20,9 @@ sys.path.append('../Flight Algorithms')
 sys.path.append('../Data Generation')
 
 import kalman as kf
+import earth_model as em
 import data_collection as dc
+from misc import plotDataAndError
 
 if __name__ == "__main__":
     '''
@@ -29,64 +31,59 @@ if __name__ == "__main__":
     3. Compares results of Kalman Filter to truth data (run the code and see plots)
     '''
     print("Kalman Filtering Simulation")
-    
+
     # Import and format data
     print("Opening file for truth data...")
-    data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy();    
-    PVA_truth = data[:, 1:11];
-    
+    data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy()
+    PVA_truth = data[:, 1:11].T
+
     # Holds our results, for plotting
     print("Initializing arrays...")
-    PVA_est = np.zeros((dc.num_points, 10))
-    
+    PVA_est = np.zeros((10, dc.num_points))
+    PHist = np.zeros((9, 9, dc.num_points))  # to store the covariance at each step
+
     # Initialize state vectors and matrices
     dc.reset()
-    x = kf.initialize_ekf_state_vector()
+    x = kf.initialize_ekf_state_vector().flatten()
     q_true = kf.initialize_q_global()
-    P, Q, R, F = kf.initialize_ekf_matrices(x, q_true)
-    ekf = kf.EKF(x, q_true, P, Q, R, kf.f, F, kf.h, kf.H)
+    P, Q = kf.initialize_ekf_matrices(x, q_true)
+    ekf = kf.EKF(x, q_true, P, Q)
 
+    # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
     i = 0
     while not dc.done():
-        
+
         # Prediction
         ekf.predict()
-        
-        if dc.gps_is_ready(): # read GPS and barometer when ready
+
+        if dc.gps_is_ready():  # read GPS and barometer when ready
             lla, dt = dc.get_next_gps_reading()
             baro = dc.get_next_barometer_reading()
-            
+
             # Update state
-            z = np.concatenate((lla, baro))
-            ekf.update(z) 
-        
-        # FOR SIMULATION ONLY: write to results vector
-        PVA_est[i, 0:3] = ekf.x[0:3]
+            ekf.update(lla, sigma_gps=0.1)
+
+        # save the data
+        PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
+        PVA_est[6:10, i] = ekf.q_e2b
+        PHist[:, :, i] = ekf.P  # store the covariance
         i += 1
-        
-    
-    # DEBUGGING ONLY: plot the P[0,0] value over time
-    plt.figure()
-    plt.plot(range(18000),kf.plot_vector)
-    plt.title("Diagonal of P matrix (P[0,0])")
-        
-    # plot position (XYZ)
+
+    # ========================== plotting ==========================
     print("Plotting results...")
-    ## PLOT POSITION
-    plt.figure()
-    plt.plot(PVA_truth[:, 0])
-    plt.plot(PVA_est[:, 0])
-    plt.title("X POSITION, WITH KALMAN FILTERING (GPS + IMU)")
-    plt.legend(["Truth","Estimated"])
-    plt.figure()
-    plt.plot(PVA_truth[:, 1])
-    plt.plot(PVA_est[:, 1])
-    plt.title("Y POSITION, WITH KALMAN FILTERING (GPS + IMU)")
-    plt.legend(["Truth","Estimated"])
-    plt.figure()
-    plt.plot(PVA_truth[:, 2])
-    plt.plot(PVA_est[:, 2])
-    plt.title("Z POSITION, WITH KALMAN FILTERING (GPS + IMU)")
-    plt.legend(["Truth","Estimated"])
-           
+
+    tplot = np.arange(PVA_est.shape[1])
+    plotDataAndError(PVA_est[:3, :], PVA_truth[:3, :], tplot, subx0=True)
+    plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)
+    plotDataAndError(PVA_est[6:10, ::10], PVA_truth[6:10, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
+
+    # fig, axs = plt.subplots(3, 1, sharex=True, figsize=(11, 8))
+    # for i, (ax, lab) in enumerate(zip(axs, ['X', 'Y', 'Z'])):
+    #     ax.plot(PVA_truth[i, :] - PVA_truth[i, 0], label='Truth')
+    #     ax.plot(PVA_est[i, :] - PVA_truth[i, 0], label='Estimate')
+    #     ax.set_title(f"{lab} ECEF Position (minus start)\nWITH KALMAN FILTERING (GPS + IMU)")
+    #     ax.legend()
+    #     ax.grid(True)
+    # plt.tight_layout()
+    plt.show()  # needed to display the figures
