@@ -44,20 +44,24 @@ if __name__ == "__main__":
 
     # Initialize state vectors and matrices
     dc.reset()
-    x = kf.initialize_ekf_state_vector().flatten()
-    q_true = kf.initialize_q_global()
-    P, Q = kf.initialize_ekf_matrices(x, q_true)
-    ekf = kf.EKF(x, q_true, P, Q)
+    x = dc.get_first_position()
+    q_true = dc.get_first_quaternion()
+    ekf = kf.EKF(x, q_true)
 
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
     i = 0
     while not dc.done():
 
+        # Read IMU
+        accel, gyro, dt = dc.get_next_imu_reading()
+        z_imu = np.concatenate((accel, gyro))
+        
         # Prediction
-        ekf.predict()
+        ekf.predict(z_imu, dt)
 
-        if dc.gps_is_ready():  # read GPS and barometer when ready
+        # Read GPS and barometer when ready
+        if dc.gps_is_ready():  
             lla, dt = dc.get_next_gps_reading()
             baro = dc.get_next_barometer_reading()
 
@@ -75,7 +79,8 @@ if __name__ == "__main__":
 
     tplot = np.arange(PVA_est.shape[1])
     plotDataAndError(PVA_est[:3, :], PVA_truth[:3, :], tplot, subx0=True)
-    plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)
+    plotDataAndError(PVA_est[3:6, :], PVA_truth[3:6, :], tplot, name='Velocity', subx0=True)
+    #plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)
     plotDataAndError(PVA_est[6:10, ::10], PVA_truth[6:10, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
 
     # fig, axs = plt.subplots(3, 1, sharex=True, figsize=(11, 8))

@@ -22,7 +22,6 @@ np.set_printoptions(linewidth=200)
 import strapdown as sd
 import quaternions as qt
 import earth_model as em
-import data_collection as dc
 
 
 class EKF:
@@ -34,57 +33,52 @@ class EKF:
     See predict() and update() for information on running the filter
     """
 
-    def __init__(self, x0, q0_e2b, P0, Q):
+    def __init__(self, x0, q0_e2b):
         """
         Initializes the EKF object
 
         Arguments:
             - x0: (9,1) or (9,) initial state vector [r_ecef, v_ecef, roll_error, pitch_error, yaw_error]
             - q0: initial best estimate of quaternion, 4 x 1,
-            - P0: (9,9) initial covariance matrix, 9 x 9, identity matrix
-            - Q: (9,9) process noise covariance matrix
-            - R: 6 x 6 identitry matrix
-            - F: linearizeds state transition matrix, 9 x 9
-            - h: see h() function below
-            - H: see H() function below ... returns a 6 x 9 matrix
         """
 
         self.x = x0.flatten()
         self.q_e2b = q0_e2b
-        self.P = P0
-        self.Q = Q
+        self.P, self.Q = init_ekf_matrices(x0, q0_e2b)
 
-    def predict(self):
+    def predict(self, z_imu, dt):
         """
-        prediction step of Kalman filter - run this as frequently as possible
+        EKF state prediction - run this when you have a new IMU reading
         
         Arguments:
-            - none
+            - z_imu: (6,1) or (6,) IMU reading [accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z]
+            - dt: time step since last reading, seconds
             
         Returns:
-            - none
+            - None
             
         Notes:
             - Requires an initialized EKF object
         """
 
         # predict state estimate
-        self.x, self.q_e2b, phi = f(self.x.flatten(), self.q_e2b)
+        self.x, self.q_e2b, phi = f(self.x.flatten(), self.q_e2b, z_imu, dt)
 
         # predict state covariance
         self.P = phi @ self.P @ phi.T + self.Q
 
     def update(self, z_gps, z_baro=None, sigma_gps=15, sigma_baro=0.1):
         """
-        EKF measurement update
-        prediction step of Kalman filter - run this when you have a new GPS or Barometer measurement
-        Currently the global quaternion update from attitude error is not working
+        EKF measurement update - run this when you have a new GPS or Barometer measurement
 
         Arguments:
-            - z: measurement vector, 6x1
+            - z_gps: (3,1) or (3,) gps measurement vector [lat, long, alt]
+            - z_baro: (3,1) or (3,) barometer measurement vector [alt1, alt2, alt3]
+            - sigma_gps: standard deviation of GPS readings
+            - sigma_baro: standard deviation of barmometer readings
 
         Returns:
-            - none
+            - None
 
         Notes:
             - Requires an initialized EKF object
@@ -94,8 +88,8 @@ class EKF:
         z_gps_ecef = em.lla2ecef(z_gps)
         nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement
         if z_baro is not None:
-            # todo: compute nu, H, R for barometer
-            # todo: use vstack and blockdiag to combine nu, H, and R as needed
+            # TODO: compute nu, H, R for barometer
+            # TODO: use vstack and blockdiag to combine nu, H, and R as needed
             raise NotImplementedError('Barometer measurement not yet implemented')
 
         # generic EKF update equations
@@ -112,26 +106,25 @@ class EKF:
         self.x[6:9] = 0  # reset attitude error
 
 
-def f(x, q_e2b):
+def f(x, q_e2b, z_imu, dt):
     """
-    This function runs IMU strapdown, and should predict the attitude error from the quaternion
+    This function updates the state vector and global quaternion via IMU strapdown. 
+    It also updates the state transiction matrix (9 x 9)
 
     Arguments:
-        - x: state vector, 9 x 1, [pos_x, ... vel_x, ... roll_error, ...]
-        - q: best quaternion estimate, 4 x 1, [qs, qi, qj, qk]
+        - x: (9,1) or (9,) state vector, [pos_x, ... vel_x, ... roll_error, ...]
+        - q_eqb: (4,1) or (4,) global quaternion [q_scalar, qi, qj, qk]
 
     Returns:
-        - x_new: new state vector, 9 x 1
-        - q_new: new quaternion estimate
-        - F: updated state propagation matrix, 9 x 9, see F() functon
-
-    Notes: for Tyler: Currently, attidude error prediction is not working, see commented sections below
+        - x_new: updated state vector
+        - q_new: updated global quaternion 
+        - phi: (9,9) updated state propagation matrix
     """
 
     r_ecef, v_ecef = x[0:3], x[3:6]  # extract ECEF states for convenience
 
     # grab next IMU reading
-    accel, gyro, dt = dc.get_next_imu_reading()
+    accel, gyro = z_imu[0:3], z_imu[3:6]
     dV_b_imu = accel * dt
     dTh_b_imu = gyro * dt
 
@@ -146,6 +139,7 @@ def f(x, q_e2b):
     return x_new, q_e2b_new, phi
 
 
+# Credit: Tyler Klein
 def get_altitude_measurement(x, alt_meas: float, sigma: float = 5.0):
     """
     Gets an altitude measurement and the accompanying measurement Jacobian. The altitude is expected to be measure in Height Above the Ellipsoid (HAE) which
@@ -186,7 +180,7 @@ def get_altitude_measurement(x, alt_meas: float, sigma: float = 5.0):
     R = sigma ** 2
     return nu, H, R
 
-
+# Credit: Tyler Klein
 def get_position_measurement(x, z, sigma=15):
     """
     Gets an absolute position measurement in the ECEF frame
@@ -274,36 +268,7 @@ def skew(M):
     return np.cross(np.eye(3), M)
 
 
-def initialize_ekf_state_vector():
-    """
-    Initializes and returns the 9 x 9 EKF state matrix
-
-    Returns:
-        - x: state vector, 9 x 9 [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll_error, pitch_error, yaw_error]
-    """
-
-    # Position and velocity are initialized from the test file
-    # TODO: read the test file instead of hard-coding these values
-    vec = [1527850.153, -4464959.009, 4276353.59, 3.784561502, 1.295026731, -1.11E-16, 0, 0, 0]
-
-    return np.array(vec)
-
-
-def initialize_q_global():
-    """
-    Initializes and returns the 4x1 global "truth" quaternion
-
-    Returns:
-        - q: initial quaternion estimate, 4 x 1, [qs, qi, qj, qk]
-    """
-
-    # get GPS reading and convert to quaternion
-    q_e2b = dc.get_first_quaternion()
-
-    return q_e2b
-
-
-def initialize_ekf_matrices(x, q):
+def init_ekf_matrices(x, q):
     """
     Initializes the P, Q, R, and F matrices
 
@@ -314,8 +279,6 @@ def initialize_ekf_matrices(x, q):
     Returns:
         - P: 9 x 9
         - Q: 9 x 9
-        - R: 6 x 6
-        - F: 9 x 9
     """
 
     # P: predicted covariance matrix, 9 x 9, can be random (reflects initial uncertainty)
