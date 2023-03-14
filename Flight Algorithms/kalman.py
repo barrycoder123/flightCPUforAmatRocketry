@@ -196,10 +196,13 @@ def get_altitude_measurement(x, alt_meas: float, sigma: float = 5.0):
     H[0, 0] = np.cos(lla[1]) * np.cos(lla[0])  # partials calculated using ECEF to LLA function; not numerically validated
     H[0, 1] = np.sin(lla[1]) * np.cos(lla[0])
     H[0, 2] = np.sin(lla[0])
-    nu = alt_meas - lla[2]
+    
+    #H = np.vstack((H,H,H))
+    
+    nu = (alt_meas - lla[2])#.reshape(3,1)
     if nu.ndim < 2:
         nu = np.expand_dims(nu, axis=1)
-    R = sigma ** 2
+    R = sigma ** 2# * np.eye(3)
     return nu, H, R
 
 # Credit: Tyler Klein
