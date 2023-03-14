@@ -123,6 +123,9 @@ elif DEVICE == DEVICES[1]:
         """
         global gps_reading_number
         
+        if not gps_is_ready():
+            return None, -1
+        
         # read from the GPS    
         reading = GPS_data[gps_reading_number, 0:3]
         

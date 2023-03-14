@@ -98,11 +98,11 @@ class EKF:
             - Requires an initialized EKF object
         """
         if (z_gps is None) and (z_baro is None):
-            print("NONE")
+            #print("NONE")
             return
         
         elif (z_gps is not None) and (z_baro is not None):
-            print("IN BOTH")
+            #print("IN BOTH")
             z_gps_ecef = em.lla2ecef(z_gps)
             nu_gps, H_gps, R_gps = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement
             nu_baro, H_baro, R_baro = get_altitude_measurement(self.x, z_baro, sigma_baro)
@@ -114,13 +114,13 @@ class EKF:
 
         # get the measurements
         elif z_gps is not None:
-            print("GPS")
+            #print("GPS")
             #print("IN GPS")
             z_gps_ecef = em.lla2ecef(z_gps)
             nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement      
         
         elif z_baro is not None:
-            print("BARO")
+            #print("BARO")
             #print("IN BARO")
             # compute nu, H, R for barometer
             nu, H, R = get_altitude_measurement(self.x, z_baro, sigma_baro)

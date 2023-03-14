@@ -68,22 +68,14 @@ if __name__ == "__main__":
         # Read GPS and barometer when ready
         baro = dc.get_next_barometer_reading()
         
-        if dc.gps_is_ready():  
-            lla, dt = dc.get_next_gps_reading()
-            #print(lla[2] - baro[0])
-        else:
-            lla = None
-            #baro = dc.get_next_barometer_reading()
-            #print(baro)
+        #if dc.gps_is_ready():  
+        lla, dt = dc.get_next_gps_reading()
 
-            # Update state
-            #baro = None
-            #print(baro)
-        lla = None
+        #lla = None
         #baro = None
         #baro = baro[:1]
         
-        #baro = None
+        baro = None
         #lla = None
         ekf.update(lla, baro, sigma_gps=2.5, sigma_baro=2.5)
 
