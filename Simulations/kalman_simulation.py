@@ -71,7 +71,9 @@ if __name__ == "__main__":
             # Update state
             #baro = None
             #print(lla[2] - baro[0])
-            ekf.update(lla, baro, sigma_gps=0.1)
+            #baro = None
+            baro = None
+            ekf.update(lla, baro, sigma_gps=2.5)
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity

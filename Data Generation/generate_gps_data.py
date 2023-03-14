@@ -24,8 +24,8 @@ dt = 1  # GPS data arrives every second
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-f', '--filename', help='trajectory .csv file', default='traj_raster_30mins_20221115_160156.csv')
-    parser.add_argument('-g', '--gps_sigma', help='position error standard deviation [m]', default=0, type=float)
-    parser.add_argument('-b', '--baro_sigma', help='altitude error standard deviation [m]', default=0, type=float)
+    parser.add_argument('-g', '--gps_sigma', help='position error standard deviation [m]', default=2.5, type=float)
+    parser.add_argument('-b', '--baro_sigma', help='altitude error standard deviation [m]', default=0.1, type=float)
     args = parser.parse_args()
 
     pos_cols, vel_cols, quat_cols = get_ecef_column_names()  # for later user
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     r_lla_modified = np.nan + np.ones(r_lla.shape)
     r_lla_modified[:, ::10] = r_lla[:, ::10]
 
-    # generate barometric pressure
+    # generate barometric altitude in meters
     baro_alt = em.ecef2lla(r_ecef)[2, :].reshape(-1,1) # em.alt2pres(r_lla[2, :]).reshape(-1, 1)
     baro1_alt = baro_alt + args.baro_sigma * np.random.randn(*baro_alt.shape)
     baro2_alt = baro_alt + args.baro_sigma * np.random.randn(*baro_alt.shape)

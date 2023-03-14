@@ -103,7 +103,7 @@ class EKF:
         nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement    
             
         if z_baro is not None:
-            
+            print("IN HERE")
             # compute nu, H, R for barometer
             nu_baro, H_baro, R_baro = get_altitude_measurement(self.x, z_baro, sigma_baro)
     
@@ -192,14 +192,14 @@ def get_altitude_measurement(x, alt_meas: np.ndarray, sigma: float = 5.0):
     """
 
     lla = em.ecef2lla(x[0:3])  # convert to LLA in [rad, rad, m (HAE)]
-    H = np.zeros((3, x.shape[0]))  # measurement partial
+    H = np.zeros((1, x.shape[0]))  # measurement partial
     H[0, 0] = np.cos(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to x
     H[0, 1] = np.sin(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to y
     H[0, 2] = np.sin(lla[0]) # partial derivative of alt_meas with respect to z
     
-    nu = (alt_meas - lla[2]).reshape(3,1)
+    nu = (alt_meas - lla[2])#.reshape(3,1)
 
-    R = sigma ** 2 * np.eye(3)
+    R = sigma ** 2# * np.eye(3)
     return nu, H, R
 
 # Credit: Tyler Klein
