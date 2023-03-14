@@ -47,6 +47,7 @@ elif DEVICE == DEVICES[1]:
     # code for simulation on PC
     imu_reading_number = 0
     gps_reading_number = 0
+    baro_reading_number = 0
     
     # reading IMU data
     imu_file_data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy();  
@@ -183,9 +184,10 @@ elif DEVICE == DEVICES[1]:
         Returns:
             - a 4 x 1 quaternion, in the form [qs, qi, qj, qk]
         """
-        global imu_reading_number, gps_reading_number
+        global imu_reading_number, gps_reading_number, baro_reading_number
         imu_reading_number = 0
         gps_reading_number = 0
+        baro_reading_number = 0
         
 
     def done():

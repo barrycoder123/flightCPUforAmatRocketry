@@ -23,7 +23,7 @@ dt = 1  # GPS data arrives every second
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('filename', help='trajectory .csv file')
+    parser.add_argument('-f', '--filename', help='trajectory .csv file', default='traj_raster_30mins_20221115_160156.csv')
     parser.add_argument('-s', '--gps_sigma', help='position error standard deviation [m]', default=15, type=float)
     args = parser.parse_args()
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     r_ecef = df[pos_cols].to_numpy().T
 
     # NOTE: the noise generation should really go after the conversion, but it's easier like this even tho it's technically not correct
-    r_ecef_noisy = r_ecef + args.gps_sigma * np.random.randn(*r_ecef.shape)
+    r_ecef_noisy = r_ecef #+ args.gps_sigma * np.random.randn(*r_ecef.shape)
 
     # generate GPS position
     r_lla = em.ecef2lla(r_ecef_noisy)  # [deg, deg, m]
@@ -46,16 +46,10 @@ if __name__ == "__main__":
     r_lla_modified = np.nan + np.ones(r_lla.shape)
     r_lla_modified[:, ::10] = r_lla[:, ::10]
 
-    # # generate GPS velocity
-    # [lat_v, long_v, h_v] = generateGPSDiff(lat_p, long_p, h_p)
-
-    # # generate GPS accel
-    # [lat_a, long_a, h_a] = generateGPSDiff(lat_v, long_v, h_v)
-
     # generate barometric pressure
-    pressure = em.alt2pres(r_lla[2, :]).reshape(-1, 1)
+    pressure = r_lla[2, :].reshape(-1,1) # em.alt2pres(r_lla[2, :]).reshape(-1, 1)
 
-    colnames = ["GPS_lat", "GPS_long", "GPS_alt", "Barometer_Pa"]
+    colnames = ["GPS_lat", "GPS_long", "GPS_alt", "Baro_alt"]
     df_new = pd.DataFrame(np.hstack((r_lla_modified.T, pressure)), columns=colnames)
     df_new.insert(0, 't [sec]', df["t [sec]"])
     df_new.to_csv("gps_and_barometer_data.csv", index=False)
@@ -75,13 +69,13 @@ if __name__ == "__main__":
 
     # plot altitude (above sea level) for sanity check
     plt.figure()
-    plt.plot(lat_p)
+    plt.plot(r_lla[2,:])
     plt.title("GPS Altitude (m)")
     plt.xlabel("Samples")
     plt.ylabel("Meters")
 
     plt.figure()
-    [x, y, z] = em.lla2ecef([lat_p, long_p, h_p])
+    [x, y, z] = em.lla2ecef(r_lla)
     plt.plot(x)
     plt.plot(y)
     plt.plot(z)

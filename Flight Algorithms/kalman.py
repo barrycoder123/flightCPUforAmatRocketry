@@ -5,9 +5,9 @@ Created on Sat Mar  4 12:22:46 2023
 
 @author: zrummler
 
-PURPOSE: Implements Extended Kalman Filtering for our Amateur Rocketry Flight Computer
+PURPOSE: Implements Extended Kalman Filtering for our Flight Computer
 
-OBJECTS: EKF(x, q, P, Q, R, f, F, h, H)
+OBJECT: EKF(x, q, P, Q, R, f, F, h, H)
 
 METHODS: EKF.predict(), EKF.update(z)
 
@@ -15,6 +15,7 @@ SEE BELOW FOR MORE DOCUMENTATION
     
 """
 
+import scipy
 import numpy as np
 
 np.set_printoptions(linewidth=200)
@@ -28,7 +29,20 @@ class EKF:
     """
     Extended Kalman Filter Implementation
 
-    See __init__ for initialization
+    How to initialize:
+        - Initialize 9-element state vector, x
+        - Initialize 4-element global quaternion, q_e2b
+        - Create a class with ekf = EKF(x, q_e2b)
+
+    How to run:
+        
+        while data collection
+            accel, gyro, dt = get next IMU reading
+            ekf.predict(accel, gyro, dt)
+            
+            if gps or barometer ready
+                lla = get next GPS data
+                ekf.update(lla)
 
     See predict() and update() for information on running the filter
     """
@@ -86,10 +100,18 @@ class EKF:
 
         # get the measurements
         z_gps_ecef = em.lla2ecef(z_gps)
-        nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement
+        nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement    
+            
         if z_baro is not None:
-            # TODO: compute nu, H, R for barometer
-            # TODO: use vstack and blockdiag to combine nu, H, and R as needed
+            
+            # compute nu, H, R for barometer
+            nu_baro, H_baro, R_baro = get_altitude_measurement(self.x, z_baro, sigma_baro)
+    
+            # use vstack and blockdiag to combine nu, H, and R as needed
+            nu = np.vstack((nu, nu_baro))
+            H = np.vstack((H, H_baro))
+            R = scipy.linalg.block_diag(R, R_baro)
+            
             raise NotImplementedError('Barometer measurement not yet implemented')
 
         # generic EKF update equations

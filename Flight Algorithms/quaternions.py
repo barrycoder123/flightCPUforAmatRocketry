@@ -106,7 +106,7 @@ def quat2dcm(q):
            [2 * (q1 * q3 - q0 * q2), 2 * (q2 * q3 + q0 * q1), q0 ** 2 - q1 ** 2 - q2 ** 2 + q3 ** 2]]
     return np.array(dcm)
 
-
+'''
 def quat2rotmat(q):
     """
     Converts a quaternion to a 3x3 rotation matrix
@@ -168,8 +168,8 @@ def rotmat2quat(R):
     q[3] = qz
 
     return q
-
-
+'''
+'''
 def quat_error(q1, q2):
     """
     Computes the error between two quaternions
@@ -198,8 +198,8 @@ def quat_error(q1, q2):
     # return q_error
 
     # Scale the error vector by 2 to obtain the error between q1 and q2
-
-
+'''
+'''
 def quat_error_rev(q_error, q1):
     if np.allclose(q_error, np.array([0, 0, 0, 0])):
         print("HERE")
@@ -210,7 +210,8 @@ def quat_error_rev(q_error, q1):
     # q_error_conj = np.array([q_error[0], -q_error[1], -q_error[2], -q_error[3]])
     # q2 = quatMultiply(q1, q_error_conj)
     # return q2
-
+'''
+'''
 
 # quat2atti
 #
@@ -250,8 +251,8 @@ def quat2atti(q_error):
     atti_error = np.array([roll_error, pitch_error, yaw_error])
 
     return atti_error
-
-
+'''
+'''
 # atti2quat
 #
 # Convert attitude error into a normalized quaternion error
@@ -285,3 +286,4 @@ def atti2quat(atti):
     q_error /= np.linalg.norm(q_error)
 
     return q_error
+'''
