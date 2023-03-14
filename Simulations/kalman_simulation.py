@@ -65,19 +65,17 @@ if __name__ == "__main__":
         # Prediction
         ekf.predict(z_imu, dt)
 
-        # Read GPS and barometer when ready
+        # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
-        
-        #if dc.gps_is_ready():  
         lla, dt = dc.get_next_gps_reading()
+        #print(lla)
 
-        #lla = None
         #baro = None
         #baro = baro[:1]
-        
         baro = None
-        #lla = None
-        ekf.update(lla, baro, sigma_gps=2.5, sigma_baro=2.5)
+        
+        # Update
+        ekf.update(lla, baro, sigma_gps=5, sigma_baro=0)
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
