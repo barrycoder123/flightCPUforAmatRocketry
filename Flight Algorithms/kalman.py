@@ -112,7 +112,7 @@ class EKF:
             H = np.vstack((H, H_baro))
             R = scipy.linalg.block_diag(R, R_baro)
             
-            raise NotImplementedError('Barometer measurement not yet implemented')
+            #raise NotImplementedError('Barometer measurement not yet implemented')
 
         # generic EKF update equations
         S = H @ self.P @ H.T + R  # innovation covariance
@@ -162,7 +162,7 @@ def f(x, q_e2b, z_imu, dt):
 
 
 # Credit: Tyler Klein
-def get_altitude_measurement(x, alt_meas: float, sigma: float = 5.0):
+def get_altitude_measurement(x, alt_meas: np.ndarray, sigma: float = 5.0):
     """
     Gets an altitude measurement and the accompanying measurement Jacobian. The altitude is expected to be measure in Height Above the Ellipsoid (HAE) which
     may not be the most useful coordinate frame. This was not used in the software and thus was never modified.
@@ -172,7 +172,7 @@ def get_altitude_measurement(x, alt_meas: float, sigma: float = 5.0):
     x : (N,) ndarray
         state vector
 
-    alt_meas : float
+    alt_meas : (3,)
         measured altitude in HAE [m]
 
     sigma : float
@@ -180,29 +180,26 @@ def get_altitude_measurement(x, alt_meas: float, sigma: float = 5.0):
 
     Returns
     -------
-    nu : float
+    nu : (3,1)
         measurement innovation vector
 
-    H : (1,N) ndarray
+    H : (3,N) ndarray
         measurement partial matrix
 
-    R : float
+    R : (3,3)
         measurement variance
 
     """
 
     lla = em.ecef2lla(x[0:3])  # convert to LLA in [rad, rad, m (HAE)]
-    H = np.zeros((1, x.shape[0]))  # measurement partial
-    H[0, 0] = np.cos(lla[1]) * np.cos(lla[0])  # partials calculated using ECEF to LLA function; not numerically validated
-    H[0, 1] = np.sin(lla[1]) * np.cos(lla[0])
-    H[0, 2] = np.sin(lla[0])
+    H = np.zeros((3, x.shape[0]))  # measurement partial
+    H[0, 0] = np.cos(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to x
+    H[0, 1] = np.sin(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to y
+    H[0, 2] = np.sin(lla[0]) # partial derivative of alt_meas with respect to z
     
-    #H = np.vstack((H,H,H))
-    
-    nu = (alt_meas - lla[2])#.reshape(3,1)
-    if nu.ndim < 2:
-        nu = np.expand_dims(nu, axis=1)
-    R = sigma ** 2# * np.eye(3)
+    nu = (alt_meas - lla[2]).reshape(3,1)
+
+    R = sigma ** 2 * np.eye(3)
     return nu, H, R
 
 # Credit: Tyler Klein

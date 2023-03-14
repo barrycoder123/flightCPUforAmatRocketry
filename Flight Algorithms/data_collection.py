@@ -130,7 +130,7 @@ elif DEVICE == DEVICES[1]:
         if gps_reading_number == 0:
             dt = GPS_t_sec[10] - GPS_t_sec[0]
         else:
-            dt = GPS_t_sec[imu_reading_number] - GPS_t_sec[imu_reading_number-10]
+            dt = GPS_t_sec[gps_reading_number] - GPS_t_sec[gps_reading_number-10]
         
         if advance: # only increment counter if desired
             gps_reading_number += 1
