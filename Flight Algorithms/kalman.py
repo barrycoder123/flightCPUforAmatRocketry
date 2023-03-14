@@ -181,7 +181,7 @@ def get_altitude_measurement(x, alt_meas: np.ndarray, sigma: float = 5.0):
     x : (N,) ndarray
         state vector
 
-    alt_meas : (3,)
+    alt_meas : (M,)
         measured altitude in HAE [m]
 
     sigma : float
@@ -189,26 +189,28 @@ def get_altitude_measurement(x, alt_meas: np.ndarray, sigma: float = 5.0):
 
     Returns
     -------
-    nu : (3,1)
+    nu : (M,1)
         measurement innovation vector
 
-    H : (3,N) ndarray
+    H : (M,N) ndarray
         measurement partial matrix
 
-    R : (3,3)
+    R : (M,M)
         measurement variance
 
     """
-
     lla = em.ecef2lla(x[0:3])  # convert to LLA in [rad, rad, m (HAE)]
-    H = np.zeros((1, x.shape[0]))  # measurement partial
+    
+    M = alt_meas.shape[0]
+
+    H = np.zeros((M, x.shape[0]))  # measurement partial
     H[0, 0] = np.cos(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to x
     H[0, 1] = np.sin(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to y
     H[0, 2] = np.sin(lla[0]) # partial derivative of alt_meas with respect to z
     
-    nu = (alt_meas - lla[2])#.reshape(3,1)
+    nu = (alt_meas - lla[2]).reshape(M,1)
 
-    R = sigma ** 2# * np.eye(3)
+    R = sigma ** 2 * np.eye(M)
     return nu, H, R
 
 # Credit: Tyler Klein

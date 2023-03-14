@@ -65,15 +65,18 @@ if __name__ == "__main__":
         
         if dc.gps_is_ready():  
             lla, dt = dc.get_next_gps_reading()
+        else:
+            lla = None
             #baro = dc.get_next_barometer_reading()
             #print(baro)
 
             # Update state
             #baro = None
             #print(baro)
-        lla = None
-        #baro = None
-        ekf.update(lla, baro[0], sigma_gps=2.5, sigma_baro=0)
+        #lla = None
+        baro = None
+        #baro = baro[:3]
+        ekf.update(lla, baro, sigma_gps=2.5)
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
