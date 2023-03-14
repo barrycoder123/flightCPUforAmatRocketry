@@ -98,29 +98,32 @@ class EKF:
             - Requires an initialized EKF object
         """
         if (z_gps is None) and (z_baro is None):
+            print("NONE")
             return
+        
+        elif (z_gps is not None) and (z_baro is not None):
+            print("IN BOTH")
+            z_gps_ecef = em.lla2ecef(z_gps)
+            nu_gps, H_gps, R_gps = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement
+            nu_baro, H_baro, R_baro = get_altitude_measurement(self.x, z_baro, sigma_baro)
+            
+            # use vstack and blockdiag to combine nu, H, and R as needed
+            nu = np.vstack((nu_gps, nu_baro))
+            H = np.vstack((H_gps, H_baro))
+            R = scipy.linalg.block_diag(R_gps, R_baro)
 
         # get the measurements
-        if z_gps is not None:
+        elif z_gps is not None:
+            print("GPS")
+            #print("IN GPS")
             z_gps_ecef = em.lla2ecef(z_gps)
-            nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement    
-            #print(nu)    
+            nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement      
         
-        if z_baro is not None:
+        elif z_baro is not None:
+            print("BARO")
+            #print("IN BARO")
             # compute nu, H, R for barometer
-            nu_baro, H_baro, R_baro = get_altitude_measurement(self.x, z_baro, sigma_baro)
-            #print(nu_baro)
-    
-            """
-            # use vstack and blockdiag to combine nu, H, and R as needed
-            nu = np.vstack((nu, nu_baro))
-            H = np.vstack((H, H_baro))
-            R = scipy.linalg.block_diag(R, R_baro)
-            """
-            nu = nu_baro
-            H = H_baro
-            R = R_baro
-            
+            nu, H, R = get_altitude_measurement(self.x, z_baro, sigma_baro)
             #raise NotImplementedError('Barometer measurement not yet implemented')
 
         # generic EKF update equations
@@ -202,11 +205,20 @@ def get_altitude_measurement(x, alt_meas: np.ndarray, sigma: float = 5.0):
     lla = em.ecef2lla(x[0:3])  # convert to LLA in [rad, rad, m (HAE)]
     
     M = alt_meas.shape[0]
+    #print(M)
 
     H = np.zeros((M, x.shape[0]))  # measurement partial
-    H[0, 0] = np.cos(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to x
-    H[0, 1] = np.sin(lla[1]) * np.cos(lla[0]) # partial derivative of alt_meas with respect to y
-    H[0, 2] = np.sin(lla[0]) # partial derivative of alt_meas with respect to z
+    
+    # Populate H matrix
+    H[:, 0] = np.cos(lla[1]) * np.cos(lla[0])
+    H[:, 1] = np.sin(lla[1]) * np.cos(lla[0])
+    H[:, 2] = np.sin(lla[0])
+    # Velocities are not affecting altitude measurements
+    # H[:, 3:6] = 0
+    # Attitude errors are also not affecting altitude measurements
+    # H[:, 6:9] = 0
+    
+    #H = np.vstack((H, H, H))
     
     nu = (alt_meas - lla[2]).reshape(M,1)
 

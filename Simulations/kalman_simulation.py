@@ -10,6 +10,7 @@ PURPOSE: Runs a Kalman Filtering simulation with Draper's test data
 SEE KALMAN.PY FOR DOCUMENTATION ON THE KALMAN FILTERING IMPLEMENTATION
 
 """
+import importlib
 
 import sys
 import numpy as np
@@ -23,6 +24,10 @@ import kalman as kf
 import earth_model as em
 import data_collection as dc
 from misc import plotDataAndError
+
+importlib.reload(kf)
+importlib.reload(em)
+importlib.reload(dc)
 
 if __name__ == "__main__":
     '''
@@ -65,6 +70,7 @@ if __name__ == "__main__":
         
         if dc.gps_is_ready():  
             lla, dt = dc.get_next_gps_reading()
+            #print(lla[2] - baro[0])
         else:
             lla = None
             #baro = dc.get_next_barometer_reading()
@@ -73,10 +79,13 @@ if __name__ == "__main__":
             # Update state
             #baro = None
             #print(baro)
+        lla = None
+        #baro = None
+        #baro = baro[:1]
+        
+        #baro = None
         #lla = None
-        baro = None
-        #baro = baro[:3]
-        ekf.update(lla, baro, sigma_gps=2.5)
+        ekf.update(lla, baro, sigma_gps=2.5, sigma_baro=2.5)
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity

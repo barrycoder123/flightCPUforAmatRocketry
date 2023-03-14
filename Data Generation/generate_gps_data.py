@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-f', '--filename', help='trajectory .csv file', default='traj_raster_30mins_20221115_160156.csv')
     parser.add_argument('-g', '--gps_sigma', help='position error standard deviation [m]', default=2.5, type=float)
-    parser.add_argument('-b', '--baro_sigma', help='altitude error standard deviation [m]', default=0.1, type=float)
+    parser.add_argument('-b', '--baro_sigma', help='altitude error standard deviation [m]', default=2.5, type=float)
     args = parser.parse_args()
 
     pos_cols, vel_cols, quat_cols = get_ecef_column_names()  # for later user
