@@ -97,20 +97,29 @@ class EKF:
         Notes:
             - Requires an initialized EKF object
         """
+        if (z_gps is None) and (z_baro is None):
+            return
 
         # get the measurements
-        z_gps_ecef = em.lla2ecef(z_gps)
-        nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement    
-            
+        if z_gps is not None:
+            z_gps_ecef = em.lla2ecef(z_gps)
+            nu, H, R = get_position_measurement(self.x, z_gps_ecef, sigma_gps)  # GPS measurement    
+            #print(nu)    
+        
         if z_baro is not None:
-            print("IN HERE")
             # compute nu, H, R for barometer
             nu_baro, H_baro, R_baro = get_altitude_measurement(self.x, z_baro, sigma_baro)
+            #print(nu_baro)
     
+            """
             # use vstack and blockdiag to combine nu, H, and R as needed
             nu = np.vstack((nu, nu_baro))
             H = np.vstack((H, H_baro))
             R = scipy.linalg.block_diag(R, R_baro)
+            """
+            nu = nu_baro
+            H = H_baro
+            R = R_baro
             
             #raise NotImplementedError('Barometer measurement not yet implemented')
 
