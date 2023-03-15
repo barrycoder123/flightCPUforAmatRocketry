@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # map_image = plt.imread('map.png')
     # ax.imshow(map_image, zorder=0, extent=BBox, aspect= 'equal')
     # =========================================================================
-    
+
     # plot altitude (above sea level) for sanity check
     plt.figure()
     plt.plot(r_lla[2,:])
