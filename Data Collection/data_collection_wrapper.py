@@ -18,15 +18,20 @@ FUNCTIONS:
     get_initial_state_and_quaternion()
     
 """
+
 import platform
+import importlib
 
 class DataCollector:
     
-    def __new__(cls):
+    def __init__(self):
+        pass
+    
+    def create(self):
         
         # For Zack on a Mac
         if platform.processor() == 'i386':
-            return cls.__file_data_collector()
+            return self.__file_data_collector()
         
         # Print welcome messages and instructions
         print("Welcome to the Data Collection module!") 
@@ -41,9 +46,9 @@ class DataCollector:
         
         # Choose subclass based on selection
         if val == 1:
-            return cls.__file_data_collector()
+            return self.__file_data_collector()
         if val == 2:
-            return cls.__sensor_data_collector()
+            return self.__sensor_data_collector()
         else:
             print("Unrecognized input, try again...")
             assert(False)
@@ -61,18 +66,12 @@ class DataCollector:
         raise NotImplementedError("Did you forget to call DataCollector().create() ?")
            
     @classmethod
-    def __file_data_collector(cls):
+    def __file_data_collector(self):
         from file_data_collector import FileDataCollector
         return FileDataCollector()
     
     @classmethod
-    def __sensor_data_collector(cls):
+    def __sensor_data_collector(self):
         from sensor_data_collector import SensorDataCollector
         return SensorDataCollector()
-
-"""
-IMPORTANT: Set DEVICE variable to DEVICES[1] if running simulation, or DEVICES[0] if running on the actual rocket
-"""
-DEVICES = ["BEAGLEBONE", "TESTING ON PC"]
-DEVICE = DEVICES[1]
 

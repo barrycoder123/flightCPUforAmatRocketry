@@ -17,7 +17,7 @@ class FileDataCollector(DataCollector):
         """
         All the code that falls below this else statement is for simulation purposes only. Instead of getting data from sensors, the simulation gets data from the datafiles
         """
-        
+        print("HERE")
         # code for simulation on PC
         self.imu_reading_number = 0
         self.gps_reading_number = 0

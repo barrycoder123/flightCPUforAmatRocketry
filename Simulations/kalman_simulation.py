@@ -24,13 +24,13 @@ sys.path.append('../Test Data')
 
 import kalman as kf
 import earth_model as em
-import data_collection_wrapper as dcw
-import plot_data_logger as pdl
+import data_logging_wrapper as dl
+import data_collection_wrapper as dc
 
 importlib.reload(kf)
 importlib.reload(em)
-importlib.reload(dcw)
-importlib.reload(pdl)
+importlib.reload(dc)
+importlib.reload(dl)
 
 if __name__ == "__main__":
     """
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     print("Kalman Filtering Simulation")
 
     # Initialize the Data Collector module
-    collector = dcw.DataCollector()
+    collector = dc.DataCollector().create()
     num_points = collector.num_points
     
     # Initialize the Extended Kalman Filter module
@@ -49,12 +49,13 @@ if __name__ == "__main__":
     ekf = kf.EKF(x, q_true)
     
     # Initialize the Data Logging module
-    logger = pdl.DataLoggerPlot(num_points)
+    logger = dl.DataLogger(num_points).create()
     
     # For debugging: store the covariance at each step
     PHist = np.zeros((9, 9, num_points))  # to store the covariance at each step
 
     # ========================== filter ==========================
+    print("Running Extended Kalman Filter...")
     for i in range(num_points):
 
         # Read IMU
