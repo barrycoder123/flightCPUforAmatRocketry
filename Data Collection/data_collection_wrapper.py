@@ -25,7 +25,7 @@ class DataCollector:
     def __new__(cls):
         
         # For Zack on a Mac
-        if platform.processor() != 'i386':
+        if platform.processor() == 'i386':
             return cls.__file_data_collector()
         
         # Print welcome messages and instructions
