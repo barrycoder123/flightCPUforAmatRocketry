@@ -212,7 +212,7 @@ def grav_gradient(r_ecef, eps=1e-6):
 #
 # Compute the quaternion of a body pointing straight upwards
 # Used to initialize the rocket's quaternion
-def lla2quat(lat, lon, alt):
+def lla2quat(lla):
     """
     Convert GPS position to a quaternion of a body pointing straight up
 
@@ -222,6 +222,8 @@ def lla2quat(lat, lon, alt):
     Returns:
     - quat: 4-dimensional quaternion, [qs, qi, qj, qk]
     """
+    
+    lat, lon, alt = lla
 
     # Convert LLA coordinates to ECEF coordinates
     x, y, z = lla2ecef(lat, lon, alt)

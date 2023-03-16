@@ -51,8 +51,7 @@ if __name__ == "__main__":
     PHist = np.zeros((9, 9, num_points))  # to store the covariance at each step
     
     # Initialize state vectors and matrices
-    x = dc.get_first_position()
-    q_true = dc.get_first_quaternion()
+    x, q_true = dc.get_initial_state_and_quaternion()
     ekf = kf.EKF(x, q_true)
 
     # ========================== filter ==========================
@@ -69,7 +68,7 @@ if __name__ == "__main__":
 
         # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
-        lla, dt = dc.get_next_gps_reading()
+        lla = dc.get_next_gps_reading()
         #lla = None
         #print(lla)
 

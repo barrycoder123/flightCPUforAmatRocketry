@@ -94,7 +94,7 @@ class FileDataCollector():
         """
         
         if not self.gps_is_ready():
-            return None, -1
+            return None
         
         # read from the GPS    
         reading = self.GPS_data[self.gps_reading_number, 0:3]
@@ -108,7 +108,7 @@ class FileDataCollector():
         if advance: # only increment counter if desired
             self.gps_reading_number += 1
        
-        return reading, dt
+        return reading
     
 
     def get_next_barometer_reading(self):
@@ -129,20 +129,17 @@ class FileDataCollector():
         return reading
     
     
-    def get_first_position(self):
+    def get_initial_state_and_quaternion(self):
+        """
+        returns the initial state vector and initial Quaternion
+        
+        Returns:
+            - state vector (9,)
+            - quaternion (4,)
+        """
         
         r_ecef = self.imu_file_data[0, 1:4].flatten()
         v_ecef = self.imu_file_data[0, 4:7].flatten()
         a_ecef = np.zeros(3)
         
-        return np.concatenate((r_ecef, v_ecef, a_ecef)) # [1527850.153, -4464959.009, 4276353.59, 3.784561502, 1.295026731, -1.11E-16, 0, 0, 0]
-
-
-    def get_first_quaternion(self):
-        """
-        returns the initial state of the Quaternion
-        
-        Returns:
-            - a 4 x 1 quaternion, in the form [qs, qi, qj, qk]
-        """
-        return self.imu_file_data[0, 7:11]
+        return np.concatenate((r_ecef, v_ecef, a_ecef)), self.imu_file_data[0, 7:11] 

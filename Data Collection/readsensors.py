@@ -30,21 +30,21 @@ period = 1/sample_rate_Hz
 
 # Function Definitions
 
-def readaccel(last_accel):
+def read_accel(last_accel):
     try:
         accel = imu.acceleration
     except RuntimeError:
         print("error reading acceleration, using previous value")
         accel = last_accel
     return accel
-def readgyro(last_gyro):
+def read_gyro(last_gyro):
     try:
         gyro = imu.gyro
     except RuntimeError:
         print("error reading gyroscope, using previous value")
         gyro = last_gyro
     return gyro
-def readbaro(last_baro):
+def read_baro(last_baro):
     try:
         baro = readALT()
     except RuntimeError:
@@ -55,9 +55,9 @@ def readbaro(last_baro):
 def collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro):
     global last_time
     
-    last_gyro = readgyro(last_gyro)
-    last_accel = readaccel(last_accel)
-    last_baro = readbaro(last_baro)
+    last_gyro = read_gyro(last_gyro)
+    last_accel = read_accel(last_accel)
+    last_baro = read_baro(last_baro)
     time_step = time.perf_counter()-last_time
     last_time = last_time+time_step
     

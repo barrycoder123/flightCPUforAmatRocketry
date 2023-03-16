@@ -9,24 +9,23 @@ Created on Thu Mar 16 13:06:09 2023
 import sys
 import time
 import numpy as np
-import readsensors as rs
 
 sys.path.append('../Flight Algorithms')
 
 import earth_model as em
-import quaternion as qt
+from gps_code_modified import read_gps
+from readsensors import read_accel, read_gyro, read_baro
 
 class SensorDataCollector:
 
     def __init__(self):
         
         self.last_time = time.perf_counter()
+        
+        self.accel_xyz = np.zeros(3)
+        self.gyro_xyz = np.zeros(3)
+        self.three_baros = np.zeros(3)
     
-    """
-    All the code that falls in this if statement is for the real-time flight computer. As we get our sensors working, we will add the data here
-    """
-    
-    print("Running on the BeagleBone AI")
     
     def get_next_imu_reading(self, advance=True):
         """
@@ -42,13 +41,14 @@ class SensorDataCollector:
         """
         
         # extract the next acceleration and angular rotation
-        accel_xyz = rs.readaccel()
-        gyro_xyz = rs.readgyro()
+        self.accel_xyz = read_accel(self.accel_xyz)
+        self.gyro_xyz = read_gyro(self.accel_xyz)
         
-        dt = time.perf_counter() - self.last_time
-        self.last_time += dt
+        current_time = time.perf_counter()
+        dt = current_time - self.last_time
+        self.last_time = current_time
         
-        return accel_xyz, gyro_xyz, dt
+        return self.accel_xyz, self.gyro_xyz, dt
     
 
     def get_next_gps_reading(self, advance=True):        
@@ -62,7 +62,13 @@ class SensorDataCollector:
             - reading: 3 x 1 Numpy array [lat, long, atti]
             - dt: time step
         """
-        raise NotImplementedError("GPS Reading Not Implemented")
+        
+        llas = read_gps()
+        
+        if llas is None:
+            return None
+        
+        return llas[0:3] # ignore satellites
     
 
     def get_next_barometer_reading(self):
@@ -76,32 +82,29 @@ class SensorDataCollector:
             - reading: (3,1) or (3,) numpy array of three readings [baro1, baro2, baro3]
         """
         
-        three_baros = np.zeros(3)
-        
-        three_baros[0] = rs.readbaro()
-        three_baros[1] = rs.readbaro()
-        three_baros[2] = rs.readbaro()
+        self.three_baros[0] = read_baro(self.three_baros[0])
+        self.three_baros[1] = read_baro(self.three_baros[1])
+        self.three_baros[2] = read_baro(self.three_baros[2])
 
-        return three_baros
+        return self.three_baros
     
     
-    def get_first_position(self):
+    def get_initial_state_and_quaternion(self):
+        """
+        returns the initial state vector and initial Quaternion
         
-        lla = self.get_next_gps_reading()
+        Returns:
+            - state vector (9,)
+            - quaternion (4,)
+        """
+        
+        lla = read_gps()
+        while lla is None:
+            lla = read_gps()
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest
         a_ecef = np.zeros(3) # initially no attitude error
+        q_e2b = em.lla2quat(lla)
         
-        return np.concatenate((r_ecef, v_ecef, a_ecef)) # [1527850.153, -4464959.009, 4276353.59, 3.784561502, 1.295026731, -1.11E-16, 0, 0, 0]
-
-
-    def get_first_quaternion(self):
-        """
-        returns the initial state of the Quaternion
-        
-        Returns:
-            - a 4 x 1 quaternion, in the form [qs, qi, qj, qk]
-        """
-        
-        return qt.lla2qu
+        return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b
