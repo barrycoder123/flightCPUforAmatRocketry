@@ -51,7 +51,6 @@ if __name__ == "__main__":
     PVA_est = np.zeros((10, num_points))
     PHist = np.zeros((9, 9, num_points))  # to store the covariance at each step
 
-    
     # Import and format data
     print("Opening file for truth data...")
     data = pd.read_csv("../Test Data/traj_raster_30mins_20221115_160156.csv").to_numpy()
@@ -72,8 +71,6 @@ if __name__ == "__main__":
         # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
         lla = dc.get_next_gps_reading()
-        #lla = None
-        #print(lla)
 
         # Update
         baro = None
