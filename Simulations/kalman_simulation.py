@@ -22,12 +22,12 @@ sys.path.append('../Data Generation')
 
 import kalman as kf
 import earth_model as em
-import data_collection as dc
+import file_data_collection as fdc
 from misc import plotDataAndError
 
 importlib.reload(kf)
 importlib.reload(em)
-importlib.reload(dc)
+importlib.reload(fdc)
 
 if __name__ == "__main__":
     '''
@@ -44,11 +44,12 @@ if __name__ == "__main__":
 
     # Holds our results, for plotting
     print("Initializing arrays...")
-    PVA_est = np.zeros((10, dc.num_points))
-    PHist = np.zeros((9, 9, dc.num_points))  # to store the covariance at each step
-
+    dc = fdc.FileDataCollector()
+    num_points = dc.num_points
+    PVA_est = np.zeros((10, num_points))
+    PHist = np.zeros((9, 9, num_points))  # to store the covariance at each step
+    
     # Initialize state vectors and matrices
-    dc.reset()
     x = dc.get_first_position()
     q_true = dc.get_first_quaternion()
     ekf = kf.EKF(x, q_true)
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
     i = 0
-    while not dc.done():
+    while i < num_points:
 
         # Read IMU
         accel, gyro, dt = dc.get_next_imu_reading()
