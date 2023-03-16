@@ -1,0 +1,120 @@
+%%%%%%%%%%%%%%%%%%%%%%%
+% Author: Ibrahima Barry
+%%%%%%%%%%%%%%%%%%%%%%%
+
+% This portion of the LaTeX document are configuration 
+% You can see it as all the equivalent of "#include" in C++
+\documentclass[12pt]{article}
+
+% These three lines add some packages to the LaTeX.
+% This is the equivalent of #include from C++ (importing known libraries)
+% The libraries help inserting figures, use math statements, and so on
+\usepackage{epsfig}
+\usepackage{amsmath,amsthm}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{graphics}
+\usepackage{pgfplots, pgfplotstable}
+\pgfplotsset{width=10cm,compat=1.9}
+\usetikzlibrary{calc}
+\graphicspath{ {./images/} }
+\usepackage{geometry}
+\geometry{
+    a4paper,
+    total={170mm, 257mm},
+    left=12mm,
+    right=12mm,
+    top=20mm,
+}
+\setlength{\parindent}{4em}
+\setlength{\parskip}{1em}
+\renewcommand{\baselinestretch}{1.5}
+
+% These lines describe the environments we will use: Lemma and Theorem
+% Although may sound repetitive to declare that our lemma will be displayed as Lemma
+% it is needed so that LaTeX can write documents in other languages 
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+
+% The commands below change the bold text where it says "Section" into "Question"
+\usepackage{titlesec}
+\titleformat{\section}
+{\normalfont\Large\bfseries}{\thesection}{1em}{} % the section{text}
+% will automatically say "Question"
+
+%Commands below change page margins (this much space at the titlepage, etc)
+\newlength{\toppush}
+\setlength{\toppush}{2\headheight}
+\addtolength{\toppush}{\headsep}
+
+%Name and subject of the class
+\def\subjnum{EE 98}
+\def\subjname{Senior Design}
+
+%Name of the student, university name and which semester
+\def\doheading#1#2#3{\vfill\eject\vspace*{-\toppush}%
+  \vbox{\hbox to\textwidth{{\bf} \subjnum: \subjname \hfil Celestial Blue}%
+    \hbox to\textwidth{{\bf} Tufts University, Spring 2023 \hfil#3\strut}%
+    \hrule}}
+
+%Command for the title of the document (Homework 0)
+\newcommand{\htitle}[1]{\vspace*{1.25ex plus 1ex minus 0ex}%
+\begin{center}
+{\large\bf #1}
+\end{center}} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BEGIN DOCUMENT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\newcommand{\keyword}{\textit{neg}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\el}{$\ell$}
+\doheading{2}{title}{}
+\begin{flushleft}
+\section{State Transition Matrix}
+
+\begin{equation}
+\hat{X}_{k} =
+\begin{bmatrix}
+r_x  \\
+r_y \\
+r_z  \\
+\dot{r}_x \\
+\dot{r}_y \\
+\dot{r}_z \\
+q_{e2b, i} \\
+q_{e2b, j} \\
+q_{e2b, k} \\
+||q_{e2b}||
+\end{bmatrix}
+\end{equation}
+%100
+$$ \hat{\textbf{x}}_{k|k-1} = f(\hat{x}_{k|k-1}, u_k) $$
+$f$ is one step of the IMU strapdown. We're not currently able to
+solve the Jacobian of $f$.\\
+$$P_{k|k-1} = F_{k} P_{k|k-1} F_{k}^T + Q_{k} $$ \\
+\text{ $Q$ is a constant diag mat we tune and is the measurement noise.}
+\begin{equation} 
+x_{k+1} = x_{k} + v dt
+\end{equation}
+\begin{equation} 
+\tilde{\boldsymbol{y}}_{k} = \boldsymbol{z}_{k} - h(\hat{\boldsymbol{x}}_{k|k-1})
+\text{ where $ \boldsymbol{z}_{k} $ is elements 0 - 2 of the state vector}
+\end{equation}
+Measurement matrix $H_{gps}$ is the Jacobian of lla wrt ecef (script provided by tyler). \\
+near-optimal Kalman Gain 
+\begin{equation}
+\boldsymbol{K}_{k} = \boldsymbol{P}_{k|k-1}{{\boldsymbol{H}_{k}^T}}\boldsymbol{S}_{k}^{-1}
+\end{equation}
+Updated state estimate
+\begin{equation}
+\boldsymbol{x}_{k|k} = \hat{\boldsymbol{x}}_{k|k-1} + \boldsymbol{K}_{k}\tilde{\boldsymbol{y}}_{k}
+\end{equation}
+Updated covariance estimate 
+\begin{equation}
+\boldsymbol{P}_{k|k} = (\boldsymbol{I} - \boldsymbol{K}_{k} {{\boldsymbol{H}_{k}}})\boldsymbol{P}_{k|k-1}
+\end{equation}
+\end{flushleft}
+\end{document}
