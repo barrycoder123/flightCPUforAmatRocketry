@@ -31,6 +31,8 @@ if __name__ == "__main__":
     1. Collects input data and runs Kalman Filtering
     2. Logs the results (plotting)
     """
+    
+    # ========================== setup ==========================
     print("Kalman Filtering Simulation")
 
     # Initialize the Data Collector module
@@ -70,14 +72,3 @@ if __name__ == "__main__":
     print("Logging results...")
 
     logger.show()
-    #plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)
-
-
-    # fig, axs = plt.subplots(3, 1, sharex=True, figsize=(11, 8))
-    # for i, (ax, lab) in enumerate(zip(axs, ['X', 'Y', 'Z'])):
-    #     ax.plot(PVA_truth[i, :] - PVA_truth[i, 0], label='Truth')
-    #     ax.plot(PVA_est[i, :] - PVA_truth[i, 0], label='Estimate')
-    #     ax.set_title(f"{lab} ECEF Position (minus start)\nWITH KALMAN FILTERING (GPS + IMU)")
-    #     ax.legend()
-    #     ax.grid(True)
-    # plt.tight_layout()
