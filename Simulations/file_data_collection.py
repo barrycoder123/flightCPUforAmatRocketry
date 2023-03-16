@@ -157,15 +157,3 @@ class FileDataCollector():
         self.imu_reading_number = 0
         self.gps_reading_number = 0
         self.baro_reading_number = 0
-        
-
-    def done(self):
-        """
-        return True if there is no more data to read, False if not
-        for simulation only
-
-        """
-        if (self.imu_reading_number >= self.num_points) or (self.gps_reading_number >= self.num_points):
-            return True
-        
-        return False
