@@ -8,6 +8,7 @@ Created on Sat Mar  4 12:22:46 2023
 
 PURPOSE: Library for data collection from hardware sensors
 
+CLASS: 
 
 FUNCTIONS:
     get_next_imu_reading()
@@ -29,7 +30,7 @@ IMPORTANT: Set DEVICE variable to DEVICES[1] if running simulation, or DEVICES[0
 DEVICES = ["BEAGLEBONE", "TESTING ON PC"]
 DEVICE = DEVICES[1]
 
-if DEVICE == DEVICES[0]:
+if 0: #DEVICE == DEVICES[0]:
     
     import sys
     import time
