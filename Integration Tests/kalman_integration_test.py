@@ -30,9 +30,8 @@ importlib.reload(dl)
 
 if __name__ == "__main__":
     """
-    1. Imports test data
-    2. Runs Kalman Filtering on the data
-    3. Compares results of Kalman Filter to truth data (run the code and see plots)
+    1. Collects input data and runs Kalman Filtering
+    2. Logs the results (plotting)
     """
     print("Kalman Filtering Simulation")
 
