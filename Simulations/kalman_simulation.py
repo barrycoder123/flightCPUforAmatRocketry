@@ -68,12 +68,9 @@ if __name__ == "__main__":
         # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
         lla, dt = dc.get_next_gps_reading()
+        lla = None
         #print(lla)
 
-        #baro = None
-        #baro = baro[:1]
-        baro = None
-        
         # Update
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=0)
 
