@@ -246,10 +246,6 @@ def lla2quat(lla):
     return quat
 
 
-# lla_jacobian
-#
-# Computes the Jacobian of (lat, lon, alt) in [rad, rad, m (HAE)] w.r.t ECEF position in [meters]
-# Used to implement our "h" function for Kalman Filtering
 # Credit: Tyler Klein
 def lla_jacobian(r_ecef, HAE=True):
     """

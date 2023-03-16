@@ -71,6 +71,7 @@ if __name__ == "__main__":
         # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
         lla = dc.get_next_gps_reading()
+        #lla = None
 
         # Update
         baro = None
