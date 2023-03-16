@@ -18,16 +18,15 @@ FUNCTIONS:
 """
 
 import numpy as np
-import pandas as pd
-import data_collection as dc
 
-WE = 7.2921151467e-05; # rad/sec
-omega = np.array([0, 0, WE]);
+WE = 7.2921151467e-05  # rad/sec
+omega = np.array([0, 0, WE])
 
 # Define the WGS84 ellipsoid parameters
-a = 6378137.0 # semi-major axis of Earth, in meters
-b = 6356752.314245 # semi-minor axis of Earth, in meters
-e = 0.0818191908426 # eccentricity of Earth
+a = 6378137.0  # semi-major axis of Earth, in meters
+b = 6356752.314245  # semi-minor axis of Earth, in meters
+e = 0.0818191908426  # eccentricity of Earth
+
 
 # ecef2lla
 #
@@ -39,38 +38,37 @@ def ecef2lla(xyz):
     Converts xyz position to GPS position
 
     Args:
-    - xyz: 3-dimensional ECEF xyz position [x, y, z]
+    - xyz: (3,N) ECEF xyz position [meters]
 
     Returns:
-    - lla: 3-dimensional GPS lla position [lat, long, atti]
-    - atti is height above sea level, as opposed to center of earth
+    - lla: (3,N) dimensional GPS lla position [lat (deg), lon (deg), alt (meters)]
+    - alt is height above sea level, as opposed to center of earth
+
     """
-    x, y, z = xyz    
+    if xyz.ndim < 2:  # force 2D
+        xyz = xyz.reshape(-1, 1)  # forces vector to a column if 1D
+
+    x = xyz[0, :]
+    y = xyz[1, :]
+    z = xyz[2, :]
 
     f = (a - b) / a
 
-    e_sq = f * (2 - f)                       
+    e_sq = f * (2 - f)
     eps = e_sq / (1.0 - e_sq)
 
-    p = np.sqrt(np.multiply(x,x) + np.multiply(y,y))
+    p = np.sqrt(np.multiply(x, x) + np.multiply(y, y))
     q = np.arctan2((z * a), (p * b))
-
-    sin_q = np.sin(q)
-    cos_q = np.cos(q)
-
-    sin_q_3 = sin_q * sin_q * sin_q
-    cos_q_3 = cos_q * cos_q * cos_q
-
-    phi = np.arctan2((z + eps * b * sin_q_3), (p - e_sq * a * cos_q_3))
+    phi = np.arctan2((z + eps * b * np.sin(q) ** 3), (p - e_sq * a * np.cos(q) ** 3))
     lam = np.arctan2(y, x)
 
     v = a / np.sqrt(1.0 - e_sq * np.sin(phi) * np.sin(phi))
-    h   = (p / np.cos(phi)) - v
+    h = (p / np.cos(phi)) - v
 
     lat = np.degrees(phi)
     lon = np.degrees(lam)
-    
-    return np.array([lat, lon, h])
+
+    return np.vstack([lat, lon, h])
 
 
 def lla2ecef(lla):
@@ -78,15 +76,15 @@ def lla2ecef(lla):
     Converts xyz position to GPS position
 
     Args:
-    - lla: 3-dimensional GPS lla position [lat, long, atti]
+    - lla: 3-dimensional GPS lla position [lat (deg), lon (deg), alt (meters)]
     - atti is height above sea level, as opposed to center of earth
 
     Returns:
     - xyz: 3-dimensional ECEF xyz position [x, y, z]
     """
-    
+
     lat, lon, h = lla
-    
+
     f = (a - b) / a
 
     e_sq = f * (2 - f)
@@ -99,7 +97,7 @@ def lla2ecef(lla):
     # Compute geocentric latitude
     sin_phi = np.sin(phi)
     cos_phi = np.cos(phi)
-    N = a / np.sqrt(1 - e_sq * sin_phi**2)
+    N = a / np.sqrt(1 - e_sq * sin_phi ** 2)
     x = (N + h) * cos_phi * np.cos(lam)
     y = (N + h) * cos_phi * np.sin(lam)
     z = (N * (1 - e_sq) + h) * sin_phi
@@ -112,13 +110,13 @@ def lla2ecef(lla):
 # determine pressure from altitude
 
 def alt2pres(altitude):
-    '''
+    """
     Determine site pressure from altitude.
 
     Parameters
     ----------
-    Altitude : scalar or Series
-        Altitude in meters above sea level 
+    altitude : scalar or Series
+        Altitude in meters above sea level
 
     Returns
     -------
@@ -145,22 +143,21 @@ def alt2pres(altitude):
 
     1. "A Quick Derivation relating altitude to air pressure" from Portland
     State Aerospace Society, Version 1.03, 12/22/2004.
-    
+
     2. https://pvlib-python.readthedocs.io/en/v0.2.2/_modules/pvlib/atmosphere.html
-    '''
+    """
 
     press = 100 * ((44331.514 - altitude) / 11880.516) ** (1 / 0.1902632)
-    
+
     return press
 
 
-
-def xyz2grav(x, y, z):    
+def xyz2grav(x, y, z):
     """
     Ellipsoid Earth gravity model
 
     Args:
-    - x, y, z: three dimensional ECEF position
+    - x, y, z: three-dimensional ECEF position
     
     Returns:
     - g: gravity vector [gx, gy, gz]
@@ -169,17 +166,18 @@ def xyz2grav(x, y, z):
     j2 = 0.00108263
     mu = 3.986004418e14
     R = 6378137
-    r = np.sqrt(x**2 + y**2 + z**2)
-    sub1 = 1.5*j2*((R/r)**2)
-    sub2 = (5*z**2)/(r**2)
-    sub3 = (-mu)/(r**3)
-    sub4 = sub3 * (1 - sub1 * (sub2 - 1));
+    r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    sub1 = 1.5 * j2 * ((R / r) ** 2)
+    sub2 = (5 * z ** 2) / (r ** 2)
+    sub3 = (-mu) / (r ** 3)
+    sub4 = sub3 * (1 - sub1 * (sub2 - 1))
     gx = x * (sub4)
-    gy = y * (sub4);
-    gz = z * (sub3) * (1 - sub1 * (sub2 - 3));
-    g = np.array([gx, gy, gz]);
-    g = g[:] #Force column
+    gy = y * (sub4)
+    gz = z * (sub3) * (1 - sub1 * (sub2 - 3))
+    g = np.array([gx, gy, gz])
+    g = g[:]  # Force column
     return g
+
 
 # grav_gradient
 #
@@ -194,11 +192,11 @@ def grav_gradient(r_ecef, eps=1e-6):
     Returns:
     - gradient: 3-D gravity gradient [gx, gy, gz]
     """
-    
+
     x, y, z = r_ecef
-    
+
     # Initialize the gradient vector
-    gradient = np.zeros((3,3))
+    gradient = np.zeros((3, 3))
 
     # Compute the partial derivatives using finite differences
     gradient[:, 0] = (xyz2grav(x + eps, y, z) - xyz2grav(x - eps, y, z)) / (2 * eps)
@@ -212,7 +210,7 @@ def grav_gradient(r_ecef, eps=1e-6):
 #
 # Compute the quaternion of a body pointing straight upwards
 # Used to initialize the rocket's quaternion
-def lla2quat(lat, lon, alt):
+def lla2quat(lla):
     """
     Convert GPS position to a quaternion of a body pointing straight up
 
@@ -223,6 +221,8 @@ def lla2quat(lat, lon, alt):
     - quat: 4-dimensional quaternion, [qs, qi, qj, qk]
     """
     
+    lat, lon, alt = lla
+
     # Convert LLA coordinates to ECEF coordinates
     x, y, z = lla2ecef(lat, lon, alt)
 
@@ -314,27 +314,3 @@ def lla_jacobian(r_ecef, HAE=True):
 
     J = np.vstack((grad_lat, grad_lon, grad_alt))
     return J
-
-
-if __name__ == "__main__":
-    print("MAIN")
-    
-    """
-    file_data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy()
-    
-    gps_data, dt = dc.get_next_gps_reading()
-    first_quat = file_data[0, 7:11]
-    
-    test_quat = lla2quat(gps_data[0], gps_data[1], gps_data[2])
-    
-    print(first_quat, test_quat)
-    """
-    
-    """
-    xyz = [6000000, 6100000, 6200000]
-    lla = ecef2lla(xyz)
-    print(lla)
-    back = lla2ecef(lla)
-    print(xyz,back)
-    """
-    
