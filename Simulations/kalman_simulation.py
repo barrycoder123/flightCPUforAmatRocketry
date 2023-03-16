@@ -69,14 +69,12 @@ if __name__ == "__main__":
         # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
         lla, dt = dc.get_next_gps_reading()
+        lla = None
         #print(lla)
 
-        #baro = None
-        #baro = baro[:1]
-        baro = None
-        
         # Update
-        ekf.update(lla, baro, sigma_gps=5, sigma_baro=0)
+        baro = baro[:1] # try just one barometer before all three
+        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
