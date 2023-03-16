@@ -23,12 +23,12 @@ sys.path.append('../Test Data')
 
 import kalman as kf
 import earth_model as em
-import file_data_collection as fdc
+import data_collection_wrapper as dcw
 from misc import plotDataAndError
 
 importlib.reload(kf)
 importlib.reload(em)
-importlib.reload(fdc)
+importlib.reload(dcw)
 
 if __name__ == "__main__":
     '''
@@ -38,26 +38,27 @@ if __name__ == "__main__":
     '''
     print("Kalman Filtering Simulation")
 
+    # Initialize the data collection module
+    dc = dcw.DataCollector().create()
+    num_points = dc.num_points
+    x, q_true = dc.get_initial_state_and_quaternion()
+    ekf = kf.EKF(x, q_true)
+    
+    # Initialize state vectors and matrices
+    print("Initializing arrays...")
+    PVA_est = np.zeros((10, num_points))
+    PHist = np.zeros((9, 9, num_points))  # to store the covariance at each step
+
+    
     # Import and format data
     print("Opening file for truth data...")
     data = pd.read_csv("../Test Data/traj_raster_30mins_20221115_160156.csv").to_numpy()
     PVA_truth = data[:, 1:11].T
 
-    # Holds our results, for plotting
-    print("Initializing arrays...")
-    dc = fdc.FileDataCollector()
-    num_points = dc.num_points
-    PVA_est = np.zeros((10, num_points))
-    PHist = np.zeros((9, 9, num_points))  # to store the covariance at each step
-    
-    # Initialize state vectors and matrices
-    x, q_true = dc.get_initial_state_and_quaternion()
-    ekf = kf.EKF(x, q_true)
-
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
-    i = 0
-    while i < num_points:
+
+    for i in range(num_points):
 
         # Read IMU
         accel, gyro, dt = dc.get_next_imu_reading()
@@ -81,7 +82,6 @@ if __name__ == "__main__":
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
         PVA_est[6:10, i] = ekf.q_e2b
         PHist[:, :, i] = ekf.P  # store the covariance
-        i += 1
 
     # ========================== plotting ==========================
     print("Plotting results...")
