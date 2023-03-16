@@ -15,8 +15,9 @@ sys.path.append('../Flight Algorithms')
 import earth_model as em
 from gps_code_modified import read_gps
 from readsensors import read_accel, read_gyro, read_baro
+from data_collection_wrapper import DataCollector
 
-class SensorDataCollector:
+class SensorDataCollector(DataCollector):
 
     def __init__(self):
         

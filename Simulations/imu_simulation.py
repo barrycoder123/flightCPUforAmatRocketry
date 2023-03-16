@@ -18,7 +18,7 @@ sys.path.append('../Data Collection')
 sys.path.append('../Test Data')
 
 import strapdown as sd
-import file_data_collection as fdc
+import data_collection_wrapper as dcw
 
 from misc import get_imu_column_names, get_ecef_column_names, plotDataAndError#, #progressBar
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     t_col, accel_cols, gyro_cols, mag_cols = get_imu_column_names()  # for later user
     pos_cols, vel_cols, quat_cols = get_ecef_column_names()  # for later user
 
-    dc = fdc.FileDataCollector()
+    dc = dcw.DataCollector().create()
     num_points = dc.num_points
 
     # Import and format data

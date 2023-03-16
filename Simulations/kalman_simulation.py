@@ -39,7 +39,7 @@ if __name__ == "__main__":
     print("Kalman Filtering Simulation")
 
     # Initialize the data collection module
-    dc = dcw.DataCollector().create()
+    dc = dcw.DataCollector()
     num_points = dc.num_points
     x, q_true = dc.get_initial_state_and_quaternion()
     ekf = kf.EKF(x, q_true)
