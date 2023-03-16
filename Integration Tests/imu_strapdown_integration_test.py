@@ -8,8 +8,6 @@ Created on Thu Mar 16 17:11:00 2023
 
 import sys
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 
 sys.path.append('../Flight Algorithms')
 sys.path.append('../Data Collection')

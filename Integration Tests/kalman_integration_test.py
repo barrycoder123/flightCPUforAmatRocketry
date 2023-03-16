@@ -19,12 +19,10 @@ sys.path.append('../Data Logging')
 sys.path.append('../Test Data')
 
 import kalman as kf
-import earth_model as em
 import data_logging_wrapper as dl
 import data_collection_wrapper as dc
 
 importlib.reload(kf)
-importlib.reload(em)
 importlib.reload(dc)
 importlib.reload(dl)
 
@@ -45,9 +43,6 @@ if __name__ == "__main__":
     
     # Initialize the Data Logging module
     logger = dl.DataLogger(num_points).create()
-    
-    # For debugging: store the covariance at each step
-    PHist = np.zeros((9, 9, num_points))  # to store the covariance at each step
 
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
@@ -70,9 +65,6 @@ if __name__ == "__main__":
         
         # Log the data
         logger.save(ekf.x, ekf.q_e2b)
-
-        # For debugging: store the covariance
-        PHist[:, :, i] = ekf.P  # store the covariance
 
     # ========================== plotting ==========================
     print("Logging results...")
