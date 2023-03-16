@@ -21,6 +21,11 @@ class SensorDataCollector(DataCollector):
 
     def __init__(self):
         
+        print("Please choose the time you'd like to run for (seconds)")
+        val = int(input(">> "))
+        dt = 0.1
+        self.num_points = val / dt # divide by timestep dt
+        
         self.last_time = time.perf_counter()
         
         self.accel_xyz = np.zeros(3)

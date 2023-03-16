@@ -76,7 +76,7 @@ if __name__ == "__main__":
         PHist[:, :, i] = ekf.P  # store the covariance
 
     # ========================== plotting ==========================
-    print("Plotting results...")
+    print("Logging results...")
 
     logger.show()
     #plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)

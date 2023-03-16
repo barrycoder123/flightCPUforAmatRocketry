@@ -33,7 +33,7 @@ if __name__ == "__main__":
     t_col, accel_cols, gyro_cols, mag_cols = get_imu_column_names()  # for later user
     pos_cols, vel_cols, quat_cols = get_ecef_column_names()  # for later user
 
-    dc = dcw.DataCollector()
+    dc = dcw.DataCollector().create()
     num_points = dc.num_points
 
     # Import and format data

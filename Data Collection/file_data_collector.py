@@ -6,6 +6,7 @@ Created on Thu Mar 16 12:25:45 2023
 @author: zrummler
 """
 
+import os
 import numpy as np
 import pandas as pd
 from data_collection_wrapper import DataCollector
@@ -20,12 +21,14 @@ class FileDataCollector(DataCollector):
         self.baro_reading_number = 0
         
         # reading IMU data
-        self.imu_file_data = pd.read_csv("../Test Data/traj_raster_30mins_20221115_160156.csv").to_numpy();  
+        file_path = "../Test Data/traj_raster_30mins_20221115_160156.csv"
+        self.imu_file_data = pd.read_csv(file_path).to_numpy();  
         self.IMU_data = self.imu_file_data[:, 11:17];
         self.IMU_t_sec = self.imu_file_data[:, 0]
             
         # reading GPS data
-        self.gps_file_data = pd.read_csv("../Test Data/gps_and_barometer_data.csv").to_numpy();
+        file_path = "../Test Data/gps_and_barometer_data.csv"
+        self.gps_file_data = pd.read_csv(file_path).to_numpy();
         self.GPS_data = self.gps_file_data[:, 1:4]
         self.baro_data = self.gps_file_data[:, 4:7]
         self.GPS_t_sec = self.gps_file_data[:, 0]
