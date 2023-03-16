@@ -23,12 +23,12 @@ class FileDataCollector():
         self.baro_reading_number = 0
         
         # reading IMU data
-        self.imu_file_data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy();  
+        self.imu_file_data = pd.read_csv("../Test Data/traj_raster_30mins_20221115_160156.csv").to_numpy();  
         self.IMU_data = self.imu_file_data[:, 11:17];
         self.IMU_t_sec = self.imu_file_data[:, 0]
             
         # reading GPS data
-        self.gps_file_data = pd.read_csv("../Data Generation/gps_and_barometer_data.csv").to_numpy();
+        self.gps_file_data = pd.read_csv("../Test Data/gps_and_barometer_data.csv").to_numpy();
         self.GPS_data = self.gps_file_data[:, 1:4]
         self.baro_data = self.gps_file_data[:, 4:7]
         self.GPS_t_sec = self.gps_file_data[:, 0]
@@ -146,14 +146,3 @@ class FileDataCollector():
             - a 4 x 1 quaternion, in the form [qs, qi, qj, qk]
         """
         return self.imu_file_data[0, 7:11]
-    
-
-    def reset(self):
-        """
-        resets data collection variables and counters
-        
-        """
-
-        self.imu_reading_number = 0
-        self.gps_reading_number = 0
-        self.baro_reading_number = 0

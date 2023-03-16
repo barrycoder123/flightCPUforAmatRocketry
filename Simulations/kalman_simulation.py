@@ -18,7 +18,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.append('../Flight Algorithms')
-sys.path.append('../Data Generation')
+sys.path.append('../Data Collection')
+sys.path.append('../Test Data')
 
 import kalman as kf
 import earth_model as em
@@ -39,7 +40,7 @@ if __name__ == "__main__":
 
     # Import and format data
     print("Opening file for truth data...")
-    data = pd.read_csv("../Data Generation/traj_raster_30mins_20221115_160156.csv").to_numpy()
+    data = pd.read_csv("../Test Data/traj_raster_30mins_20221115_160156.csv").to_numpy()
     PVA_truth = data[:, 1:11].T
 
     # Holds our results, for plotting
@@ -69,11 +70,12 @@ if __name__ == "__main__":
         # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
         lla, dt = dc.get_next_gps_reading()
-        lla = None
+        #lla = None
         #print(lla)
 
         # Update
-        baro = baro[:1] # try just one barometer before all three
+        baro = None
+        #baro = baro[:1] # try just one barometer before all three
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
 
         # save the data

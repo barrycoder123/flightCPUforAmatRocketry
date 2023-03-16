@@ -1,46 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar  4 12:22:46 2023
+Created on Thu Mar 16 13:06:09 2023
 
 @author: zrummler
-
-
-PURPOSE: Library for data collection from hardware sensors
-
-CLASS: 
-
-FUNCTIONS:
-    get_next_imu_reading()
-    gps_is_ready() - bool
-    get_next_gps_reading()
-    get_next_barometer_reading
-    get_first_quaternion()
-    
 """
+
+import sys
+import time
 import numpy as np
+import readsensors as rs
 
-import platform
-platform.processor()
+sys.path.append('../Flight Algorithms')
 
-#class DataCollector()
+import earth_model as em
+import quaternion as qt
 
+class SensorDataCollector:
 
-"""
-IMPORTANT: Set DEVICE variable to DEVICES[1] if running simulation, or DEVICES[0] if running on the actual rocket
-"""
-DEVICES = ["BEAGLEBONE", "TESTING ON PC"]
-DEVICE = DEVICES[1]
-
-if 0: #DEVICE == DEVICES[0]:
-    
-    import sys
-    import time
-    sys.path.append('../Sensor Code')
-    import readsensors as rs
-    import earth_model as em
-    
-    last_time = time.perf_counter()
+    def __init__(self):
+        
+        self.last_time = time.perf_counter()
     
     """
     All the code that falls in this if statement is for the real-time flight computer. As we get our sensors working, we will add the data here
@@ -48,7 +28,7 @@ if 0: #DEVICE == DEVICES[0]:
     
     print("Running on the BeagleBone AI")
     
-    def get_next_imu_reading(advance=True):
+    def get_next_imu_reading(self, advance=True):
         """
         gets the next IMU reading 
         
@@ -60,19 +40,18 @@ if 0: #DEVICE == DEVICES[0]:
             - gyro_xyz: 3 x 1 Numpy array
             - dt: time step
         """
-        global last_time
         
         # extract the next acceleration and angular rotation
         accel_xyz = rs.readaccel()
         gyro_xyz = rs.readgyro()
         
-        dt = time.perf_counter() - last_time
-        last_time += dt
+        dt = time.perf_counter() - self.last_time
+        self.last_time += dt
         
         return accel_xyz, gyro_xyz, dt
     
 
-    def get_next_gps_reading(advance=True):        
+    def get_next_gps_reading(self, advance=True):        
         """
         gets the next GPS reading 
         
@@ -86,7 +65,7 @@ if 0: #DEVICE == DEVICES[0]:
         raise NotImplementedError("GPS Reading Not Implemented")
     
 
-    def get_next_barometer_reading():
+    def get_next_barometer_reading(self):
         """
         gets the next barometer reading
         
@@ -106,9 +85,9 @@ if 0: #DEVICE == DEVICES[0]:
         return three_baros
     
     
-    def get_first_position():
+    def get_first_position(self):
         
-        lla = get_next_gps_reading()
+        lla = self.get_next_gps_reading()
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest
@@ -117,7 +96,7 @@ if 0: #DEVICE == DEVICES[0]:
         return np.concatenate((r_ecef, v_ecef, a_ecef)) # [1527850.153, -4464959.009, 4276353.59, 3.784561502, 1.295026731, -1.11E-16, 0, 0, 0]
 
 
-    def get_first_quaternion():
+    def get_first_quaternion(self):
         """
         returns the initial state of the Quaternion
         
@@ -125,20 +104,4 @@ if 0: #DEVICE == DEVICES[0]:
             - a 4 x 1 quaternion, in the form [qs, qi, qj, qk]
         """
         
-        return imu_file_data[0, 7:11]
-    
-
-    def reset():
-        """
-        TODO
-        """
-        raise NotImplementedError("GPS Reading Not Implemented")
-        
-
-    def done():
-        """
-        TODO
-        """
-        
-        raise NotImplementedError("GPS Reading Not Implemented")
-    
+        return qt.lla2qu

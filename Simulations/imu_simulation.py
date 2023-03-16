@@ -14,29 +14,31 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.append('../Flight Algorithms')
-sys.path.append('../Data Generation')
+sys.path.append('../Data Collection')
+sys.path.append('../Test Data')
 
 import strapdown as sd
-import data_collection as dc
+import file_data_collection as fdc
 
-from misc import get_imu_column_names, get_ecef_column_names, plotDataAndError, progressBar
+from misc import get_imu_column_names, get_ecef_column_names, plotDataAndError#, #progressBar
 
 # main
 if __name__ == "__main__":
 
     # ====================== configuration ======================
-    imu_file = r"../Data Generation/traj_raster_30mins_20221115_160156.csv"
+    imu_file = r"../Test Data/traj_raster_30mins_20221115_160156.csv"
     # imu_file = r"C:\Users\tqk0611\Documents\Haystack\goonies_repo\analysis\traj\traj_raster_30mins_20230310_081326.csv"
 
     # ===========================================================
     t_col, accel_cols, gyro_cols, mag_cols = get_imu_column_names()  # for later user
     pos_cols, vel_cols, quat_cols = get_ecef_column_names()  # for later user
 
-    dc.reset()
+    dc = fdc.FileDataCollector()
+    num_points = dc.num_points
 
     # Import and format data
     df = pd.read_csv(imu_file)  # DataFrame
-    numPoints = len(df)
+    #numPoints = len(df)
     # data = pd.read_csv(imu_file).to_numpy().T
     PVA_truth = df[pos_cols + vel_cols + quat_cols].to_numpy().T
     dt = np.mean(np.diff(df[t_col]))  # [seconds]
@@ -50,13 +52,12 @@ if __name__ == "__main__":
 
     # Run the strapdown for all data
     print(f"Running strapdown simulation with dt = {1e3 * dt:.0f} ms")
-    for i, row in df.iloc[:-1].iterrows():
-        # get IMU measurements
-        dV_b_imu = row[accel_cols] * dt
-        dTh_b_imu = row[gyro_cols] * dt
+    for i in range(num_points - 1):
 
         # simulate getting the next IMU reading
-        # accel, gyro, dt = dc.get_next_imu_reading() # what's the purpose of this?
+        accel, gyro, dt = dc.get_next_imu_reading()
+        dV_b_imu = accel * dt
+        dTh_b_imu = gyro * dt
 
         # grab our current PVA estimate
         r_ecef = PVA_est[0:3, i]  # ECEF position [m]
@@ -73,13 +74,10 @@ if __name__ == "__main__":
 
     print("Plotting results...")
 
-    """ this is a terrible way to do this """
 
     # =======================================================================================
     plotDataAndError(PVA_est[6:, :], PVA_truth[6:, :], df[t_col], unit=None, axes=['A', 'B', 'C', 'D'], name='Quaternion')
     plotDataAndError(PVA_est[3:6, :], PVA_truth[3:6, :], df[t_col], name='Velocity', unit='m/s')
     plotDataAndError(PVA_est[:3, :], PVA_truth[:3, :], df[t_col], subx0=True)
-
-    dc.reset()
 
     plt.show()
