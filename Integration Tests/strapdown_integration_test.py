@@ -11,6 +11,7 @@ import numpy as np
 
 sys.path.append('../Flight Algorithms')
 sys.path.append('../Data Collection')
+sys.path.append('../Data Logging')
 sys.path.append('../Test Data')
 
 import strapdown as sd
