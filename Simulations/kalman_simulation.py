@@ -69,13 +69,13 @@ if __name__ == "__main__":
 
         # Read GPS and barometer -- these return None if no new data
         baro = dc.get_next_barometer_reading()
-        lla = dc.get_next_gps_reading()
-        #lla = None
+        #lla = dc.get_next_gps_reading()
+        lla = None
 
         # Update
         #baro = None
-        baro = baro#[:1] # try just one barometer before all three
-        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
+        #baro = baro#[:1] # try just one barometer before all three
+        ekf.update(lla, baro, sigma_gps=5, sigma_baro=5) # try variance = 10
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
@@ -91,12 +91,4 @@ if __name__ == "__main__":
     #plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)
     plotDataAndError(PVA_est[6:10, ::10], PVA_truth[6:10, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
 
-    # fig, axs = plt.subplots(3, 1, sharex=True, figsize=(11, 8))
-    # for i, (ax, lab) in enumerate(zip(axs, ['X', 'Y', 'Z'])):
-    #     ax.plot(PVA_truth[i, :] - PVA_truth[i, 0], label='Truth')
-    #     ax.plot(PVA_est[i, :] - PVA_truth[i, 0], label='Estimate')
-    #     ax.set_title(f"{lab} ECEF Position (minus start)\nWITH KALMAN FILTERING (GPS + IMU)")
-    #     ax.legend()
-    #     ax.grid(True)
-    # plt.tight_layout()
     plt.show()  # needed to display the figures
