@@ -6,8 +6,7 @@ Created on Tue Feb 21 12:46:07 2023
 @author: zrummler
 
 PURPOSE: Runs a Kalman Filtering simulation with Draper's test data
-
-SEE KALMAN.PY FOR DOCUMENTATION ON THE KALMAN FILTERING IMPLEMENTATION
+Good for quick debugging/verification of the Kalman Filtering implementation
 
 """
 import importlib
@@ -74,8 +73,8 @@ if __name__ == "__main__":
         #lla = None
 
         # Update
-        baro = None
-        #baro = baro[:1] # try just one barometer before all three
+        #baro = None
+        baro = baro#[:1] # try just one barometer before all three
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
 
         # save the data
