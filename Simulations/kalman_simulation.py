@@ -74,8 +74,8 @@ if __name__ == "__main__":
 
         # Update
         #baro = None
-        #baro = baro#[:1] # try just one barometer before all three
-        ekf.update(lla, baro, sigma_gps=5, sigma_baro=5) # try variance = 10
+        baro = baro[:1] # try just one barometer before all three
+        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10)
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
