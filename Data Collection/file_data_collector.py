@@ -37,13 +37,10 @@ class FileDataCollector(DataCollector):
         self.num_points = min(self.imu_file_data.shape[0], self.gps_file_data.shape[0])
     
 
-    def get_next_imu_reading(self, advance=True):
+    def get_next_imu_reading(self):
         """
         gets the next IMU reading 
-        
-        Arguments:
-            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
-            
+
         Returns:
             - accel_xyz: 3 x 1 Numpy array
             - gyro_xyz: 3 x 1 Numpy array
@@ -58,51 +55,38 @@ class FileDataCollector(DataCollector):
         if self.imu_reading_number == 0:
             dt = self.IMU_t_sec[1] - self.IMU_t_sec[0]
         else:
-            dt = self.IMU_t_sec[self.imu_reading_number] - self.IMU_t_sec[self.imu_reading_number-1]
-            
-        if advance:
-            self.imu_reading_number += 1    
+            dt = self.IMU_t_sec[self.imu_reading_number] - self.IMU_t_sec[self.imu_reading_number-1]  
+        
+        self.imu_reading_number += 1
         
         return accel_xyz, gyro_xyz, dt
     
 
-    def get_next_gps_reading(self, advance=True):        
+    def get_next_gps_reading(self):        
         """
         gets the next GPS reading 
         
-        Arguments:
-            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
-            
         Returns:
-            - reading: 3 x 1 Numpy array [lat, long, atti]
-            - dt: time step
+            - lla: 3 x 1 Numpy array [lat, long, atti]
+            - satellites: number of satellites used to determine lat, long, atti
         """
         
         if np.isnan(self.GPS_data[self.gps_reading_number, 0]):
             self.gps_reading_number += 1
-            return None
+            return None, None
         
         # read from the GPS    
         reading = self.GPS_data[self.gps_reading_number, 0:3]
+        satellites = 8
         
-        # time step computation (dt)
-        if self.gps_reading_number == 0:
-            dt = self.GPS_t_sec[10] - self.GPS_t_sec[0]
-        else:
-            dt = self.GPS_t_sec[self.gps_reading_number] - self.GPS_t_sec[self.gps_reading_number-10]
+        self.gps_reading_number += 1
         
-        if advance: # only increment counter if desired
-            self.gps_reading_number += 1
-       
-        return reading
+        return reading, satellites
     
 
     def get_next_barometer_reading(self):
         """
         gets the next barometer reading
-        
-        Arguments:
-            - none
             
         Returns:
             - reading: (3,1) or (3,) numpy array of three readings [baro1, baro2, baro3]

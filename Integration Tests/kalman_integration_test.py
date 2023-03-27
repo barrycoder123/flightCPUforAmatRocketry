@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
         # Read GPS and barometer -- these return None if no new data
         baro = collector.get_next_barometer_reading()
-        lla = collector.get_next_gps_reading()
+        lla, satellites = collector.get_next_gps_reading()
 
         # Update
         baro = None

@@ -33,13 +33,10 @@ class SensorDataCollector(DataCollector):
         self.three_baros = np.zeros(3)
     
     
-    def get_next_imu_reading(self, advance=True):
+    def get_next_imu_reading(self):
         """
         gets the next IMU reading 
-        
-        Arguments:
-            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
-            
+
         Returns:
             - accel_xyz: 3 x 1 Numpy array
             - gyro_xyz: 3 x 1 Numpy array
@@ -57,32 +54,29 @@ class SensorDataCollector(DataCollector):
         return self.accel_xyz, self.gyro_xyz, dt
     
 
-    def get_next_gps_reading(self, advance=True):        
+    def get_next_gps_reading(self):        
         """
         gets the next GPS reading 
         
-        Arguments:
-            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
-            
         Returns:
-            - reading: 3 x 1 Numpy array [lat, long, atti]
-            - dt: time step
+            - lla: 3 x 1 Numpy array [lat, long, atti]
+            - satellites: number of satellites used to determine lat, long, atti
         """
         
         llas = read_gps()
         
         if llas is None:
-            return None
+            return None, None
         
-        return llas[0:3] # ignore satellites
+        lla = llas[0:3]
+        satellites = llas[3]
+        
+        return lla, satellites
     
 
     def get_next_barometer_reading(self):
         """
         gets the next barometer reading
-        
-        Arguments:
-            - none
             
         Returns:
             - reading: (3,1) or (3,) numpy array of three readings [baro1, baro2, baro3]
