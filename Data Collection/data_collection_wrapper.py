@@ -62,7 +62,7 @@ class DataCollector:
     def get_next_gps_reading(self):
         raise NotImplementedError("Did you forget to call DataCollector().create() ?")
         
-    def get_initial_state_and_quaternion(self):
+    def get_initial_state_and_quaternion(self, lla):
         raise NotImplementedError("Did you forget to call DataCollector().create() ?")
            
     @classmethod

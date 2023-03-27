@@ -69,11 +69,14 @@ class FileDataCollector(DataCollector):
         Returns:
             - lla: 3 x 1 Numpy array [lat, long, atti]
             - satellites: number of satellites used to determine lat, long, atti
+            
+        Notes:
+            - Returns None, 0 if no reading can be made
         """
         
         if np.isnan(self.GPS_data[self.gps_reading_number, 0]):
             self.gps_reading_number += 1
-            return None, None
+            return None, 0
         
         # read from the GPS    
         reading = self.GPS_data[self.gps_reading_number, 0:3]
@@ -99,9 +102,12 @@ class FileDataCollector(DataCollector):
         return reading
     
     
-    def get_initial_state_and_quaternion(self):
+    def get_initial_state_and_quaternion(self, lla=None):
         """
         returns the initial state vector and initial Quaternion
+        
+        Arguments:
+            - lla (not used for file_data_collector)
         
         Returns:
             - state vector (9,)

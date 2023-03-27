@@ -61,12 +61,15 @@ class SensorDataCollector(DataCollector):
         Returns:
             - lla: 3 x 1 Numpy array [lat, long, atti]
             - satellites: number of satellites used to determine lat, long, atti
+            
+        Notes:
+            - Returns None, 0 if no reading can be made
         """
         
         llas = read_gps()
         
         if llas is None:
-            return None, None
+            return None, 0
         
         lla = llas[0:3]
         satellites = llas[3]
@@ -89,18 +92,22 @@ class SensorDataCollector(DataCollector):
         return self.three_baros
     
     
-    def get_initial_state_and_quaternion(self):
+    def get_initial_state_and_quaternion(self, lla=None):
         """
         returns the initial state vector and initial Quaternion
+        
+        Arguments:
+            - high-accuracy lla estimate (must be at least 8 satellites)
         
         Returns:
             - state vector (9,)
             - quaternion (4,)
         """
         
-        lla = read_gps()
+        # read GPS if lla is passed as none
         while lla is None:
-            lla = read_gps()
+            llas = read_gps()
+            lla = llas[0:3]
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest
