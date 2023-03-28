@@ -7,9 +7,9 @@ Created on Sat Mar  4 12:22:46 2023
 
 
 PURPOSE: 
-- Wrapper for data collection class
-- Selects the FileDataCollector sublass if you're on a PC
-- Selects the SensorDataCollector subclass if you're on the actual nav CPU
+- Wrapper for data collection base class
+- Selects the FileDataCollector sub-class if you're on a PC
+- Selects the SensorDataCollector sub-class if you're on the actual flight CPU
 
 FUNCTIONS:
     get_next_imu_reading()

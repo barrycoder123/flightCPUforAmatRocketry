@@ -34,7 +34,7 @@ class DataLogger:
         if val == 1:
             return self.__data_plotter(self.num_points)
         if val == 2:
-            return self.__flash_writer(self.num_points)
+            return self.__flash_writer()
             
     def save(self):
         raise NotImplementedError("Did you forget to call DataLogger().create() ?")

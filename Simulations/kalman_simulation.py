@@ -22,12 +22,12 @@ sys.path.append('../Test Data')
 
 import kalman as kf
 import earth_model as em
-import data_collection_wrapper as dcw
+import file_data_collector as dc
 from misc import plotDataAndError
 
 importlib.reload(kf)
 importlib.reload(em)
-importlib.reload(dcw)
+importlib.reload(dc)
 
 if __name__ == "__main__":
     '''
@@ -38,11 +38,11 @@ if __name__ == "__main__":
     print("Kalman Filtering Simulation")
 
     # Initialize the Data Collection module
-    dc = dcw.DataCollector().create()
-    num_points = dc.num_points
+    collector = dc.FileDataCollector()
+    num_points = collector.num_points
     
     # Initialize the EKF module
-    x, q_true = dc.get_initial_state_and_quaternion()
+    x, q_true = collector.get_initial_state_and_quaternion()
     ekf = kf.EKF(x, q_true)
     
     # Initialize state vectors and matrices
@@ -61,15 +61,15 @@ if __name__ == "__main__":
     for i in range(num_points):
 
         # Read IMU
-        accel, gyro, dt = dc.get_next_imu_reading()
+        accel, gyro, dt = collector.get_next_imu_reading()
         z_imu = np.concatenate((accel, gyro))
         
         # Prediction
         ekf.predict(z_imu, dt)
 
         # Read GPS and barometer -- these return None if no new data
-        baro = dc.get_next_barometer_reading()
-        lla, satellites = dc.get_next_gps_reading()
+        baro = collector.get_next_barometer_reading()
+        lla, satellites = collector.get_next_gps_reading()
 
         # Update
         baro = None

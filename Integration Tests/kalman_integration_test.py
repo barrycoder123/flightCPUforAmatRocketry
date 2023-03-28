@@ -5,7 +5,8 @@ Created on Thu Mar 16 16:06:53 2023
 
 @author: zrummler
 
-Main function!
+PURPOSE: used to test the Kalman Filter on the actual hardware
+
 """
 
 import importlib
@@ -18,8 +19,9 @@ sys.path.append('../Data Collection')
 sys.path.append('../Data Logging')
 sys.path.append('../Test Data')
 
+import time
 import kalman as kf
-import data_logging_wrapper as dl
+import data_logger as dl
 import data_collection_wrapper as dc
 
 importlib.reload(kf)
@@ -44,10 +46,13 @@ if __name__ == "__main__":
     ekf = kf.EKF(x, q_true)
     
     # Initialize the Data Logging module
-    logger = dl.DataLogger(num_points).create()
+    start_time = time.time()
+    colnames = ["t", "pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "q_scalar", "q_i", "q_j", "q_k"]
+    logger = dl.DataLogger(x, q_true, colnames, num_points)
 
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
+    logger.start_timer()
     for i in range(num_points):
 
         # Read IMU
@@ -66,9 +71,14 @@ if __name__ == "__main__":
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data
-        logger.save(ekf.x, ekf.q_e2b)
+        logger.save_state_to_buffer(ekf.x, ekf.q_e2b)
 
     # ========================== plotting ==========================
     print("Logging results...")
+    logger.write_buffer_to_file()
 
-    logger.show()
+    logger.plot_file_contents()
+    
+    end_time = time.time()
+    
+    print("EXECUTION TIME: ", end_time - start_time)
