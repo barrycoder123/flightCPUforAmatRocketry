@@ -76,7 +76,6 @@ if __name__ == "__main__":
     # ========================== plotting ==========================
     print("Logging results...")
     logger.write_buffer_to_file()
-
     logger.plot_file_contents()
     
     end_time = time.time()
