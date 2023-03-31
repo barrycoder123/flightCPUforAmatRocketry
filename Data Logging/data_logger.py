@@ -89,7 +89,20 @@ class DataLogger:
         self.__plotData(PVA_est[1:4, :], tplot, subx0=True)
         
         plt.show()  # needed to display the figures
+     
+    def print_file_contents(self):
         
+        df = pd.read_csv("PVA_est.csv")
+        PVA_est = df.to_numpy().T
+        num_points = PVA_est.shape[1]
+        
+        print("POSITION:")
+        
+        for i in range(num_points):
+            print(PVA_est[0, i], PVA_est[1:4, i])
+        
+        
+     
     def __plotData(self, x, t, cov=None, name='Position', unit='m', subx0=False, decim_fact=1, tEnd=None, axes=None):
         """
         TODO

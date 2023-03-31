@@ -15,7 +15,7 @@ sys.path.append('../Data Logging')
 sys.path.append('../Test Data')
 
 import strapdown as sd
-import data_logging_wrapper as dl
+import data_logger as dl
 import data_collection_wrapper as dc
 
 # main
@@ -30,13 +30,13 @@ if __name__ == "__main__":
     x = np.concatenate((kalman_state[0:6], q_true))
     
     # Initialize the Data Logging module
-    logger = dl.DataLogger(num_points).create()
-    logger.save(x, q_true)
+    colnames = ["t", "pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "q_scalar", "q_i", "q_j", "q_k"]
+    logger = dl.DataLogger(kalman_state, q_true, colnames, num_points)
 
     # Run the strapdown for all data
     print("Running strapdown simulation")
-    
-    for i in range(num_points - 1):
+    logger.start_timer()
+    for i in range(num_points):
 
         # get the next IMU reading
         accel, gyro, dt = collector.get_next_imu_reading()
@@ -53,8 +53,11 @@ if __name__ == "__main__":
         x = np.concatenate((r_ecef_new, v_ecef_new, q_e2b_new))
         
         # Log the values for later viewing
-        logger.save(x, q_e2b_new)
+        logger.save_state_to_buffer(x, q_e2b_new)
 
+    logger.write_buffer_to_file()
     print("Plotting results...")
-    logger.show()
+    
+    logger.plot_file_contents()
+    logger.print_file_contents()
 
