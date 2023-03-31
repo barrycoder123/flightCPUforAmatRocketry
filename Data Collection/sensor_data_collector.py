@@ -24,10 +24,8 @@ class SensorDataCollector(DataCollector):
         Initializes arrays and waits for GPS to warm up
         """
         
-        print("Please choose the time you'd like to run for (seconds)")
-        val = int(input(">> "))
-        dt = 0.1
-        self.num_points = val / dt # divide by timestep dt
+        print("Please choose the number of data points you'd like to collect")
+        self.num_points = int(input(">> "))
         
         self.accel_xyz = np.zeros(3)
         self.gyro_xyz = np.zeros(3)

@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     logger.print_buffer_contents()
     
-    
+ 
     # logger.write_buffer_to_file()
     # print("Plotting results...")
     
