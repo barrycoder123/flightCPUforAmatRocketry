@@ -12,7 +12,7 @@ import adafruit_gps
 
 import Adafruit_BBIO.UART as UART
 
-UART.setup("UART1")
+UART.setup("UART2")
 
 # Create a serial connection for the GPS connection using default speed and
 # a slightly higher timeout (GPS modules typically update once a second).
@@ -25,7 +25,7 @@ UART.setup("UART1")
 # might need to change the timeout
 # gps defaults to 9600 baud, don't change it
 import serial
-uart = serial.Serial("/dev/ttyO1", baudrate=9600, timeout=10)
+uart = serial.Serial("/dev/ttyO2", baudrate=9600, timeout=10)
 
 # Create a GPS module instance.
 gps = adafruit_gps.GPS(uart)  # Use UART/pyserial

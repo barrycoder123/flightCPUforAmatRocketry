@@ -11,7 +11,8 @@ UART.setup("UART1")
 
 # Begin Setup
 uart = serial.Serial("/dev/ttyO1")
-imu = Adafruit_BNO055.BNO055_UART(uart)
+# imu = Adafruit_BNO055.BNO055_UART(uart)
+imu = serial.Serial("/dev/ttyO1", 9600)
 
 
 path = pathlib.Path().resolve()
