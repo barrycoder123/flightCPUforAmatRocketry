@@ -1,15 +1,22 @@
 import serial
-import adafruit_bno055
+import Adafruit_BNO055
 import time
 from barometer import *
 import configparser
+import Adafruit_BBIO.UART as UART
+import pathlib
+
+UART.setup("UART1")
+
 
 # Begin Setup
-uart = serial.Serial("/dev/serial0")
-imu = adafruit_bno055.BNO055_UART(uart)
+uart = serial.Serial("/dev/ttyO1")
+imu = Adafruit_BNO055.BNO055_UART(uart)
 
+
+path = pathlib.Path().resolve()
 config = configparser.ConfigParser()
-config.read(r'C:\Users\geng\Downloads\rocketproject\barometer.txt')
+config.read(path / 'barometer.txt')
 
 setSLP(int(config.get('Barometer', 'sealevelpressure')))
 
