@@ -37,6 +37,7 @@ class DataCollector:
             return self.__sensor_data_collector()
         
         # Print welcome messages and instructions
+        print("PROCESSOR: ", platform.processor())
         print("Welcome to the Data Collection module!") 
         print("You are running this code on an unrecognized computer (", end="")
         print(platform.processor(), end="")
