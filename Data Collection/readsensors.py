@@ -1,7 +1,7 @@
 import serial
 import Adafruit_BNO055
 import time
-from barometer import *
+#from barometer import *
 import configparser
 import Adafruit_BBIO.UART as UART
 import pathlib
@@ -18,7 +18,7 @@ path = pathlib.Path().resolve()
 config = configparser.ConfigParser()
 config.read(path / 'barometer.txt')
 
-setSLP(int(config.get('Barometer', 'sealevelpressure')))
+#setSLP(int(config.get('Barometer', 'sealevelpressure')))
 
 
 last_val = 0xFFFF

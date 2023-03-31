@@ -30,7 +30,7 @@ class DataCollector:
     def create(self):
         
         # For Zack on a Mac
-        if platform.processor() == 'i386':
+        if platform.processor() != 'i386':
             return self.__file_data_collector()
         
         if platform.processor() == 0:
