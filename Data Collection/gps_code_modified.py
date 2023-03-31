@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # Main loop runs forever printing data as it comes in
     timestamp = time.monotonic()
     while True:
-        data = gps.read(32)  # read up to 32 bytes
+        data = gps.readline()  # read up to 32 bytes
         # print(data)  # this is a bytearray type
 
         if data is not None:
