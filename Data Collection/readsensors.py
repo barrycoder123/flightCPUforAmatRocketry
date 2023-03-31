@@ -52,16 +52,16 @@ def read_baro(last_baro):
         baro = last_baro
     return baro
 
-def collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro):
-    global last_time
+# def collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro):
+#     global last_time
     
-    last_gyro = read_gyro(last_gyro)
-    last_accel = read_accel(last_accel)
-    last_baro = read_baro(last_baro)
-    time_step = time.perf_counter()-last_time
-    last_time = last_time+time_step
+#     last_gyro = read_gyro(last_gyro)
+#     last_accel = read_accel(last_accel)
+#     last_baro = read_baro(last_baro)
+#     time_step = time.perf_counter()-last_time
+#     last_time = last_time+time_step
     
-    return last_gyro, last_accel, last_baro, time_step, last_time
+#     return last_gyro, last_accel, last_baro, time_step, last_time
 
 # Code below is for debugging purposes:
 
