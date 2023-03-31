@@ -41,6 +41,7 @@ if __name__ == "__main__":
     collector = dc.DataCollector().create()
     num_points = collector.num_points
     
+    # Warm up GPS
     satellites = 0
     while satellites < 8:
         lla, satellites = collector.get_next_gps_reading()
