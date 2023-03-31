@@ -20,17 +20,26 @@ from data_collection_wrapper import DataCollector
 class SensorDataCollector(DataCollector):
 
     def __init__(self):
+        """
+        Initializes arrays and waits for GPS to warm up
+        """
         
         print("Please choose the time you'd like to run for (seconds)")
         val = int(input(">> "))
         dt = 0.1
         self.num_points = val / dt # divide by timestep dt
         
-        self.last_time = time.perf_counter()
-        
         self.accel_xyz = np.zeros(3)
         self.gyro_xyz = np.zeros(3)
         self.three_baros = np.zeros(3)
+        
+        # Wait for GPS to warm up
+        satellites = 0
+        lla = None
+        while lla is None and satellites < 8:
+            llas = read_gps()
+            lla = llas[0:3]
+            satellites = llas[3]
     
     
     def get_next_imu_reading(self):
@@ -113,5 +122,7 @@ class SensorDataCollector(DataCollector):
         v_ecef = np.zeros(3) # initially at rest
         a_ecef = np.zeros(3) # initially no attitude error
         q_e2b = em.lla2quat(lla)
+        
+        self.last_time = time.perf_counter() # this could be a problem
         
         return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b

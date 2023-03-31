@@ -41,11 +41,6 @@ if __name__ == "__main__":
     collector = dc.DataCollector().create()
     num_points = collector.num_points
     
-    # Warm up GPS
-    satellites = 0
-    while satellites < 8:
-        lla, satellites = collector.get_next_gps_reading()
-    
     # Initialize the Extended Kalman Filter module
     x, q_true = collector.get_initial_state_and_quaternion()
     ekf = kf.EKF(x, q_true)

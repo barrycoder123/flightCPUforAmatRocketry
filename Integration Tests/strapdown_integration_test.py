@@ -25,11 +25,6 @@ if __name__ == "__main__":
     collector = dc.DataCollector().create()
     num_points = collector.num_points
     
-    # Warm up GPS
-    satellites = 0
-    while satellites < 8:
-        lla, satellites = collector.get_next_gps_reading()
-    
     # initialize State
     kalman_state, q_true = collector.get_initial_state_and_quaternion()
     x = np.concatenate((kalman_state[0:6], q_true))
