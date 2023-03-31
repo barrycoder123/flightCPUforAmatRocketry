@@ -33,9 +33,14 @@ class DataCollector:
         if platform.processor() == 'i386':
             return self.__file_data_collector()
         
+        if platform.processor() == 0:
+            return self.__sensor_data_collector()
+        
         # Print welcome messages and instructions
         print("Welcome to the Data Collection module!") 
-        print("You are running this code on an unrecognized computer. It's likely that you're running on the BeagleBoard for the first time, or you're on a new PC.\n")
+        print("You are running this code on an unrecognized computer (", end="")
+        print(platform.processor(), end="")
+        print("). It's likely that you're running on the BeagleBoard for the first time, or you're on a new PC.\n")
         print("\tSelect (1) if you are developing/debugging on a PC (i.e., using test data from a file)\n")
         print("\tSelect (2) if you are debugging on the Flight Computer (i.e., using hardware sensors)\n")
         
