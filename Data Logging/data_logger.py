@@ -9,7 +9,7 @@ If num_points is None, then
 
 import time
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import matplotlib.pyplot as plt
 
 class DataLogger:
@@ -67,39 +67,49 @@ class DataLogger:
     
         self.write_pos += 1
         
-    def write_buffer_to_file(self):
-        """
-        Writes the buffer to a .csv file. Must call this after you finish saving data
-        """
+    def print_buffer_contents(self):
         
-        df_new = pd.DataFrame(self.PVA_est.T, columns=self.colnames)
-        df_new.to_csv("PVA_est.csv", index=False)
-        
-    def plot_file_contents(self):
-        """
-        Reads the log file and plots the data in the form PVA. Helpful for debugging
-        """
-        
-        df = pd.read_csv("PVA_est.csv")
-        PVA_est = df.to_numpy().T
-        
-        tplot = np.arange(PVA_est.shape[1])
-        self.__plotData(PVA_est[7:11, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
-        self.__plotData(PVA_est[4:7, :], tplot, name='Velocity', subx0=True)
-        self.__plotData(PVA_est[1:4, :], tplot, subx0=True)
-        
-        plt.show()  # needed to display the figures
-     
-    def print_file_contents(self):
-        
-        df = pd.read_csv("PVA_est.csv")
-        PVA_est = df.to_numpy().T
-        num_points = PVA_est.shape[1]
+        num_points = self.PVA_est.shape[1]
         
         print("POSITION:")
         
         for i in range(num_points):
-            print(PVA_est[0, i], PVA_est[1:4, i])
+            print(self.PVA_est[0, i], self.PVA_est[1:4, i])
+        
+
+    # def write_buffer_to_file(self):
+    #     """
+    #     Writes the buffer to a .csv file. Must call this after you finish saving data
+    #     """
+        
+    #     df_new = pd.DataFrame(self.PVA_est.T, columns=self.colnames)
+    #     df_new.to_csv("PVA_est.csv", index=False)
+        
+    # def plot_file_contents(self):
+    #     """
+    #     Reads the log file and plots the data in the form PVA. Helpful for debugging
+    #     """
+        
+    #     df = pd.read_csv("PVA_est.csv")
+    #     PVA_est = df.to_numpy().T
+        
+    #     tplot = np.arange(PVA_est.shape[1])
+    #     self.__plotData(PVA_est[7:11, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
+    #     self.__plotData(PVA_est[4:7, :], tplot, name='Velocity', subx0=True)
+    #     self.__plotData(PVA_est[1:4, :], tplot, subx0=True)
+        
+    #     plt.show()  # needed to display the figures
+     
+    # def print_file_contents(self):
+        
+    #     df = pd.read_csv("PVA_est.csv")
+    #     PVA_est = df.to_numpy().T
+    #     num_points = PVA_est.shape[1]
+        
+    #     print("POSITION:")
+        
+    #     for i in range(num_points):
+    #         print(PVA_est[0, i], PVA_est[1:4, i])
         
         
      
