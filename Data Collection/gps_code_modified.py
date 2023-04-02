@@ -86,15 +86,17 @@ def get_altitude(data_str):
 
 #returns [lat, long, alt, #satellites]
 def read_gps():
-    data = gps.readline()  # read dataline, times out after timeout defined in uart
-    # print(data)  # this is a bytearray type
+    
+    # check if data is available from the serial port
+    ready_to_read, _, _ = select.select([uart], [], [], 0)
+    if ready_to_read:
+        data = gps.readline()  # read dataline, times out after timeout defined in uart
+    else:
+        return None
 
-    if data is not None:
-        # convert bytearray to string
-        data_str = "".join([chr(b) for b in data])
-        # print(data_str, end="")
-        return get_llas(data_str)
-    return None
+    # convert bytearray to string
+    data_str = "".join([chr(b) for b in data])
+    return get_llas(data_str)
 
 #get and ignore first output
 gps.readline()
@@ -104,17 +106,23 @@ if __name__ == "__main__":
     # Main loop runs forever printing data as it comes in
     timestamp = time.monotonic()
     while True:
-        ready_to_read, _, _ = select.select([uart], [], [], 0)
-        if ready_to_read:
-            data = gps.readline()  # read up to 32 bytes
-        else:
-            data = None
-        # print(data)  # this is a bytearray type
+        
+        gps_data = read_gps()
+        
+        if gps_data is not None:
+            print(gps_data, end="")
+        
+        # ready_to_read, _, _ = select.select([uart], [], [], 0)
+        # if ready_to_read:
+        #     data = gps.readline()  # read up to 32 bytes
+        # else:
+        #     data = None
+        # # print(data)  # this is a bytearray type
 
-        if data is not None:
-            # convert bytearray to string
-            data_string = "".join([chr(b) for b in data])
-            print(data_string, end="")
+        # if data is not None:
+        #     # convert bytearray to string
+        #     data_string = "".join([chr(b) for b in data])
+        #     print(data_string, end="")
 
         # if time.monotonic() - timestamp > 5:
         #     # every 5 seconds...
