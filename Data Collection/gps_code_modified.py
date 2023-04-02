@@ -65,6 +65,7 @@ SATELLITES = 7
 ALTITUDE = 9
 UNIT = 10
 
+
 def ddm_to_dd(coord_str, cardinal_dir):
     """
     Convert a latitude or longitude reading from degrees and decimal minutes (DDM) to decimal degrees (DM)
@@ -76,7 +77,7 @@ def ddm_to_dd(coord_str, cardinal_dir):
 
     Returns
     -------
-    - decimal_degrees : lat or longitude in "+/- ddd.ddddd..."
+    - decimal_degrees : latitude or longitude in "+/- ddd.ddddd..."
 
     Notes
     -----
@@ -104,10 +105,9 @@ def ddm_to_dd(coord_str, cardinal_dir):
     return decimal_degrees
     
 
-#extracts latitude, longitude, altitude, and #satellites
 def get_llas(data_str):
     """
-    
+    Extracts latitude, longitude, altitude, and number of satellites from data string
 
     Parameters
     ----------
@@ -116,7 +116,7 @@ def get_llas(data_str):
 
     Returns
     -------
-    list
+    llas : list
         - lat (float) decimal degrees latitude
         - long (float) decimal degrees longitude
         - alt (float) altitude in meters
@@ -129,15 +129,22 @@ def get_llas(data_str):
     lat = ddm_to_dd(data[LATITUDE], data[NS])
     long = ddm_to_dd(data[LONGITUDE], data[EW])
 
-    return [lat, long, gps.altitude, gps.satellites]
+    return [lat, long, gps.altitude_m, gps.satellites]
 
-#just returns altitude
-def get_altitude(data_str):
-    data = data_str.spit(',')
-    return data[ALTITUDE]
 
-#returns [lat, long, alt, #satellites]
 def read_gps():
+    """
+    Reads the GPS
+
+    Returns
+    -------
+    llas : list
+        - lat (float) decimal degrees latitude
+        - long (float) decimal degrees longitude
+        - alt (float) altitude in meters
+        - satellites (float) number of satellites
+
+    """
     
     # check if data is available from the serial port
     ready_to_read, _, _ = select.select([uart], [], [], 0)
@@ -149,6 +156,38 @@ def read_gps():
     # convert bytearray to string
     data_str = "".join([chr(b) for b in data])
     return get_llas(data_str)
+
+def read_gps_new():
+    """
+    potentially better function for reading GPS
+    
+    Returns
+    -------
+    llas : list
+        - lat (float) decimal degrees latitude
+        - long (float) decimal degrees longitude
+        - alt (float) altitude in meters
+        - satellites (float) number of satellites
+        
+    Notes
+    -----
+    Returns None if no new data is available
+    """
+    
+    gps.update()
+    
+    # Return None if no available data
+    if not gps.has_fix:
+        return None
+    
+    # Extract relevant data otherwise
+    lat = gps.latitude
+    long = gps.longitude
+    alt = gps.altitude_m
+    satellites = gps.satellites
+    
+    return [lat, long, alt, satellites]
+    
 
 #get and ignore first output
 gps.readline()
@@ -197,27 +236,7 @@ if __name__ == "__main__":
         if gps.altitude_m is not None:
             print("Altitude: {} meters".format(gps.altitude_m))
 
+        # MATT: uncomment this to run the code you have 
         # llas = read_gps()
         # if llas is not None:
         #     print(llas)
-        
-        
-        
-        # ready_to_read, _, _ = select.select([uart], [], [], 0)
-        # if ready_to_read:
-        #     data = gps.readline()  # read up to 32 bytes
-        # else:
-        #     data = None
-        # # print(data)  # this is a bytearray type
-
-        # if data is not None:
-        #     # convert bytearray to string
-        #     data_string = "".join([chr(b) for b in data])
-        #     print(data_string, end="")
-            
-        
-
-        # if time.monotonic() - timestamp > 5:
-        #     # every 5 seconds...
-        #     gps.send_command(b"PMTK605")  # request firmware version
-        #     timestamp = time.monotonic()
