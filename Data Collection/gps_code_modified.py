@@ -65,19 +65,71 @@ SATELLITES = 7
 ALTITUDE = 9
 UNIT = 10
 
-def set_dir(boolean, val):
-    if boolean is True:
-        return val
-    else:
-        return val * -1
+def ddm_to_dd(coord_str, cardinal_dir):
+    """
+    Convert a latitude or longitude reading from degrees and decimal minutes (DDM) to decimal degrees (DM)
 
+    Parameters
+    ----------
+    - coord_str : coordinate string of the form "dddmm.mmmmm..."
+    - cardinal_dir : single capital char: "N", "S", "E", or "W"
+
+    Returns
+    -------
+    - decimal_degrees : lat or longitude in "+/- ddd.ddddd..."
+
+    Notes
+    -----
+    - Returns None if bad input (such as empty string)
+
+    """
+    
+    if (len(coord_str) == 0 or len(cardinal_dir) == 0):
+        return None
+    
+    # split the coordinate string into degrees and minutes parts
+    parts = coord_str.split(".")
+    degrees = float(parts[0][:-2])
+    minutes = float(parts[0][-2:] + '.' + parts[1][:4])
+    
+    # check if the coordinate is negative and adjust the sign accordingly
+    if cardinal_dir in ['S', 'W']:
+        sign = -1
+    else:
+        sign = 1
+    
+    # calculate the decimal degrees coordinate
+    decimal_degrees = sign * (degrees + (minutes / 60.0))
+    
+    return decimal_degrees
+    
 
 #extracts latitude, longitude, altitude, and #satellites
 def get_llas(data_str):
+    """
+    
+
+    Parameters
+    ----------
+    data_str : string
+        data from gps.readline() that has been converted to string
+
+    Returns
+    -------
+    list
+        - lat (float) decimal degrees latitude
+        - long (float) decimal degrees longitude
+        - alt (float) altitude in meters
+        - satellites (float) number of satellites
+
+    """
+    
     data = data_str.split(',')
-    lat = set_dir(data[NS] == "N", float(data[LATITUDE]))
-    lng = set_dir(data[EW] == "E", float(data[LONGITUDE]))
-    return [lat, lng, float(data[ALTITUDE]), data[SATELLITES]]
+
+    lat = ddm_to_dd(data[LATITUDE], data[NS])
+    long = ddm_to_dd(data[LONGITUDE], data[EW])
+
+    return [lat, long, gps.altitude, gps.satellites]
 
 #just returns altitude
 def get_altitude(data_str):
@@ -103,7 +155,8 @@ gps.readline()
 
 #default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
-    # Main loop runs forever printing data as it comes in
+    
+    # # Main loop runs forever printing data as it comes in
     timestamp = time.monotonic()
     while True:
         
