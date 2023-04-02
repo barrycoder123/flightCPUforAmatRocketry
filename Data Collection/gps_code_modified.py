@@ -98,15 +98,18 @@ def read_gps():
 #get and ignore first output
 gps.readline()
 
-#default code provided by adafruit, which I wrapped in this if block
+import select
 
+#default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
     # Main loop runs forever printing data as it comes in
     timestamp = time.monotonic()
     while True:
-        data = gps.readline()  # read up to 32 bytes
-        
-        print("READ A LINE!!")
+        ready_to_read, _, _ = select.select([uart], [], [], 0)
+        if ready_to_read:
+            data = gps.readline()  # read up to 32 bytes
+        else:
+            print ("NOT READY!!")
         # print(data)  # this is a bytearray type
 
         if data is not None:
