@@ -111,6 +111,8 @@ if __name__ == "__main__":
             # convert bytearray to string
             data_string = "".join([chr(b) for b in data])
             print(data_string, end="")
+        else:
+            print(None)
 
         # if time.monotonic() - timestamp > 5:
         #     # every 5 seconds...
