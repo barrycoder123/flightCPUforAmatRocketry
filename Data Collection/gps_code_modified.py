@@ -107,22 +107,19 @@ if __name__ == "__main__":
     timestamp = time.monotonic()
     while True:
         
-        gps_data = read_gps()
-        
-        if gps_data is not None:
-            print(gps_data, end="")
-        
-        # ready_to_read, _, _ = select.select([uart], [], [], 0)
-        # if ready_to_read:
-        #     data = gps.readline()  # read up to 32 bytes
-        # else:
-        #     data = None
-        # # print(data)  # this is a bytearray type
+        ready_to_read, _, _ = select.select([uart], [], [], 0)
+        if ready_to_read:
+            data = gps.readline()  # read up to 32 bytes
+        else:
+            data = None
+        # print(data)  # this is a bytearray type
 
-        # if data is not None:
-        #     # convert bytearray to string
-        #     data_string = "".join([chr(b) for b in data])
-        #     print(data_string, end="")
+        if data is not None:
+            # convert bytearray to string
+            data_string = "".join([chr(b) for b in data])
+            print(data_string, end="")
+            
+        
 
         # if time.monotonic() - timestamp > 5:
         #     # every 5 seconds...
