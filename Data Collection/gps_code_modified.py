@@ -25,6 +25,7 @@ UART.setup("UART2")
 # might need to change the timeout
 # gps defaults to 9600 baud, don't change it
 import serial
+import select
 uart = serial.Serial("/dev/ttyO2", baudrate=9600, timeout=10)
 
 # Create a GPS module instance.
@@ -98,8 +99,6 @@ def read_gps():
 #get and ignore first output
 gps.readline()
 
-import select
-
 #default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
     # Main loop runs forever printing data as it comes in
@@ -109,7 +108,6 @@ if __name__ == "__main__":
         if ready_to_read:
             data = gps.readline()  # read up to 32 bytes
         else:
-            print ("NOT READY!!")
             data = None
         # print(data)  # this is a bytearray type
 
