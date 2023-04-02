@@ -110,6 +110,7 @@ if __name__ == "__main__":
             data = gps.readline()  # read up to 32 bytes
         else:
             print ("NOT READY!!")
+            data = None
         # print(data)  # this is a bytearray type
 
         if data is not None:
