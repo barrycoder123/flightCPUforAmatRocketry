@@ -47,7 +47,7 @@ gps.send_command(b"PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 # gps.send_command(b'PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0')
 
 # Set update rate to once a second (1hz) which is what you typically want.
-gps.send_command(b"PMTK220,1000")
+# gps.send_command(b"PMTK220,1000")
 # Or decrease to once every two seconds by doubling the millisecond value.
 # Be sure to also increase your UART timeout above!
 # gps.send_command(b'PMTK220,2000')
@@ -57,15 +57,26 @@ gps.send_command(b"PMTK220,1000")
 
 #these are the indices of each data point returned by the GPS
 LATITUDE = 2
+NS = 3
 LONGITUDE = 4
+EW = 5
 SATELLITES = 7
 ALTITUDE = 9
 UNIT = 10
 
+def set_dir(boolean, val):
+    if boolean is True:
+        return val
+    else:
+        return val * -1
+
+
 #extracts latitude, longitude, altitude, and #satellites
 def get_llas(data_str):
     data = data_str.split(',')
-    return [data[i] for i in [2, 4, 9, 7]]
+    lat = set_dir(data[NS] == "N", float(data[LATITUDE]))
+    lng = set_dir(data[EW] == "E", float(data[LONGITUDE]))
+    return [lat, lng, float(data[ALTITUDE]), data[SATELLITES]]
 
 #just returns altitude
 def get_altitude(data_str):
@@ -83,7 +94,10 @@ def read_gps():
         # print(data_str, end="")
         return get_llas(data_str)
     return None
-    
+
+#get and ignore first output
+gps.readline()
+
 #default code provided by adafruit, which I wrapped in this if block
 
 if __name__ == "__main__":
