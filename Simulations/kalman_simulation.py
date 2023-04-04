@@ -6,8 +6,7 @@ Created on Tue Feb 21 12:46:07 2023
 @author: zrummler
 
 PURPOSE: Runs a Kalman Filtering simulation with Draper's test data
-
-SEE KALMAN.PY FOR DOCUMENTATION ON THE KALMAN FILTERING IMPLEMENTATION
+Good for quick debugging/verification of the Kalman Filtering implementation
 
 """
 import importlib
@@ -23,12 +22,12 @@ sys.path.append('../Test Data')
 
 import kalman as kf
 import earth_model as em
-import data_collection_wrapper as dcw
+import file_data_collector as dc
 from misc import plotDataAndError
 
 importlib.reload(kf)
 importlib.reload(em)
-importlib.reload(dcw)
+importlib.reload(dc)
 
 if __name__ == "__main__":
     '''
@@ -39,11 +38,11 @@ if __name__ == "__main__":
     print("Kalman Filtering Simulation")
 
     # Initialize the Data Collection module
-    dc = dcw.DataCollector().create()
-    num_points = dc.num_points
+    collector = dc.FileDataCollector()
+    num_points = collector.num_points
     
     # Initialize the EKF module
-    x, q_true = dc.get_initial_state_and_quaternion()
+    x, q_true = collector.get_initial_state_and_quaternion()
     ekf = kf.EKF(x, q_true)
     
     # Initialize state vectors and matrices
@@ -62,20 +61,20 @@ if __name__ == "__main__":
     for i in range(num_points):
 
         # Read IMU
-        accel, gyro, dt = dc.get_next_imu_reading()
+        accel, gyro, dt = collector.get_next_imu_reading()
         z_imu = np.concatenate((accel, gyro))
         
         # Prediction
         ekf.predict(z_imu, dt)
 
         # Read GPS and barometer -- these return None if no new data
-        baro = dc.get_next_barometer_reading()
-        lla = dc.get_next_gps_reading()
+        baro = collector.get_next_barometer_reading()
+        lla, satellites = collector.get_next_gps_reading()
 
         # Update
         baro = None
         #baro = baro[:1] # try just one barometer before all three
-        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
+        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10)
 
         # save the data
         PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
@@ -91,12 +90,4 @@ if __name__ == "__main__":
     #plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)
     plotDataAndError(PVA_est[6:10, ::10], PVA_truth[6:10, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
 
-    # fig, axs = plt.subplots(3, 1, sharex=True, figsize=(11, 8))
-    # for i, (ax, lab) in enumerate(zip(axs, ['X', 'Y', 'Z'])):
-    #     ax.plot(PVA_truth[i, :] - PVA_truth[i, 0], label='Truth')
-    #     ax.plot(PVA_est[i, :] - PVA_truth[i, 0], label='Estimate')
-    #     ax.set_title(f"{lab} ECEF Position (minus start)\nWITH KALMAN FILTERING (GPS + IMU)")
-    #     ax.legend()
-    #     ax.grid(True)
-    # plt.tight_layout()
     plt.show()  # needed to display the figures

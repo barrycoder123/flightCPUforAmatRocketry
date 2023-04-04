@@ -20,26 +20,32 @@ from data_collection_wrapper import DataCollector
 class SensorDataCollector(DataCollector):
 
     def __init__(self):
+        """
+        Initializes arrays and waits for GPS to warm up
+        """
         
         print("Please choose the time you'd like to run for (seconds)")
         val = int(input(">> "))
         dt = 0.1
         self.num_points = val / dt # divide by timestep dt
         
-        self.last_time = time.perf_counter()
-        
         self.accel_xyz = np.zeros(3)
         self.gyro_xyz = np.zeros(3)
         self.three_baros = np.zeros(3)
+        
+        # Wait for GPS to warm up
+        satellites = 0
+        lla = None
+        while lla is None and satellites < 8:
+            llas = read_gps()
+            lla = llas[0:3]
+            satellites = llas[3]
     
     
-    def get_next_imu_reading(self, advance=True):
+    def get_next_imu_reading(self):
         """
         gets the next IMU reading 
-        
-        Arguments:
-            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
-            
+
         Returns:
             - accel_xyz: 3 x 1 Numpy array
             - gyro_xyz: 3 x 1 Numpy array
@@ -57,32 +63,32 @@ class SensorDataCollector(DataCollector):
         return self.accel_xyz, self.gyro_xyz, dt
     
 
-    def get_next_gps_reading(self, advance=True):        
+    def get_next_gps_reading(self):        
         """
         gets the next GPS reading 
         
-        Arguments:
-            - advance: Boolean (optional), if True then data collection advances, if False then on the next call you will get the same data as before
-            
         Returns:
-            - reading: 3 x 1 Numpy array [lat, long, atti]
-            - dt: time step
+            - lla: 3 x 1 Numpy array [lat, long, atti]
+            - satellites: number of satellites used to determine lat, long, atti
+            
+        Notes:
+            - Returns None, 0 if no reading can be made
         """
         
         llas = read_gps()
         
         if llas is None:
-            return None
+            return None, 0
         
-        return llas[0:3] # ignore satellites
+        lla = llas[0:3]
+        satellites = llas[3]
+        
+        return lla, satellites
     
 
     def get_next_barometer_reading(self):
         """
         gets the next barometer reading
-        
-        Arguments:
-            - none
             
         Returns:
             - reading: (3,1) or (3,) numpy array of three readings [baro1, baro2, baro3]
@@ -95,22 +101,28 @@ class SensorDataCollector(DataCollector):
         return self.three_baros
     
     
-    def get_initial_state_and_quaternion(self):
+    def get_initial_state_and_quaternion(self, lla=None):
         """
         returns the initial state vector and initial Quaternion
+        
+        Arguments:
+            - high-accuracy lla estimate (must be at least 8 satellites)
         
         Returns:
             - state vector (9,)
             - quaternion (4,)
         """
         
-        lla = read_gps()
+        # read GPS if lla is passed as none
         while lla is None:
-            lla = read_gps()
+            llas = read_gps()
+            lla = llas[0:3]
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest
         a_ecef = np.zeros(3) # initially no attitude error
         q_e2b = em.lla2quat(lla)
+        
+        self.last_time = time.perf_counter() # this could be a problem
         
         return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b

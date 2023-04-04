@@ -210,15 +210,13 @@ def get_altitude_measurement(x, alt_meas: np.ndarray, sigma: float = 5.0):
     H = np.zeros((M, x.shape[0]))  # measurement partial
     
     # Populate H matrix
-    H[:, 0] = np.cos(lla[1]) * np.cos(lla[0])
-    H[:, 1] = np.sin(lla[1]) * np.cos(lla[0])
-    H[:, 2] = np.sin(lla[0])
-    # Velocities are not affecting altitude measurements
-    # H[:, 3:6] = 0
-    # Attitude errors are also not affecting altitude measurements
-    # H[:, 6:9] = 0
-    
-    #H = np.vstack((H, H, H))
+    #H[:, 0] = np.cos(lla[1]) * np.cos(lla[0])
+    #H[:, 1] = np.sin(lla[1]) * np.cos(lla[0])
+    #H[:, 2] = np.sin(lla[0])
+
+    # Populate H matrix
+    J = em.lla_jacobian(x[0:3])
+    H[:, 0:3] = J[2,:]
     
     nu = (alt_meas - lla[2]).reshape(M,1)
 
