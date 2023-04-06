@@ -20,11 +20,12 @@ import data_collection_wrapper as dc
 
 # main
 if __name__ == "__main__":
-
     # Initialize the Data Collector module
+    #program hangs on this line
     collector = dc.DataCollector().create()
+    print('hit')
     num_points = collector.num_points
-    
+
     # initialize State
     kalman_state, q_true = collector.get_initial_state_and_quaternion()
     x = np.concatenate((kalman_state[0:6], q_true))

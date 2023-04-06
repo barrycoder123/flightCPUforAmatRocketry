@@ -221,10 +221,8 @@ def lla2quat(lla):
     - quat: 4-dimensional quaternion, [qs, qi, qj, qk]
     """
     
-    lat, lon, alt = lla
-
     # Convert LLA coordinates to ECEF coordinates
-    x, y, z = lla2ecef(lat, lon, alt)
+    x, y, z = lla2ecef(lla)
 
     # Calculate the gravitational acceleration vector in the ECEF frame
     grav = xyz2grav(x, y, z)

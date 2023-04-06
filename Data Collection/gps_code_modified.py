@@ -103,7 +103,7 @@ def ddm_to_dd(coord_str, cardinal_dir):
     decimal_degrees = sign * (degrees + (minutes / 60.0))
     
     return decimal_degrees
-    
+   
 
 def get_llas(data_str):
     """
@@ -123,13 +123,18 @@ def get_llas(data_str):
         - satellites (float) number of satellites
 
     """
-    
+    print(data_str)
     data = data_str.split(',')
-
-    lat = ddm_to_dd(data[LATITUDE], data[NS])
-    long = ddm_to_dd(data[LONGITUDE], data[EW])
-
-    return [lat, long, gps.altitude_m, gps.satellites]
+    lat = data[LATITUDE]
+    long = data[LONGITUDE]
+    alt = data[ALTITUDE]
+    print(f'lat: {lat}, long: {long}, alt: {alt}')
+    if '' in [lat, long, alt]:
+        return None
+    lat = ddm_to_dd(lat, data[NS])
+    long = ddm_to_dd(long, data[EW])
+    print(f'casted lat: {lat}, long: {long}, alt: {alt}')
+    return [lat, long, float(alt), gps.satellites]
 
 
 def read_gps():
@@ -147,15 +152,18 @@ def read_gps():
     """
     
     # check if data is available from the serial port
-    ready_to_read, _, _ = select.select([uart], [], [], 0)
+    ready_to_read = select.select([uart], [], [], 0)
     if ready_to_read:
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
         return None
-
+    #data = gps.readline()
+    #if data is None:
+    #    return None
     # convert bytearray to string
     data_str = "".join([chr(b) for b in data])
     return get_llas(data_str)
+
 
 def read_gps_new():
     """
@@ -189,9 +197,6 @@ def read_gps_new():
     
     return [lat, long, alt, satellites]
     
-
-#get and ignore first output
-gps.readline()
 
 #default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
