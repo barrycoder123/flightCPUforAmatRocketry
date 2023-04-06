@@ -20,6 +20,7 @@ from data_collection_wrapper import DataCollector
 class SensorDataCollector(DataCollector):
 
     def __init__(self):
+        
         """
         Initializes arrays and waits for GPS to warm up
         """
@@ -35,6 +36,7 @@ class SensorDataCollector(DataCollector):
         satellites = 0
         lla = None
         while lla is None and satellites < 8:
+            print(satellites)
             llas = read_gps()
             if llas is not None:
                 lla = llas[0:3]

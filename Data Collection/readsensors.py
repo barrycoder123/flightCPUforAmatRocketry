@@ -1,5 +1,5 @@
 import serial
-import Adafruit_BNO055
+import adafruit_bno055
 import time
 #from barometer import *
 import configparser
@@ -8,12 +8,11 @@ import pathlib
 
 UART.setup("UART1")
 
-
 # Begin Setup
-uart = serial.Serial("/dev/ttyO1")
-# imu = Adafruit_BNO055.BNO055_UART(uart)
-imu = serial.Serial("/dev/ttyO1", 9600)
-
+uart = serial.Serial("/dev/ttyO1", 115200)
+imu = adafruit_bno055.BNO055_UART(uart)
+print(dir(imu))
+print(imu)
 
 path = pathlib.Path().resolve()
 config = configparser.ConfigParser()
@@ -60,28 +59,30 @@ def read_baro(last_baro):
         baro = last_baro
     return baro
 
-# def collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro):
-#     global last_time
+def collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro):
+     # global last_time
     
-#     last_gyro = read_gyro(last_gyro)
-#     last_accel = read_accel(last_accel)
-#     last_baro = read_baro(last_baro)
-#     time_step = time.perf_counter()-last_time
-#     last_time = last_time+time_step
+     last_gyro = read_gyro(last_gyro)
+     last_accel = read_accel(last_accel)
+     # last_baro = read_baro(last_baro)
+     last_baro = 0
+     time_step = time.perf_counter()-last_time
+     last_time = last_time+time_step
     
-#     return last_gyro, last_accel, last_baro, time_step, last_time
+     return last_gyro, last_accel, last_baro, time_step, last_time
 
 # Code below is for debugging purposes:
 
-#while True:
-#
-#    last_gyro,last_accel,last_baro,time_step,last_time = collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro)
-#
-#    print("Accelerometer (m/s^2): {}".format(last_accel))
-#    print("Gyroscope (rad/sec): {}".format(last_gyro))
-#    print("Altitude (m): {}".format(last_baro))
-#    print("Time step (sec): {}".format(time_step))
-#    print()
-#    
-#    if (time_step < period):
-#        time.sleep(period-time_step)
+if __name__ == '__main__':
+    while True:
+
+        last_gyro,last_accel,last_baro,time_step,last_time = collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro)
+
+        print("Accelerometer (m/s^2): {}".format(last_accel))
+        print("Gyroscope (rad/sec): {}".format(last_gyro))
+        print("Altitude (m): {}".format(last_baro))
+        print("Time step (sec): {}".format(time_step))
+        print()
+    
+        if (time_step < period):
+            time.sleep(period-time_step)
