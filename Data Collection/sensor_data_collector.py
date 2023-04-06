@@ -17,6 +17,8 @@ from gps_code_modified import read_gps, gps
 from readsensors import read_accel, read_gyro, read_baro
 from data_collection_wrapper import DataCollector
 
+NUM_SATELLITES = 8
+
 class SensorDataCollector(DataCollector):
 
     def __init__(self):
@@ -33,14 +35,9 @@ class SensorDataCollector(DataCollector):
         self.three_baros = np.zeros(3)
         
         # Wait for GPS to warm up
-        satellites = 0
         lla = None
-        while lla is None and satellites < 8:
-            print(satellites)
-            llas = read_gps()
-            if llas is not None:
-                lla = llas[0:3]
-                satellites = llas[3]
+        while lla is None:
+            lla = read_gps(NUM_SATELLITES)
         print("Exited while loop")
     
     def get_next_imu_reading(self):
@@ -76,15 +73,9 @@ class SensorDataCollector(DataCollector):
             - Returns None, 0 if no reading can be made
         """
         
-        llas = read_gps()
+        lla = read_gps(NUM_SATELLITES)
         
-        if llas is None:
-            return None, 0
-        
-        lla = llas[0:3]
-        satellites = llas[3]
-        
-        return lla, satellites
+        return lla
     
 
     def get_next_barometer_reading(self):
@@ -102,12 +93,9 @@ class SensorDataCollector(DataCollector):
         return self.three_baros
     
     
-    def get_initial_state_and_quaternion(self, lla=None):
+    def get_initial_state_and_quaternion(self):
         """
         returns the initial state vector and initial Quaternion
-        
-        Arguments:
-            - high-accuracy lla estimate (must be at least 8 satellites)
         
         Returns:
             - state vector (9,)
@@ -115,10 +103,9 @@ class SensorDataCollector(DataCollector):
         """
         
         # read GPS if lla is passed as none
+        lla = None
         while lla is None:
-            llas = read_gps()
-            if llas is not None:
-                lla = llas[0:3]
+            lla = read_gps(NUM_SATELLITES)
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest

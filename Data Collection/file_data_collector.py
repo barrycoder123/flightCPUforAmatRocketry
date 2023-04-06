@@ -76,15 +76,14 @@ class FileDataCollector(DataCollector):
         
         if np.isnan(self.GPS_data[self.gps_reading_number, 0]):
             self.gps_reading_number += 1
-            return None, 0
+            return None
         
         # read from the GPS    
         reading = self.GPS_data[self.gps_reading_number, 0:3]
-        satellites = 8
         
         self.gps_reading_number += 1
         
-        return reading, satellites
+        return reading
     
 
     def get_next_barometer_reading(self):
@@ -102,12 +101,9 @@ class FileDataCollector(DataCollector):
         return reading
     
     
-    def get_initial_state_and_quaternion(self, lla=None):
+    def get_initial_state_and_quaternion(self):
         """
         returns the initial state vector and initial Quaternion
-        
-        Arguments:
-            - lla (not used for file_data_collector)
         
         Returns:
             - state vector (9,)

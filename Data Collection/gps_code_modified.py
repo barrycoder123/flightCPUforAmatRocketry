@@ -123,21 +123,24 @@ def get_llas(data_str):
         - satellites (float) number of satellites
 
     """
-    print(data_str)
     data = data_str.split(',')
     lat = data[LATITUDE]
     long = data[LONGITUDE]
     alt = data[ALTITUDE]
     print(f'lat: {lat}, long: {long}, alt: {alt}')
+    
     if '' in [lat, long, alt]:
         return None
+    
     lat = ddm_to_dd(lat, data[NS])
     long = ddm_to_dd(long, data[EW])
+    alt = float(alt)
     print(f'casted lat: {lat}, long: {long}, alt: {alt}')
-    return [lat, long, float(alt), gps.satellites]
+    
+    return [lat, long, alt]
 
 
-def read_gps():
+def read_gps(num_desired_satellites=0):
     """
     Reads the GPS
 
@@ -157,15 +160,20 @@ def read_gps():
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
         return None
-    #data = gps.readline()
-    #if data is None:
-    #    return None
-    # convert bytearray to string
+    
+    # format the data string
     data_str = "".join([chr(b) for b in data])
+    print(data_str)
+    
+    # check if we've read enough satellites, for high accuracy
+    if int(gps.satellites) < num_desired_satellites:
+        print("NOT ENOUGH SATELLITES")
+        return None
+    
     return get_llas(data_str)
 
 
-def read_gps_new():
+def read_gps_new(num_desired_satellites=0):
     """
     potentially better function for reading GPS
     
@@ -187,15 +195,19 @@ def read_gps_new():
     
     # Return None if no available data
     if not gps.has_fix:
+        print("NO FIX")
+        return None
+    
+    if int(gps.satellites) < num_desired_satellites:
+        print("NOT ENOUGH SATELLITES")
         return None
     
     # Extract relevant data otherwise
     lat = gps.latitude
     long = gps.longitude
     alt = gps.altitude_m
-    satellites = gps.satellites
     
-    return [lat, long, alt, satellites]
+    return [lat, long, alt]
     
 
 #default code provided by adafruit, which I wrapped in this if block

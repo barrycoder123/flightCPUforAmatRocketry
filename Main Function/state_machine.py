@@ -36,9 +36,7 @@ class StateMachine:
         time.sleep(wait_time)
         
         # 3: Continually read from the GPS until a reading with at least 8 satellites is made. Once a reading with 8 satellites is made, save that reading [Lat, Lon, Alt]
-        satellites = 0
-        while satellites < 8:
-            lla, satellites = self.data_collector.get_next_gps_reading()
+        lla = self.data_collector.get_next_gps_reading()
         
         # 4: Initialize attitude with GPS and IMU reading. Currently: get_initial_state_and_quaternion() in Data collection. Need to re-write to take in LLA from valid GPS update (8+ satellites, and freshly calibrated and warmed up IMU).
         x, q_true = self.data_collector.get_initial_state_and_quaternion(lla)
@@ -120,7 +118,7 @@ def kalman_loop_no_logging(ekf, collector):
 
     # Read GPS and barometer -- these return None if no new data
     baro = collector.get_next_barometer_reading()
-    lla, satellites = collector.get_next_gps_reading()
+    lla = collector.get_next_gps_reading()
 
     # Update
     baro = None
@@ -154,7 +152,7 @@ def kalman_loop_with_logging(ekf, collector, logger):
 
     # Read GPS and barometer -- these return None if no new data
     baro = collector.get_next_barometer_reading()
-    lla, satellites = collector.get_next_gps_reading()
+    lla = collector.get_next_gps_reading()
 
     # Update
     baro = None
