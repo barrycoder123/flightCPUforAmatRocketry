@@ -213,6 +213,7 @@ def read_gps_new(num_desired_satellites=0):
 #default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
     
+    gps.readline()
     # # Main loop runs forever printing data as it comes in
     last_print = time.monotonic()
     while True:
@@ -223,7 +224,7 @@ if __name__ == "__main__":
         print(gps.lattitude, gps.longitude, gps.altitude_m)
         print(gps.satellites)
         
-        lla2 = read_gps_new(8)
+        #lla2 = read_gps_new(8)
         
         # We have a fix! (gps.has_fix is true)
         # Print out details about the fix like location, date, etc.
