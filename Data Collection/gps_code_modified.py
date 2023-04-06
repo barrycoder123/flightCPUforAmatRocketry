@@ -65,6 +65,9 @@ SATELLITES = 7
 ALTITUDE = 9
 UNIT = 10
 
+#read and ignore first line
+gps.readline()
+
 def ddm_to_dd(coord_str, cardinal_dir):
     """
     Convert a latitude or longitude reading from degrees and decimal minutes (DDM) to decimal degrees (DM)
@@ -102,7 +105,7 @@ def ddm_to_dd(coord_str, cardinal_dir):
     decimal_degrees = sign * (degrees + (minutes / 60.0))
     
     return decimal_degrees
-    
+   
 
 #extracts latitude, longitude, altitude, and #satellites
 def get_llas(data_str):
@@ -123,13 +126,21 @@ def get_llas(data_str):
         - satellites (float) number of satellites
 
     """
-    
+    print(data_str)
     data = data_str.split(',')
+    lat = data[LATITUDE]
+    long = data[LONGITUDE]
+    alt = data[ALTITUDE]
+    print(f'lat: {lat}, long: {long}, alt: {alt}')
+    if '' in [lat, long, alt]:
+        return None
+    #if long is not None:
+    #    long = ddm_to_dd(long, data[EW])
+    lat = ddm_to_dd(lat, data[NS])
+    long = ddm_to_dd(long, data[EW])
+    print(f'casted lat: {lat}, long: {long}, alt: {alt}')
+    return [lat, long, float(alt), gps.satellites]
 
-    lat = ddm_to_dd(data[LATITUDE], data[NS])
-    long = ddm_to_dd(data[LONGITUDE], data[EW])
-
-    return [lat, long, gps.altitude, gps.satellites]
 
 #just returns altitude
 def get_altitude(data_str):
@@ -140,18 +151,17 @@ def get_altitude(data_str):
 def read_gps():
     
     # check if data is available from the serial port
-    ready_to_read, _, _ = select.select([uart], [], [], 0)
+    ready_to_read = select.select([uart], [], [], 0)
     if ready_to_read:
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
         return None
-
+    #data = gps.readline()
+    #if data is None:
+    #    return None
     # convert bytearray to string
     data_str = "".join([chr(b) for b in data])
     return get_llas(data_str)
-
-#get and ignore first output
-gps.readline()
 
 #default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":

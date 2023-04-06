@@ -13,7 +13,7 @@ import numpy as np
 sys.path.append('../Flight Algorithms')
 
 import earth_model as em
-from gps_code_modified import read_gps
+from gps_code_modified import read_gps, gps
 from readsensors import read_accel, read_gyro, read_baro
 from data_collection_wrapper import DataCollector
 
@@ -23,7 +23,7 @@ class SensorDataCollector(DataCollector):
         """
         Initializes arrays and waits for GPS to warm up
         """
-        
+        gps.readline() #read and ignore first line
         print("Please choose the number of data points you'd like to collect")
         self.num_points = int(input(">> "))
         
@@ -36,9 +36,10 @@ class SensorDataCollector(DataCollector):
         lla = None
         while lla is None and satellites < 8:
             llas = read_gps()
-            lla = llas[0:3]
-            satellites = llas[3]
-    
+            if llas is not None:
+                lla = llas[0:3]
+                satellites = llas[3]
+        print("Exited while loop")
     
     def get_next_imu_reading(self):
         """
@@ -114,7 +115,8 @@ class SensorDataCollector(DataCollector):
         # read GPS if lla is passed as none
         while lla is None:
             llas = read_gps()
-            lla = llas[0:3]
+            if llas is not None:
+                lla = llas[0:3]
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest
