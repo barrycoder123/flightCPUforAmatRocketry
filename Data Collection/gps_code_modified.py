@@ -65,8 +65,6 @@ SATELLITES = 7
 ALTITUDE = 9
 UNIT = 10
 
-#read and ignore first line
-gps.readline()
 
 def ddm_to_dd(coord_str, cardinal_dir):
     """
@@ -134,18 +132,11 @@ def get_llas(data_str):
     print(f'lat: {lat}, long: {long}, alt: {alt}')
     if '' in [lat, long, alt]:
         return None
-    #if long is not None:
-    #    long = ddm_to_dd(long, data[EW])
     lat = ddm_to_dd(lat, data[NS])
     long = ddm_to_dd(long, data[EW])
     print(f'casted lat: {lat}, long: {long}, alt: {alt}')
     return [lat, long, float(alt), gps.satellites]
 
-
-#just returns altitude
-def get_altitude(data_str):
-    data = data_str.spit(',')
-    return data[ALTITUDE]
 
 #returns [lat, long, alt, #satellites]
 def read_gps():
