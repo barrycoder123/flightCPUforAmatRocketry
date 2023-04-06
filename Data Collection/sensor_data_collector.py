@@ -17,7 +17,7 @@ from gps_code_modified import read_gps, gps
 from readsensors import read_accel, read_gyro, read_baro
 from data_collection_wrapper import DataCollector
 
-NUM_SATELLITES = 8
+NUM_SATELLITES = 8 # number of satellites required for each GPS fix
 
 class SensorDataCollector(DataCollector):
 
@@ -67,7 +67,6 @@ class SensorDataCollector(DataCollector):
         
         Returns:
             - lla: 3 x 1 Numpy array [lat, long, atti]
-            - satellites: number of satellites used to determine lat, long, atti
             
         Notes:
             - Returns None, 0 if no reading can be made

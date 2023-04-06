@@ -217,19 +217,8 @@ if __name__ == "__main__":
     last_print = time.monotonic()
     while True:
         
-        # Make sure to call gps.update() every loop iteration and at least twice
-        # as fast as data comes from the GPS unit (usually every second).
-        # This returns a bool that's true if it parsed new data (you can ignore it
-        # though if you don't care and instead look at the has_fix property).
-        gps.update()
-        # Every second print out current location details if there's a fix.
-        current = time.monotonic()
-        if current - last_print >= 1.0:
-            last_print = current
-        if not gps.has_fix:
-            # Try again if we don't have a fix yet.
-            print("Waiting for fix...")
-            continue
+        lla = read_gps(8)
+        lla2 = read_gps_new(8)
         
         # We have a fix! (gps.has_fix is true)
         # Print out details about the fix like location, date, etc.
@@ -244,15 +233,10 @@ if __name__ == "__main__":
         gps.timestamp_utc.tm_sec,
         )
         )
-        print("Latitude: {0:.6f} degrees".format(gps.latitude))
-        print("Longitude: {0:.6f} degrees".format(gps.longitude))
-        print("Fix quality: {}".format(gps.fix_quality))
-        # Some attributes beyond latitude, longitude and timestamp are optional
-        # and might not be present. Check if they're None before trying to use!
-        if gps.satellites is not None:
-            print("# satellites: {}".format(gps.satellites))
-        if gps.altitude_m is not None:
-            print("Altitude: {} meters".format(gps.altitude_m))
+        
+        print(f'casted lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
+        print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
+        print()
 
         # MATT: uncomment this to run the code you have 
         # llas = read_gps()

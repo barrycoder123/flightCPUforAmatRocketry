@@ -68,10 +68,9 @@ class FileDataCollector(DataCollector):
         
         Returns:
             - lla: 3 x 1 Numpy array [lat, long, atti]
-            - satellites: number of satellites used to determine lat, long, atti
             
         Notes:
-            - Returns None, 0 if no reading can be made
+            - Returns None if no reading can be made
         """
         
         if np.isnan(self.GPS_data[self.gps_reading_number, 0]):
