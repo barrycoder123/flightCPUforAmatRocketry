@@ -38,6 +38,7 @@ class SensorDataCollector(DataCollector):
         lla = None
         while lla is None:
             lla = read_gps(NUM_SATELLITES)
+            
         print("Exited while loop")
     
     def get_next_imu_reading(self):

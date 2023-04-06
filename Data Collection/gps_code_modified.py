@@ -72,12 +72,12 @@ def ddm_to_dd(coord_str, cardinal_dir):
 
     Parameters
     ----------
-    - coord_str : coordinate string of the form "dddmm.mmmmm..."
+    - coord_str : DDM coordinate string of the form "dddmm.mmmmm..."
     - cardinal_dir : single capital char: "N", "S", "E", or "W"
 
     Returns
     -------
-    - decimal_degrees : latitude or longitude in "+/- ddd.ddddd..."
+    - decimal_degrees : DD latitude or longitude in "+/- ddd.ddddd..."
 
     Notes
     -----
@@ -154,12 +154,12 @@ def read_gps(num_desired_satellites=0):
 
     """
     
-    # check if data is available from the serial port
+    # if GPS is ready, read the data
     ready_to_read = select.select([uart], [], [], 0)
     if ready_to_read:
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
-        return None
+        return None # if not, return None
     
     # format the data string
     data_str = "".join([chr(b) for b in data])
@@ -168,7 +168,7 @@ def read_gps(num_desired_satellites=0):
     # check if we've read enough satellites, for high accuracy
     if gps.satellites is not None and int(gps.satellites) < num_desired_satellites:
         print("NOT ENOUGH SATELLITES")
-        return None
+        return None # if not, return None
     
     return get_llas(data_str)
 
@@ -176,6 +176,8 @@ def read_gps(num_desired_satellites=0):
 def read_gps_new(num_desired_satellites=0):
     """
     potentially better function for reading GPS
+    potentially worse, so we'll have to test
+    - as long as read_gps() is bug free I have no issue with it
     
     Returns
     -------
@@ -210,7 +212,7 @@ def read_gps_new(num_desired_satellites=0):
     return [lat, long, alt]
     
 
-#default code provided by adafruit, which I wrapped in this if block
+# default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
     
     gps.readline()
@@ -219,14 +221,10 @@ if __name__ == "__main__":
     while True:
         
         lla = read_gps(num_desired_satellites=8)
-        lla2 = read_gps_new(num_desired_satellites=8)
+        #lla2 = read_gps_new(num_desired_satellites=8)
         
-        gps.update()
-        print(gps.lattitude, gps.longitude, gps.altitude_m)
-        print(gps.satellites)
-        
-        if gps.has_fix: 
-            # We have a fix! (gps.has_fix is true)
+        # print data if we got some!
+        if lla is not None:
             # Print out details about the fix like location, date, etc.
             print("=" * 40) # Print a separator line.
             print(
@@ -241,10 +239,5 @@ if __name__ == "__main__":
             )
         
             print(f'casted lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
-            print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
+            #print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
             print()
-
-        # MATT: uncomment this to run the code you have 
-        # llas = read_gps()
-        # if llas is not None:
-        #     print(llas)
