@@ -166,7 +166,7 @@ def read_gps(num_desired_satellites=0):
     print(data_str)
     
     # check if we've read enough satellites, for high accuracy
-    if int(gps.satellites) < num_desired_satellites:
+    if gps.satellites is not None and int(gps.satellites) < num_desired_satellites:
         print("NOT ENOUGH SATELLITES")
         return None
     
@@ -213,30 +213,32 @@ def read_gps_new(num_desired_satellites=0):
 #default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
     
+    gps.readline()
     # # Main loop runs forever printing data as it comes in
     last_print = time.monotonic()
     while True:
         
-        lla = read_gps(8)
-        lla2 = read_gps_new(8)
+        lla = read_gps(num_desired_satellites=8)
+        lla2 = read_gps_new(num_desired_satellites=8)
         
-        # We have a fix! (gps.has_fix is true)
-        # Print out details about the fix like location, date, etc.
-        print("=" * 40) # Print a separator line.
-        print(
-        "Fix timestamp: {}/{}/{} {:02}:{:02}:{:02}".format(
-        gps.timestamp_utc.tm_mon, # Grab parts of the time from the
-        gps.timestamp_utc.tm_mday, # struct_time object that holds
-        gps.timestamp_utc.tm_year, # the fix time. Note you might
-        gps.timestamp_utc.tm_hour, # not get all data like year, day,
-        gps.timestamp_utc.tm_min, # month!
-        gps.timestamp_utc.tm_sec,
-        )
-        )
+        if gps.has_fix: 
+            # We have a fix! (gps.has_fix is true)
+            # Print out details about the fix like location, date, etc.
+            print("=" * 40) # Print a separator line.
+            print(
+            "Fix timestamp: {}/{}/{} {:02}:{:02}:{:02}".format(
+            gps.timestamp_utc.tm_mon, # Grab parts of the time from the
+            gps.timestamp_utc.tm_mday, # struct_time object that holds
+            gps.timestamp_utc.tm_year, # the fix time. Note you might
+            gps.timestamp_utc.tm_hour, # not get all data like year, day,
+            gps.timestamp_utc.tm_min, # month!
+            gps.timestamp_utc.tm_sec,
+            )
+            )
         
-        print(f'casted lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
-        print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
-        print()
+            print(f'casted lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
+            print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
+            print()
 
         # MATT: uncomment this to run the code you have 
         # llas = read_gps()
