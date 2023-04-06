@@ -221,6 +221,10 @@ if __name__ == "__main__":
         lla = read_gps(num_desired_satellites=8)
         lla2 = read_gps_new(num_desired_satellites=8)
         
+        gps.update()
+        print(gps.lattitude, gps.longitude, gps.altitude_m)
+        print(gps.satellites)
+        
         if gps.has_fix: 
             # We have a fix! (gps.has_fix is true)
             # Print out details about the fix like location, date, etc.
