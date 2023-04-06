@@ -218,6 +218,11 @@ if __name__ == "__main__":
     while True:
         
         lla = read_gps(8)
+        
+        gps.update()
+        print(gps.lattitude, gps.longitude, gps.altitude_m)
+        print(gps.satellites)
+        
         lla2 = read_gps_new(8)
         
         # We have a fix! (gps.has_fix is true)
