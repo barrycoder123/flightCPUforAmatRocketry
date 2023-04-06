@@ -43,7 +43,8 @@ class SensorDataCollector(DataCollector):
     
     def get_next_imu_reading(self):
         """
-        gets the next IMU reading 
+        gets the next IMU reading  (acceleration, angular rotation)
+        Also returns time step
 
         Returns:
             - accel_xyz: 3 x 1 Numpy array
@@ -102,7 +103,7 @@ class SensorDataCollector(DataCollector):
             - quaternion (4,)
         """
         
-        # read GPS if lla is passed as none
+        # wait for GPS to warm up, then save that reading
         lla = None
         while lla is None:
             lla = read_gps(NUM_SATELLITES)
