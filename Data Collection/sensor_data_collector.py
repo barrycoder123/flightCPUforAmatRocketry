@@ -39,7 +39,6 @@ class SensorDataCollector(DataCollector):
             lla = llas[0:3]
             satellites = llas[3]
     
-    
     def get_next_imu_reading(self):
         """
         gets the next IMU reading 

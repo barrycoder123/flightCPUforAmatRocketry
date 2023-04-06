@@ -174,6 +174,7 @@ def read_gps_new():
     Returns None if no new data is available
     """
     
+    # "Ping" the GPS
     gps.update()
     
     # Return None if no available data
