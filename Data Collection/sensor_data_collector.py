@@ -118,6 +118,8 @@ class SensorDataCollector(DataCollector):
         lla = None
         while lla is None:
             lla = read_gps_new(NUM_SATELLITES)
+        print("Initial LLA:",lla)
+
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest

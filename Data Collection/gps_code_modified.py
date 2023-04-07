@@ -126,7 +126,6 @@ def get_lla(data):
     lat = data[LATITUDE]
     long = data[LONGITUDE]
     alt = data[ALTITUDE]
-    print(f'lat: {lat}, long: {long}, alt: {alt}')
     
     if '' in [lat, long, alt]:
         return None
@@ -134,8 +133,7 @@ def get_lla(data):
     lat = ddm_to_dd(lat, data[NS])
     long = ddm_to_dd(long, data[EW])
     alt = float(alt)
-    print(f'casted lat: {lat}, long: {long}, alt: {alt}')
-    
+       
     return [lat, long, alt]
 
 last_time = time.monotonic()
@@ -232,14 +230,14 @@ def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
         - the GPS gets a fix but no new data is available in the desired time frame
         - the GPS gets a fix but not enough satellites were used
     """
-    global last_time
+    global last_time#, gps
 
     # Update the GPS struct
     gps.update()
 
     # sanity check: ensure GPS has a fix before moving on
     if not gps.has_fix:
-        print("NO GPS FIX")
+        print("NO GPS FIX NEW")
         return None
 
     # if not enough time has passed, you will not get new data
@@ -272,14 +270,16 @@ if __name__ == "__main__":
     # # Main loop runs forever printing data as it comes in
     while True:
         
-        lla = read_gps(num_desired_satellites=4, desired_update_time=1.0)
+        #lla = read_gps(num_desired_satellites=4, desired_update_time=1.0)
+        lla = read_gps_new(num_desired_satellites=4, desired_update_time=1.0)
 
         # print data if we got some!
-        if lla is not None:
+        if (lla is not None):
+            
             # Print out details about the fix like location, date, etc.
             print("=" * 40) # Print a separator line.
             print(
-            "Fix timestamp: {}/{}/{} {:02}:{:02}:{:02}".format(
+            "Timestamp: {}/{}/{} {:02}:{:02}:{:02}".format(
             gps.timestamp_utc.tm_mon, # Grab parts of the time from the
             gps.timestamp_utc.tm_mday, # struct_time object that holds
             gps.timestamp_utc.tm_year, # the fix time. Note you might
@@ -289,7 +289,8 @@ if __name__ == "__main__":
             )
             )
             print(f'lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
-            #print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
+            #print(gps.latitude, gps.longitude, gps.altitude_m)
+            #)print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
             print()
         #else:
             #print("Nothing")
