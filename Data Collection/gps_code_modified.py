@@ -105,7 +105,7 @@ def ddm_to_dd(coord_str, cardinal_dir):
     return decimal_degrees
    
 
-def get_llas(data_str):
+def get_llas(data):
     """
     Extracts latitude, longitude, altitude, and number of satellites from data string
 
@@ -123,7 +123,6 @@ def get_llas(data_str):
         - satellites (float) number of satellites
 
     """
-    data = data_str.split(',')
     lat = data[LATITUDE]
     long = data[LONGITUDE]
     alt = data[ALTITUDE]
@@ -159,16 +158,18 @@ def read_gps(num_desired_satellites=0):
     if ready_to_read:
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
-        return None # if not, return None
+        return None # for when no data is available
     
     # format the data string
-    data_str = "".join([chr(b) for b in data])
-    print(data_str)
-    
+    data_str = "".join([chr(b) for b in data]) # convert to string from byteArray
+    data_str = data_str.split(',') # separate into discrete elements using comma
+    if len(data_str) < LATITUDE:
+        return None # for when the data string is too short
+
     # check if we've read enough satellites, for high accuracy
     if gps.satellites is not None and int(gps.satellites) < num_desired_satellites:
         print("NOT ENOUGH SATELLITES")
-        return None # if not, return None
+        return None # for when we don't have enough satellites
     
     return get_llas(data_str)
 
@@ -244,3 +245,5 @@ if __name__ == "__main__":
             print(f'casted lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
             #print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
             print()
+        else:
+            print("Nothing")
