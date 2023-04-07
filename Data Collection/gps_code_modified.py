@@ -138,8 +138,8 @@ def get_llas(data):
     
     return [lat, long, alt]
 
-
-def read_gps(num_desired_satellites=0):
+last_print = time.monotonic()
+def read_gps(ping_time=1.0, num_desired_satellites=0):
     """
     Reads the GPS
 
@@ -152,10 +152,12 @@ def read_gps(num_desired_satellites=0):
         - satellites (float) number of satellites
 
     """
-    
+    global last_print
+
     # if GPS is ready, read the data
-    ready_to_read = select.select([uart], [], [], 0)
-    if ready_to_read:
+    current = time.monotonic()
+    if current - last_print >= ping_time:
+        last_print = current
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
         return None # for when no data is available
@@ -163,7 +165,7 @@ def read_gps(num_desired_satellites=0):
     # format the data string
     data_str = "".join([chr(b) for b in data]) # convert to string from byteArray
     data_str = data_str.split(',') # separate into discrete elements using comma
-    if len(data_str) < LATITUDE:
+    if len(data_str) < LONGITUDE:
         return None # for when the data string is too short
 
     # check if we've read enough satellites, for high accuracy
@@ -173,8 +175,7 @@ def read_gps(num_desired_satellites=0):
     
     return get_llas(data_str)
 
-
-def read_gps_new(num_desired_satellites=0):
+def read_gps_new(ping_time=1.0, num_desired_satellites=0):
     """
     potentially better function for reading GPS
     potentially worse, so we'll have to test
@@ -192,18 +193,26 @@ def read_gps_new(num_desired_satellites=0):
     -----
     Returns None if no new data is available
     """
-    
+    global last_print
+
     # "Ping" the GPS
     gps.update()
 
     #print(gps.has_fix)
+
+    # Return None if not enough time elapsed
+    current = time.monotonic()
+    if current - last_print < ping_time:
+        #print("NOT ENOUGH TIME")
+        return None
+    print("HERE IS ONE SECOND")
+    last_print = current
     
     # Return None if no available data
     if not gps.has_fix:
-        # print("NO FIX")
+        #print("NO FIX")
         return None
     
-    print("satelites: ", gps.satellites)
     if int(gps.satellites) < num_desired_satellites:
         #print("NOT ENOUGH SATELLITES")
         return None
@@ -219,13 +228,12 @@ def read_gps_new(num_desired_satellites=0):
 # default code provided by adafruit, which I wrapped in this if block
 if __name__ == "__main__":
     
-    gps.readline()
     # # Main loop runs forever printing data as it comes in
     last_print = time.monotonic()
     while True:
         
-        lla = read_gps(num_desired_satellites=4)
-        #lla2 = read_gps_new(num_desired_satellites=8)
+        #lla = read_gps(ping_time=1.0, num_desired_satellites=4)
+        lla = read_gps_new(ping_time=1.0, num_desired_satellites=4)
         
         # print data if we got some!
         if lla is not None:
@@ -245,5 +253,5 @@ if __name__ == "__main__":
             print(f'casted lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
             #print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
             print()
-        else:
-            print("Nothing")
+        #else:
+            #print("Nothing")
