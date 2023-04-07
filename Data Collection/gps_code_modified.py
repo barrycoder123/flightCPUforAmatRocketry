@@ -167,12 +167,14 @@ def read_gps(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
     if time_change > GPS_UPDATE_TIME:
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
+        print("NOT ENOUGH TIME")
         return None # for when no data is available
     
     # format the data string
     data_str = "".join([chr(b) for b in data]) # convert to string from byteArray
     data_str = data_str.split(',') # separate into discrete elements using comma
     if len(data_str) < LONGITUDE:
+        print("BAD DATA STRING")
         return None # for when the data string is too short
 
     # check if we've read enough satellites, for high accuracy
@@ -206,17 +208,17 @@ def read_gps_new(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
 
     # if enough time has elapsed, the GPS has new data
     if time_change < GPS_UPDATE_TIME:
-        #print("NOT ENOUGH TIME")
+        # print("NOT ENOUGH TIME")
         return None
-
+    print("SHOULD BE HERE")
     
     # Return None if no available data
     if not gps.has_fix:
-        #print("NO FIX")
+        print("NO FIX")
         return None
     
     if int(gps.satellites) < num_desired_satellites:
-        #print("NOT ENOUGH SATELLITES")
+        print("NOT ENOUGH SATELLITES")
         return None
     
     # Extract relevant data otherwise
@@ -231,11 +233,16 @@ def read_gps_new(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
 if __name__ == "__main__":
     
     # # Main loop runs forever printing data as it comes in
-    last_print = time.monotonic()
+    last_time = time.monotonic()
     while True:
         
-        #lla = read_gps(ping_time=1.0, num_desired_satellites=4)
-        lla = read_gps_new(ping_time=1.0, num_desired_satellites=4)
+        #lla = read_gps(time_change=1.0, num_desired_satellites=4)
+        current_time = time.monotonic()
+        dt = current_time - last_time
+        last_time = current_time
+        print(dt)
+
+        lla = read_gps_new(time_change=dt, num_desired_satellites=4)
         
         # print data if we got some!
         if lla is not None:
