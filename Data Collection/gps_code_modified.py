@@ -106,9 +106,9 @@ def ddm_to_dd(coord_str, cardinal_dir):
     return decimal_degrees
    
 
-def get_llas(data):
+def get_lla(data):
     """
-    Extracts latitude, longitude, altitude, and number of satellites from data string
+    Extracts latitude, longitude, altitude, from data string
 
     Parameters
     ----------
@@ -117,11 +117,10 @@ def get_llas(data):
 
     Returns
     -------
-    llas : list
-        - lat (float) decimal degrees latitude
-        - long (float) decimal degrees longitude
+    lla : list
+        - lat (float) latitude in decimal-degrees format
+        - long (float) latitude in decimal-degrees format
         - alt (float) altitude in meters
-        - satellites (float) number of satellites
 
     """
     lat = data[LATITUDE]
@@ -147,20 +146,21 @@ def read_gps(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     
     Parameters
     ----------
-    time_change : float (seconds)
-        - the amount of time that has elapsed since the last GPS read
-        - by default, this number is larger than necessary
     num_desired_satellites : int
         - the number of satellites that the GPS must lock on to
         - by default, this number is set to 0
+    desired_update_time : float 
+        - the amount of time (seconds) that should elapse before the GPS provides a new reading
+        - by default, this number is set to the GPS's inherent update time. 
+        You can increase it if you want less frequent updates, but if you decrease 
+        it you will not get new data each time
 
     Returns
     -------
     llas : list
-        - lat (float) decimal degrees latitude
-        - long (float) decimal degrees longitude
+        - lat (float) latitude in decimal-degrees format
+        - long (float) latitude in decimal-degrees format
         - alt (float) altitude in meters
-        - satellites (float) number of satellites
 
     """
     global last_time
@@ -186,13 +186,24 @@ def read_gps(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
         print("NOT ENOUGH SATELLITES")
         return None # for when we don't have enough satellites
     
-    return get_llas(data_str)
+    return get_lla(data_str)
 
 def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     """
     potentially better function for reading GPS
     potentially worse, so we'll have to test
     - as long as read_gps() is bug free I have no issue with it
+    
+    Parameters
+    ----------
+    num_desired_satellites : int
+        - the number of satellites that the GPS must lock on to
+        - by default, this number is set to 0
+    desired_update_time : float 
+        - the amount of time (seconds) that should elapse before the GPS provides a new reading
+        - by default, this number is set to the GPS's inherent update time. 
+        You can increase it if you want less frequent updates, but if you decrease 
+        it you will not get new data each time
     
     Returns
     -------
@@ -240,16 +251,11 @@ def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
 if __name__ == "__main__":
     
     # # Main loop runs forever printing data as it comes in
-    last_time = time.monotonic()
     while True:
         
         #lla = read_gps(time_change=1.0, num_desired_satellites=4)
-        current_time = time.monotonic()
-        dt = current_time - last_time
-        last_time = current_time
-        print(dt)
 
-        lla = read_gps_new(time_change=dt, num_desired_satellites=4)
+        lla = read_gps(num_desired_satellites=4, desired_updatet_time=1.0)
         
         # print data if we got some!
         if lla is not None:
