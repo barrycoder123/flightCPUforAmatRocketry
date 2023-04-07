@@ -223,7 +223,7 @@ if __name__ == "__main__":
     last_print = time.monotonic()
     while True:
         
-        lla = read_gps_new(num_desired_satellites=4)
+        lla = read_gps(num_desired_satellites=4)
         #lla2 = read_gps_new(num_desired_satellites=8)
         
         # print data if we got some!

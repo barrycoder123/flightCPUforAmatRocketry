@@ -9,7 +9,7 @@ If num_points is None, then
 
 import time
 import numpy as np
-#import pandas as pd
+import pandas as pd
 #import matplotlib.pyplot as plt
 
 class DataLogger:
@@ -71,14 +71,13 @@ class DataLogger:
         
         num_points = self.PVA_est.shape[1]
         
-        print("POSITION:")
+        print("POSITION DRIFT:")
         
         for i in range(num_points):
-            diff_x = self.PVA_est[0,i] - self.PVA_est[0,0]
-            diff_y = self.PVA_est[0,i] - self.PVA_est[0,0]
-            diff_z = self.PVA_est[0,i] - self.PVA_est[0,0]
+            curr_time = self.PVA_est[0,i]
+            drift_xyz = self.PVA_est[1:3,i] - self.PVA_est[1:3,0]
             
-            print(diff_x, diff_y, diff_z)
+            print(curr_time, drift_xyz)
         
 
     # def write_buffer_to_file(self):

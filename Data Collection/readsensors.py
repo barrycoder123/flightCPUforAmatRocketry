@@ -12,8 +12,6 @@ UART.setup("UART1")
 # Begin Setup
 uart = serial.Serial("/dev/ttyO1", 115200)
 imu = adafruit_bno055.BNO055_UART(uart)
-print(dir(imu))
-print(imu)
 
 path = pathlib.Path().resolve()
 config = configparser.ConfigParser()
@@ -24,8 +22,8 @@ config.read(path / 'barometer.txt')
 
 last_val = 0xFFFF
 # set up initial sensor values
-last_accel = [0,0,0]
-last_gyro = [0,0,0]
+last_accel = np.array([last_val,last_val,last_val])
+last_gyro = np.array([last_val,last_val,last_val])
 last_baro = last_val
 last_time = time.perf_counter()
 
