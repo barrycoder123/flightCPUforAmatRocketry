@@ -33,7 +33,7 @@ class DataCollector:
         if platform.processor() == 'i386':
             return self.__file_data_collector()
         
-        if platform.processor() == 0:
+        if platform.system() == 'Linux':
             return self.__sensor_data_collector()
         
         # Print welcome messages and instructions
