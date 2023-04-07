@@ -47,6 +47,7 @@ gps.send_command(b"PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 # Turn on everything (not all of it is parsed!)
 # gps.send_command(b'PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0')
 
+GPS_UPDATE_TIME = 1.0 # want the GPS to get new data every 1 second
 # Set update rate to once a second (1hz) which is what you typically want.
 # gps.send_command(b"PMTK220,1000")
 # Or decrease to once every two seconds by doubling the millisecond value.
@@ -138,10 +139,18 @@ def get_llas(data):
     
     return [lat, long, alt]
 
-last_print = time.monotonic()
-def read_gps(ping_time=1.0, num_desired_satellites=0):
+def read_gps(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
     """
     Reads the GPS
+    
+    Parameters
+    ----------
+    time_change : float (seconds)
+        - the amount of time that has elapsed since the last GPS read
+        - by default, this number is larger than necessary
+    num_desired_satellites : int
+        - the number of satellites that the GPS must lock on to
+        - by default, this number is set to 0
 
     Returns
     -------
@@ -154,10 +163,8 @@ def read_gps(ping_time=1.0, num_desired_satellites=0):
     """
     global last_print
 
-    # if GPS is ready, read the data
-    current = time.monotonic()
-    if current - last_print >= ping_time:
-        last_print = current
+    # if time elapsed , read the data
+    if time_change > GPS_UPDATE_TIME:
         data = gps.readline()  # read dataline, times out after timeout defined in uart
     else:
         return None # for when no data is available
@@ -175,7 +182,7 @@ def read_gps(ping_time=1.0, num_desired_satellites=0):
     
     return get_llas(data_str)
 
-def read_gps_new(ping_time=1.0, num_desired_satellites=0):
+def read_gps_new(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
     """
     potentially better function for reading GPS
     potentially worse, so we'll have to test
@@ -193,20 +200,15 @@ def read_gps_new(ping_time=1.0, num_desired_satellites=0):
     -----
     Returns None if no new data is available
     """
-    global last_print
 
-    # "Ping" the GPS
+    # Update the GPS struct
     gps.update()
 
-    #print(gps.has_fix)
-
-    # Return None if not enough time elapsed
-    current = time.monotonic()
-    if current - last_print < ping_time:
+    # if enough time has elapsed, the GPS has new data
+    if time_change < GPS_UPDATE_TIME:
         #print("NOT ENOUGH TIME")
         return None
-    print("HERE IS ONE SECOND")
-    last_print = current
+
     
     # Return None if no available data
     if not gps.has_fix:

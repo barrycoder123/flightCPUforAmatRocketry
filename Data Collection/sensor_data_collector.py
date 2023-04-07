@@ -17,7 +17,7 @@ from gps_code_modified import read_gps, read_gps_new, gps
 from readsensors import read_accel, read_gyro, read_baro
 from data_collection_wrapper import DataCollector
 
-NUM_SATELLITES = 4 # number of satellites required for each GPS fix
+NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
 
 class SensorDataCollector(DataCollector):
 
@@ -41,6 +41,17 @@ class SensorDataCollector(DataCollector):
             
         print("Exited while loop")
     
+    def start_timer(self):
+        """
+        start the data collector timer
+        
+        No arguments, no return value
+        """
+        
+        t_initial = time.monotonic()
+        self.last_imu_time = t_initial
+        self.last_gps_time = t_initial
+    
     def get_next_imu_reading(self):
         """
         gets the next IMU reading  (acceleration, angular rotation)
@@ -56,9 +67,10 @@ class SensorDataCollector(DataCollector):
         self.accel_xyz = read_accel(self.accel_xyz)
         self.gyro_xyz = read_gyro(self.accel_xyz)
         
-        current_time = time.perf_counter()
-        dt = current_time - self.last_time
-        self.last_time = current_time
+        # determine change in time (seconds) between last and current IMU read
+        current_time = time.monotonic()
+        dt = current_time - self.last_imu_time
+        self.last_imu_time = current_time
         
         return self.accel_xyz, self.gyro_xyz, dt
     
@@ -74,8 +86,12 @@ class SensorDataCollector(DataCollector):
             - Returns None, 0 if no reading can be made
         """
         
-        lla = read_gps_new(NUM_SATELLITES)
+        # determine change in time (seconds) between last and current IMU read
+        current_time = time.monotonic()
+        time_change = current_time - self.last_gps_time
+        self.last_gps_time = current_time
         
+        lla = read_gps_new(time_change, NUM_SATELLITES)
         return lla
     
 
@@ -112,7 +128,5 @@ class SensorDataCollector(DataCollector):
         v_ecef = np.zeros(3) # initially at rest
         a_ecef = np.zeros(3) # initially no attitude error
         q_e2b = em.lla2quat(lla)
-        
-        self.last_time = time.perf_counter() # this could be a problem
         
         return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b
