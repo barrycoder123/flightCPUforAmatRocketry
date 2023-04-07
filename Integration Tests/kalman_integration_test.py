@@ -52,6 +52,7 @@ if __name__ == "__main__":
 
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
+    collector.start_timer()
     logger.start_timer()
     for i in range(num_points):
 
@@ -68,9 +69,9 @@ if __name__ == "__main__":
 
         # Update
         baro = None
-        print("here")
-        if lla is not None:
-            print("Got a GPS!")
+        #print("here")
+        #if lla is not None:
+        #    print("Got a GPS!")
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data

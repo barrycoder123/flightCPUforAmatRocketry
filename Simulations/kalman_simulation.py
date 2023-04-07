@@ -57,7 +57,6 @@ if __name__ == "__main__":
 
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
-
     for i in range(num_points):
 
         # Read IMU

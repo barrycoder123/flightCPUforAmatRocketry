@@ -50,7 +50,6 @@ class SensorDataCollector(DataCollector):
         
         t_initial = time.monotonic()
         self.last_imu_time = t_initial
-        self.last_gps_time = t_initial
     
     def get_next_imu_reading(self):
         """
@@ -85,13 +84,9 @@ class SensorDataCollector(DataCollector):
         Notes:
             - Returns None, 0 if no reading can be made
         """
-        
-        # determine change in time (seconds) between last and current IMU read
-        current_time = time.monotonic()
-        time_change = current_time - self.last_gps_time
-        self.last_gps_time = current_time
-        
-        lla = read_gps_new(time_change, NUM_SATELLITES)
+         
+        # update every 1.0 seconds
+        lla = read_gps_new(NUM_SATELLITES, 1.0)
         return lla
     
 

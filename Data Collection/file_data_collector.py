@@ -114,3 +114,6 @@ class FileDataCollector(DataCollector):
         a_ecef = np.zeros(3)
         
         return np.concatenate((r_ecef, v_ecef, a_ecef)), self.imu_file_data[0, 7:11] 
+
+    def start_timer(self):
+        pass

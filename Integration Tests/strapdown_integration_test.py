@@ -36,6 +36,7 @@ if __name__ == "__main__":
 
     # Run the strapdown for all data
     print("Running strapdown simulation")
+    collector.start_timer()
     logger.start_timer()
     for i in range(num_points):
 
@@ -56,12 +57,12 @@ if __name__ == "__main__":
         # Log the values for later viewing
         logger.save_state_to_buffer(x, q_e2b_new)
 
-    logger.print_buffer_contents()
+    #logger.print_buffer_contents()
     
  
-    # logger.write_buffer_to_file()
+    logger.write_buffer_to_file()
     # print("Plotting results...")
     
-    # logger.plot_file_contents()
-    # logger.print_file_contents()
+    #logger.plot_file_contents()
+    logger.print_file_contents()
 

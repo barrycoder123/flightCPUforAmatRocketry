@@ -139,7 +139,9 @@ def get_llas(data):
     
     return [lat, long, alt]
 
-def read_gps(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
+last_time = time.monotonic()
+
+def read_gps(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     """
     Reads the GPS
     
@@ -161,30 +163,32 @@ def read_gps(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
         - satellites (float) number of satellites
 
     """
-    global last_print
+    global last_time
 
-    # if time elapsed , read the data
-    if time_change > GPS_UPDATE_TIME:
-        data = gps.readline()  # read dataline, times out after timeout defined in uart
-    else:
+    # if not enough time has passed, you will not get new data
+    current = time.monotonic()
+    dt = current - last_time
+    if dt < desired_update_time:
         print("NOT ENOUGH TIME")
         return None # for when no data is available
+    data = gps.readline()  # read dataline, times out after timeout defined in uart
+    last_time = current
     
-    # format the data string
+    # once we have data, format the data string
     data_str = "".join([chr(b) for b in data]) # convert to string from byteArray
     data_str = data_str.split(',') # separate into discrete elements using comma
     if len(data_str) < LONGITUDE:
         print("BAD DATA STRING")
         return None # for when the data string is too short
 
-    # check if we've read enough satellites, for high accuracy
+    # finally check if we've read enough satellites, for high accuracy
     if gps.satellites is not None and int(gps.satellites) < num_desired_satellites:
         print("NOT ENOUGH SATELLITES")
         return None # for when we don't have enough satellites
     
     return get_llas(data_str)
 
-def read_gps_new(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
+def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     """
     potentially better function for reading GPS
     potentially worse, so we'll have to test
@@ -202,15 +206,18 @@ def read_gps_new(time_change=GPS_UPDATE_TIME+1, num_desired_satellites=0):
     -----
     Returns None if no new data is available
     """
+    global last_time
 
     # Update the GPS struct
     gps.update()
 
-    # if enough time has elapsed, the GPS has new data
-    if time_change < GPS_UPDATE_TIME:
-        # print("NOT ENOUGH TIME")
-        return None
-    print("SHOULD BE HERE")
+    # if not enough time has passed, you will not get new data
+    current = time.monotonic()
+    dt = current - last_time
+    if dt < desired_update_time:
+        print("NOT ENOUGH TIME")
+        return None # for when no data is available
+    last_time = current
     
     # Return None if no available data
     if not gps.has_fix:
