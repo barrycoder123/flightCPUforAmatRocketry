@@ -75,7 +75,7 @@ class DataLogger:
         
         for i in range(num_points):
             curr_time = self.PVA_est[0,i]
-            drift_xyz = self.PVA_est[1:3,i] - self.PVA_est[1:3,0]
+            drift_xyz = self.PVA_est[1:4,i] - self.PVA_est[1:4,0]
             
             print(curr_time, drift_xyz)
         
