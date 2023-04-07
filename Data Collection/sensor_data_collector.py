@@ -13,11 +13,11 @@ import numpy as np
 sys.path.append('../Flight Algorithms')
 
 import earth_model as em
-from gps_code_modified import read_gps, gps
+from gps_code_modified import read_gps, read_gps_new, gps
 from readsensors import read_accel, read_gyro, read_baro
 from data_collection_wrapper import DataCollector
 
-NUM_SATELLITES = 8 # number of satellites required for each GPS fix
+NUM_SATELLITES = 4 # number of satellites required for each GPS fix
 
 class SensorDataCollector(DataCollector):
 
@@ -37,7 +37,7 @@ class SensorDataCollector(DataCollector):
         # Wait for GPS to warm up
         lla = None
         while lla is None:
-            lla = read_gps(NUM_SATELLITES)
+            lla = read_gps_new(NUM_SATELLITES)
             
         print("Exited while loop")
     
@@ -74,7 +74,7 @@ class SensorDataCollector(DataCollector):
             - Returns None, 0 if no reading can be made
         """
         
-        lla = read_gps(NUM_SATELLITES)
+        lla = read_gps_new(NUM_SATELLITES)
         
         return lla
     
@@ -106,7 +106,7 @@ class SensorDataCollector(DataCollector):
         # wait for GPS to warm up, then save that reading
         lla = None
         while lla is None:
-            lla = read_gps(NUM_SATELLITES)
+            lla = read_gps_new(NUM_SATELLITES)
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest

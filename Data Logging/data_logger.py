@@ -74,7 +74,11 @@ class DataLogger:
         print("POSITION:")
         
         for i in range(num_points):
-            print(self.PVA_est[0, i], self.PVA_est[1:4, i])
+            diff_x = self.PVA_est[0,i] - self.PVA_est[0,0]
+            diff_y = self.PVA_est[0,i] - self.PVA_est[0,0]
+            diff_z = self.PVA_est[0,i] - self.PVA_est[0,0]
+            
+            print(diff_x, diff_y, diff_z)
         
 
     # def write_buffer_to_file(self):

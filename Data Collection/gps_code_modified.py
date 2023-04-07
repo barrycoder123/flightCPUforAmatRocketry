@@ -26,7 +26,7 @@ UART.setup("UART2")
 # gps defaults to 9600 baud, don't change it
 import serial
 import select
-uart = serial.Serial("/dev/ttyO2", baudrate=9600, timeout=10)
+uart = serial.Serial("/dev/ttyO2", baudrate=9600, timeout=1)
 
 # Create a GPS module instance.
 gps = adafruit_gps.GPS(uart)  # Use UART/pyserial
@@ -194,14 +194,17 @@ def read_gps_new(num_desired_satellites=0):
     
     # "Ping" the GPS
     gps.update()
+
+    #print(gps.has_fix)
     
     # Return None if no available data
     if not gps.has_fix:
-        print("NO FIX")
+        # print("NO FIX")
         return None
     
+    print("satelites: ", gps.satellites)
     if int(gps.satellites) < num_desired_satellites:
-        print("NOT ENOUGH SATELLITES")
+        #print("NOT ENOUGH SATELLITES")
         return None
     
     # Extract relevant data otherwise
@@ -209,7 +212,7 @@ def read_gps_new(num_desired_satellites=0):
     long = gps.longitude
     alt = gps.altitude_m
     
-    return [lat, long, alt]
+    return [float(lat), float(long), float(alt)]
     
 
 # default code provided by adafruit, which I wrapped in this if block
@@ -220,7 +223,7 @@ if __name__ == "__main__":
     last_print = time.monotonic()
     while True:
         
-        lla = read_gps(num_desired_satellites=8)
+        lla = read_gps_new(num_desired_satellites=4)
         #lla2 = read_gps_new(num_desired_satellites=8)
         
         # print data if we got some!

@@ -5,6 +5,7 @@ import time
 import configparser
 import Adafruit_BBIO.UART as UART
 import pathlib
+import numpy as np
 
 UART.setup("UART1")
 
@@ -23,8 +24,8 @@ config.read(path / 'barometer.txt')
 
 last_val = 0xFFFF
 # set up initial sensor values
-last_accel = last_val
-last_gyro = last_val
+last_accel = [0,0,0]
+last_gyro = [0,0,0]
 last_baro = last_val
 last_time = time.perf_counter()
 
@@ -39,24 +40,24 @@ period = 1/sample_rate_Hz
 
 def read_accel(last_accel):
     try:
-        accel = imu.acceleration
+        accel = np.array([float(item) for item in imu.acceleration])
     except RuntimeError:
         print("error reading acceleration, using previous value")
         accel = last_accel
     return accel
 def read_gyro(last_gyro):
     try:
-        gyro = imu.gyro
+        gyro = np.array([float(item) for item in imu.gyro])
     except RuntimeError:
         print("error reading gyroscope, using previous value")
         gyro = last_gyro
     return gyro
 def read_baro(last_baro):
     try:
-        baro = readALT()
+        baro = float(readALT())
     except RuntimeError:
         print("error reading barometer, using previous value")
-        baro = last_baro
+        baro = float(last_baro)
     return baro
 
 def collectdata(last_gyro, last_accel, last_baro, last_time, gyro, accel, baro):

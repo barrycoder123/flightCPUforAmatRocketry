@@ -63,11 +63,14 @@ if __name__ == "__main__":
         ekf.predict(z_imu, dt)
 
         # Read GPS and barometer -- these return None if no new data
-        baro = collector.get_next_barometer_reading()
+        # baro = collector.get_next_barometer_reading()
         lla = collector.get_next_gps_reading()
 
         # Update
         baro = None
+        print("here")
+        if lla is not None:
+            print("Got a GPS!")
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data
@@ -75,9 +78,9 @@ if __name__ == "__main__":
 
     # ========================== plotting ==========================
     print("Logging results...")
-    logger.write_buffer_to_file()
-    logger.plot_file_contents()
-    logger.print_file_contents()
+    #logger.write_buffer_to_file()
+    #logger.plot_file_contents()
+    logger.print_buffer_contents()
     
     end_time = time.time()
     
