@@ -106,7 +106,7 @@ def quat2dcm(q):
            [2 * (q1 * q3 - q0 * q2), 2 * (q2 * q3 + q0 * q1), q0 ** 2 - q1 ** 2 - q2 ** 2 + q3 ** 2]]
     return np.array(dcm)
 
-'''
+
 def quat2rotmat(q):
     """
     Converts a quaternion to a 3x3 rotation matrix
@@ -286,4 +286,3 @@ def atti2quat(atti):
     q_error /= np.linalg.norm(q_error)
 
     return q_error
-'''

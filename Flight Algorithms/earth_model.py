@@ -230,6 +230,7 @@ def lla2quat(lla):
     # Assume that the body is pointing straight away from the gravity vector
     # Body-frame x-axis is aligned with negative gravity vector in ECEF frame
     body_x = -grav / np.linalg.norm(grav)
+    body_x = body_x.squeeze()
     ecef_x = np.array([1, 0, 0])  # ECEF x-axis
 
     # Calculate the rotation axis and angle between ECEF x-axis and body x-axis
@@ -308,3 +309,14 @@ def lla_jacobian(r_ecef, HAE=True):
 
     J = np.vstack((grad_lat, grad_lon, grad_alt))
     return J
+
+if __name__ == "__main__":
+    
+    xyz = np.array([1527850.153, -4464959.009,4276353.59])
+    lla = ecef2lla(xyz)
+    quat = lla2quat(lla)
+    
+    expected_quat = [0.901797015,-0.39979036,	-0.066508461,-0.150021455]
+    
+    print("Computed quat:",quat)
+    print("Expected quat:",expected_quat)
