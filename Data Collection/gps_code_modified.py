@@ -126,7 +126,6 @@ def get_lla(data):
     lat = data[LATITUDE]
     long = data[LONGITUDE]
     alt = data[ALTITUDE]
-    print(f'lat: {lat}, long: {long}, alt: {alt}')
     
     if '' in [lat, long, alt]:
         return None
@@ -134,8 +133,7 @@ def get_lla(data):
     lat = ddm_to_dd(lat, data[NS])
     long = ddm_to_dd(long, data[EW])
     alt = float(alt)
-    print(f'casted lat: {lat}, long: {long}, alt: {alt}')
-    
+       
     return [lat, long, alt]
 
 last_time = time.monotonic()
@@ -146,43 +144,56 @@ def read_gps(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     
     Parameters
     ----------
-    num_desired_satellites : int
+    num_desired_satellites : int (optional)
         - the number of satellites that the GPS must lock on to
         - by default, this number is set to 0
-    desired_update_time : float 
+    desired_update_time : float (optional)
         - the amount of time (seconds) that should elapse before the GPS provides a new reading
-        - by default, this number is set to the GPS's inherent update time. 
+        - by default, this number is set to the GPS's inherent update time of 1 second. 
         You can increase it if you want less frequent updates, but if you decrease 
-        it you will not get new data each time
+        it you will not get new data more frequently than one second
 
     Returns
     -------
-    llas : list
+    lla : list
         - lat (float) latitude in decimal-degrees format
         - long (float) latitude in decimal-degrees format
         - alt (float) altitude in meters
 
+    Notes
+    -----
+    Returns None if:
+        - the GPS cannot get a fix
+        - the GPS gets a fix but no new data is available in the desired time frame
+        - the GPS gets a fix but not enough satellites were used
+        - the GPS data string is formatted poorly
     """
     global last_time
+
+    gps.update() # update the GPS struct
+
+    # sanity check: ensure GPS has a fix before moving on
+    if not gps.has_fix:
+        print("NO GPS FIX")
+        return None
 
     # if not enough time has passed, you will not get new data
     current = time.monotonic()
     dt = current - last_time
     if dt < desired_update_time:
-        print("NOT ENOUGH TIME")
         return None # for when no data is available
     data = gps.readline()  # read dataline, times out after timeout defined in uart
     last_time = current
-    
+
     # once we have data, format the data string
     data_str = "".join([chr(b) for b in data]) # convert to string from byteArray
     data_str = data_str.split(',') # separate into discrete elements using comma
     if len(data_str) < LONGITUDE:
         print("BAD DATA STRING")
         return None # for when the data string is too short
-
+    
     # finally check if we've read enough satellites, for high accuracy
-    if gps.satellites is not None and int(gps.satellites) < num_desired_satellites:
+    if (gps.satellites is not None) and (int(gps.satellites) < num_desired_satellites):
         print("NOT ENOUGH SATELLITES")
         return None # for when we don't have enough satellites
     
@@ -207,27 +218,33 @@ def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     
     Returns
     -------
-    llas : list
+    lla : list
         - lat (float) decimal degrees latitude
         - long (float) decimal degrees longitude
         - alt (float) altitude in meters
-        - satellites (float) number of satellites
         
     Notes
     -----
-    Returns None if no new data is available
+    Returns None if:
+        - the GPS cannot get a fix
+        - the GPS gets a fix but no new data is available in the desired time frame
+        - the GPS gets a fix but not enough satellites were used
     """
-    global last_time
+    global last_time#, gps
 
     # Update the GPS struct
     gps.update()
+
+    # sanity check: ensure GPS has a fix before moving on
+    if not gps.has_fix:
+        print("NO GPS FIX NEW")
+        return None
 
     # if not enough time has passed, you will not get new data
     current = time.monotonic()
     dt = current - last_time
     if dt < desired_update_time:
-        print("NOT ENOUGH TIME")
-        return None # for when no data is available
+        return
     last_time = current
     
     # Return None if no available data
@@ -235,7 +252,7 @@ def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
         print("NO FIX")
         return None
     
-    if int(gps.satellites) < num_desired_satellites:
+    if (gps.satellites is not None) and (int(gps.satellites) < num_desired_satellites):
         print("NOT ENOUGH SATELLITES")
         return None
     
@@ -253,16 +270,16 @@ if __name__ == "__main__":
     # # Main loop runs forever printing data as it comes in
     while True:
         
-        #lla = read_gps(time_change=1.0, num_desired_satellites=4)
+        #lla = read_gps(num_desired_satellites=4, desired_update_time=1.0)
+        lla = read_gps_new(num_desired_satellites=4, desired_update_time=1.0)
 
-        lla = read_gps(num_desired_satellites=4, desired_updatet_time=1.0)
-        
         # print data if we got some!
-        if lla is not None:
+        if (lla is not None):
+            
             # Print out details about the fix like location, date, etc.
             print("=" * 40) # Print a separator line.
             print(
-            "Fix timestamp: {}/{}/{} {:02}:{:02}:{:02}".format(
+            "Timestamp: {}/{}/{} {:02}:{:02}:{:02}".format(
             gps.timestamp_utc.tm_mon, # Grab parts of the time from the
             gps.timestamp_utc.tm_mday, # struct_time object that holds
             gps.timestamp_utc.tm_year, # the fix time. Note you might
@@ -271,9 +288,9 @@ if __name__ == "__main__":
             gps.timestamp_utc.tm_sec,
             )
             )
-        
-            print(f'casted lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
-            #print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
+            print(f'lat: {lla[0]}, long: {lla[1]}, alt: {lla[2]}')
+            #print(gps.latitude, gps.longitude, gps.altitude_m)
+            #)print(f'casted lat2: {lla2[0]}, long: {lla2[1]}, alt: {lla2[2]}')
             print()
         #else:
             #print("Nothing")

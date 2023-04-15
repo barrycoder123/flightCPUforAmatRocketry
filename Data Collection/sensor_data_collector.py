@@ -35,9 +35,9 @@ class SensorDataCollector(DataCollector):
         self.three_baros = np.zeros(3)
         
         # Wait for GPS to warm up
-        lla = None
-        while lla is None:
-            lla = read_gps_new(NUM_SATELLITES)
+        #lla = None
+        #while lla is None:
+        #    lla = read_gps_new(NUM_SATELLITES)
             
         print("Exited while loop")
     
@@ -116,8 +116,11 @@ class SensorDataCollector(DataCollector):
         
         # wait for GPS to warm up, then save that reading
         lla = None
-        while lla is None:
-            lla = read_gps_new(NUM_SATELLITES)
+        lla = np.array([42.403061, -71.113635, 40.0])
+        #while lla is None:
+        #    lla = read_gps_new(NUM_SATELLITES)
+        print("Initial LLA:",lla)
+
         
         r_ecef = em.lla2ecef(lla)
         v_ecef = np.zeros(3) # initially at rest
