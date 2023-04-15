@@ -42,9 +42,10 @@ def ecef2lla(xyz):
 
     Returns:
     - lla: (3,N) dimensional GPS lla position [lat (deg), lon (deg), alt (meters)]
-    - alt is height above sea level, as opposed to center of earth
+    - alt is height above ellipsoid, as opposed to center of earth
 
     """
+    
     if xyz.ndim < 2:  # force 2D
         xyz = xyz.reshape(-1, 1)  # forces vector to a column if 1D
 
@@ -57,18 +58,25 @@ def ecef2lla(xyz):
     e_sq = f * (2 - f)
     eps = e_sq / (1.0 - e_sq)
 
-    p = np.sqrt(np.multiply(x, x) + np.multiply(y, y))
+    p = np.sqrt(x ** 2 + y ** 2)
     q = np.arctan2((z * a), (p * b))
     phi = np.arctan2((z + eps * b * np.sin(q) ** 3), (p - e_sq * a * np.cos(q) ** 3))
     lam = np.arctan2(y, x)
 
-    v = a / np.sqrt(1.0 - e_sq * np.sin(phi) * np.sin(phi))
-    h = (p / np.cos(phi)) - v
+    N = a / np.sqrt(1.0 - e_sq * np.sin(phi) * np.sin(phi))
+    if (p == 0):
+        if (z > 0):
+            h = z - b
+        else:
+            h = z + b
+    else:
+        h = (p / np.cos(phi)) - N
 
     lat = np.degrees(phi)
     lon = np.degrees(lam)
 
     return np.vstack([lat, lon, h])
+    
 
 
 def lla2ecef(lla):
@@ -76,12 +84,14 @@ def lla2ecef(lla):
     Converts xyz position to GPS position
 
     Args:
-    - lla: 3-dimensional GPS lla position [lat (deg), lon (deg), alt (meters)]
-    - atti is height above sea level, as opposed to center of earth
+    - lla: (3,1) position [lat (deg), lon (deg), alt (meters, HAE)]
 
     Returns:
-    - xyz: 3-dimensional ECEF xyz position [x, y, z]
+    - xyz: (3,1) 3-dimensional ECEF xyz position [x, y, z]
     """
+
+    if lla.ndim < 2:  # force 2D
+        lla = lla.reshape(-1, 1)  # forces vector to a column if 1D
 
     lat, lon, h = lla
 
@@ -101,9 +111,9 @@ def lla2ecef(lla):
     x = (N + h) * cos_phi * np.cos(lam)
     y = (N + h) * cos_phi * np.sin(lam)
     z = (N * (1 - e_sq) + h) * sin_phi
+    
 
     return np.array([x, y, z])
-
 
 # alt2pres
 #
@@ -162,6 +172,8 @@ def xyz2grav(x, y, z):
     Returns:
     - g: gravity vector [gx, gy, gz]
     """
+    
+    x, y, z, = xyz
 
     j2 = 0.00108263
     mu = 3.986004418e14

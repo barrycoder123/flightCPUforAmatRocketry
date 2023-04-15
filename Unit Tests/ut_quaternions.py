@@ -9,62 +9,63 @@ Created on Tue Mar  7 10:37:36 2023
 import sys
 import numpy as np
 
-sys.path.append('../FLight Algorithms')
+sys.path.append('../Flight Algorithms')
 
-import quaternions as qt
+import earth_model as em
 
-q_inputs = np.array([
-    [0.3, 0.4, 0.5, 0.6],
-    [0.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 0.0],
-    [0.0, 1.0, 0.0, 0.0],
-    [0.0, 0.0, 1.0, 0.0]])
 
-def unit_test_quat2atti():
-    
-    print("Testing quat2atti and atti2quat:")
-    
-    # Test quaternion error [0.3, 0.4, 0.5, 0.6]
-    for i in range(len(q_inputs)):
-        q_error = np.array(q_inputs[i])
-        #q_error /= np.linalg.norm(q_error)
-        atti_error = qt.quat2atti(q_error)
-        q_error_reconstructed = qt.atti2quat(atti_error)
-        assert np.allclose(q_error, q_error_reconstructed)
-    
-    
-    print("All unit tests passed.")
-    
-def unit_test_quat_error():
-    
-    # Test case 1: q1 and q2 are identical
-    q1 = np.array([1, 0, 0, 0])
-    q2 = np.array([1, 0, 0, 0])
-    q_error_expected = np.array([0, 0, 0, 0])
-    q_error = qt.quat_error(q1, q2)
-    assert np.allclose(q_error, q_error_expected)
+llas = np.vstack([
+        [90, 0, 0],
+        [-90, 0, 0],
+        [0, 0, 0],
+        [0, 180, 0]])
 
-    # Test case 2: q1 and q2 differ by 90-degree rotation about Z-axis
-    q1 = np.array([1, 0, 0, 0])
-    q2 = np.array([np.sqrt(2)/2, 0, 0, np.sqrt(2)/2])
-    q_error_expected = np.array([0, 0, 0, np.sqrt(2)])
-    q_error = qt.quat_error(q1, q2)
-    print(q_error)
-    assert np.allclose(q_error, q_error_expected)
+xyzs = np.array([
+        [0, 0, em.b],
+        [0, 0, -em.b],
+        [em.a, 0, 0],
+        [-em.a, 0, 0]])
 
-    # Test case 3: Convert error quaternion back to original quaternion
-    q1 = np.array([1, 0, 0, 0])
-    q_error = np.array([0, 0, 0, np.sqrt(2)])
-    q2_expected = np.array([np.sqrt(2)/2, 0, 0, np.sqrt(2)/2])
-    q2 = qt.quat_from_err(q1, q_error)
-    assert np.allclose(q2, q2_expected)
+def unit_test_lla2ecef():
+        
+    for i in range(len(llas)):
+        lla = llas[i] # north pole
+        xyz = em.lla2ecef(lla)
+        if not np.allclose(xyzs[i].reshape(-1,1), xyz):
+            print("lla2ecef test failed!")
+            print(xyzs[i].reshape(-1,1))
+            print(xyz)
+            return
+        
+        
+    print("lla2ecef all passed!")
+    
+def unit_test_ecef2lla():
+    
+    for i in range(len(xyzs)):
+        xyz = xyzs[i]
+        lla = em.ecef2lla(xyz)
+        if not np.allclose(llas[i].reshape(-1,1), lla):
+            print("ecef2lla test failed!")
+            print(llas[i].reshape(-1,1))
+            print(lla)
+            return
 
+    print("ecef2lla all passed!")  
     
     
-    print("All unit tests passed.")
+def unit_test_lla2quat():
+    
+    for i in range(len(llas)):
+        lla = llas[i] # north pole
+        quat = em.lla2quat(lla)
+        print(quat)
+    
+
     
 if __name__ == "__main__":
     
     #unit_test_quat2atti()
     
-    unit_test_quat_error()
+    unit_test_lla2ecef()
+    unit_test_ecef2lla()
