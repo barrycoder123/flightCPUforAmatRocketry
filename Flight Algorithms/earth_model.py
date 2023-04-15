@@ -215,9 +215,9 @@ def grav_gradient(xyz, eps=1e-6):
     gradient = np.zeros((3, 3))
 
     # Compute the partial derivatives using finite differences
-    gradient[:, 0] = (xyz2grav(x + eps, y, z) - xyz2grav(x - eps, y, z)) / (2 * eps)
-    gradient[:, 1] = (xyz2grav(x, y + eps, z) - xyz2grav(x, y - eps, z)) / (2 * eps)
-    gradient[:, 2] = (xyz2grav(x, y, z + eps) - xyz2grav(x, y, z - eps)) / (2 * eps)
+    gradient[:, 0] = (xyz2grav(np.array([x + eps, y, z])) - xyz2grav(np.array([x - eps, y, z]))) / (2 * eps)
+    gradient[:, 1] = (xyz2grav(np.array([x, y + eps, z])) - xyz2grav(np.array([x, y - eps, z]))) / (2 * eps)
+    gradient[:, 2] = (xyz2grav(np.array([x, y, z + eps])) - xyz2grav(np.array([x, y, z - eps]))) / (2 * eps)
 
     return gradient
 
