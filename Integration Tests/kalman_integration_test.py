@@ -69,9 +69,9 @@ if __name__ == "__main__":
 
         # Update
         baro = None
-        print("here")
-        if lla is not None:
-            print("Got a GPS!")
+        #print("here")
+        #if lla is not None:
+            #print("Got a GPS!")
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     print("Logging results...")
     #logger.write_buffer_to_file()
     #logger.plot_file_contents()
-    logger.print_buffer_contents()
+    logger.print_position_drift()
     
     end_time = time.time()
     

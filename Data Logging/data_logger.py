@@ -62,12 +62,13 @@ class DataLogger:
         """
         
         self.PVA_est[0, self.write_pos] = time.perf_counter() - self.t_initial
-        self.PVA_est[1:7, self.write_pos] = state_vector[:6]  # store position and velocity only
-        self.PVA_est[7:11, self.write_pos] = quaternion # store the quaternion
+        self.PVA_est[1:7, self.write_pos] = state_vector[:6].flatten()  # store position and velocity only
+        self.PVA_est[7:11, self.write_pos] = quaternion.flatten() # store the quaternion
     
-        self.write_pos += 1
+        self.write_pos += 1     
         
-    def print_buffer_contents(self):
+    
+    def print_position_drift(self):
         
         num_points = self.PVA_est.shape[1]
         
