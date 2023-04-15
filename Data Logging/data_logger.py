@@ -60,6 +60,8 @@ class DataLogger:
         Returns:
             none
         """
+        state_vector.flatten()
+        quaternion.flatten()
         
         self.PVA_est[0, self.write_pos] = time.perf_counter() - self.t_initial
         self.PVA_est[1:7, self.write_pos] = state_vector[:6]  # store position and velocity only

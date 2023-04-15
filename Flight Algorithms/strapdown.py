@@ -4,12 +4,36 @@ import quaternions as qt
 import earth_model as em
 
 
-# strapdown
-#
-# Single iteration of a 1st-Order IMU Strapdown
-# Credit: Tyler Klein
 def strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt):
-    
+    """
+    Runs one single iteration of a 1-st order IMU Strapdown
+    Credit: Tyler Klein
+
+    Parameters
+    ----------
+    r_ecef : (3,)
+        DESCRIPTION.
+    v_ecef : (3,)
+        DESCRIPTION.
+    q_e2b : (4,)
+        DESCRIPTION.
+    dV_b_imu : (3,)
+        DESCRIPTION.
+    dTh_b_imu : (3,)
+        DESCRIPTION.
+    dt : (3,)
+        DESCRIPTION.
+
+    Returns
+    -------
+    r_ecef_new : (3,)
+        DESCRIPTION.
+    v_ecef_new : (3,)
+        DESCRIPTION.
+    q_e2b_new : (4,)
+        DESCRIPTION.
+
+    """
     
     
     # Position Update
