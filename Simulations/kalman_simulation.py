@@ -86,7 +86,6 @@ if __name__ == "__main__":
     tplot = np.arange(PVA_est.shape[1])
     plotDataAndError(PVA_est[:3, :], PVA_truth[:3, :], tplot, subx0=True)
     plotDataAndError(PVA_est[3:6, :], PVA_truth[3:6, :], tplot, name='Velocity', subx0=True)
-    #plotDataAndError(PVA_est[:3, ::10], PVA_truth[:3, ::10], tplot[::10], subx0=True)
     plotDataAndError(PVA_est[6:10, ::10], PVA_truth[6:10, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
 
     plt.show()  # needed to display the figures

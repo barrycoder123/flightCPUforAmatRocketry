@@ -67,13 +67,6 @@ def unit_test_xyz2grav():
         xyz = xyzs[i]
         grav = em.xyz2grav(xyz)
         print(grav)
-    
-def unit_test_lla2quat():
-    
-    for i in range(len(llas)):
-        lla = llas[i] # north pole
-        quat = em.lla2quat(lla)
-        print(quat)
         
 
 def unit_test_lla2quat():
@@ -87,9 +80,8 @@ def unit_test_lla2quat():
 if __name__ == "__main__":
     
     
-    #unit_test_lla2ecef()
-    #unit_test_ecef2lla()
-    
-    #unit_test_xyz2grav()
+    unit_test_lla2ecef()
+    unit_test_ecef2lla()
+    unit_test_xyz2grav()
     
     unit_test_lla2quat()
