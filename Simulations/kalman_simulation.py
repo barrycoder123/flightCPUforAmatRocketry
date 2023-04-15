@@ -76,8 +76,8 @@ if __name__ == "__main__":
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10)
 
         # save the data
-        PVA_est[:6, i] = ekf.x[:6]  # store ECEF position and velocity
-        PVA_est[6:10, i] = ekf.q_e2b
+        PVA_est[:6, i] = ekf.x[:6].squeeze()  # store ECEF position and velocity
+        PVA_est[6:10, i] = ekf.q_e2b.squeeze()
         PHist[:, :, i] = ekf.P  # store the covariance
 
     # ========================== plotting ==========================
