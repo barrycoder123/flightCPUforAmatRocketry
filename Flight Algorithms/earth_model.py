@@ -84,10 +84,10 @@ def lla2ecef(lla):
     Converts xyz position to GPS position
 
     Args:
-    - lla: (3,1) position [lat (deg), lon (deg), alt (meters, HAE)]
+    - lla: (3,N) position [lat (deg), lon (deg), alt (meters, HAE)]
 
     Returns:
-    - xyz: (3,1) 3-dimensional ECEF xyz position [x, y, z]
+    - xyz: (3,N) 3-dimensional ECEF xyz position [x, y, z]
     """
 
     if lla.ndim < 2:  # force 2D
@@ -162,18 +162,22 @@ def alt2pres(altitude):
     return press
 
 
-def xyz2grav(x, y, z):
+def xyz2grav(xyz):
     """
     Ellipsoid Earth gravity model
 
     Args:
-    - x, y, z: three-dimensional ECEF position
+    - xyz: (3,) three-dimensional ECEF position (meters)
     
     Returns:
-    - g: gravity vector [gx, gy, gz]
+    - g: (3,) gravity vector [gx, gy, gz]
     """
     
-    x, y, z, = xyz
+    if xyz.ndim > 1:  # force 2D
+        xyz = xyz.flatten()  # forces vector to a column if 1D
+        
+    x, y, z = xyz
+        
 
     j2 = 0.00108263
     mu = 3.986004418e14
@@ -194,18 +198,18 @@ def xyz2grav(x, y, z):
 # grav_gradient
 #
 # Calculate the 3x3 gradient of gravity
-def grav_gradient(r_ecef, eps=1e-6):
+def grav_gradient(xyz, eps=1e-6):
     """
     Ellipsoid Earth gravity model
 
     Args:
-    - r_ecef: 3-D ECEF position, [x, y, z]
+    - xyz: (3,) 3-D ECEF position, [x, y, z]
     
     Returns:
     - gradient: 3-D gravity gradient [gx, gy, gz]
     """
 
-    x, y, z = r_ecef
+    x, y, z = xyz
 
     # Initialize the gradient vector
     gradient = np.zeros((3, 3))
@@ -234,10 +238,10 @@ def lla2quat(lla):
     """
     
     # Convert LLA coordinates to ECEF coordinates
-    x, y, z = lla2ecef(lla)
+    xyz = lla2ecef(lla)
 
     # Calculate the gravitational acceleration vector in the ECEF frame
-    grav = xyz2grav(x, y, z)
+    grav = xyz2grav(xyz)
 
     # Assume that the body is pointing straight away from the gravity vector
     # Body-frame x-axis is aligned with negative gravity vector in ECEF frame

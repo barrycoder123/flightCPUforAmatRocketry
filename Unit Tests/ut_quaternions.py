@@ -13,18 +13,25 @@ sys.path.append('../Flight Algorithms')
 
 import earth_model as em
 
+# X-axis: points towards intersection of equator and prime meridian
+# Y-axis: points towards equator and 90-degrees meridian
+# Z-axis: points through the earth's north pole
 
 llas = np.vstack([
         [90, 0, 0],
-        [-90, 0, 0],
-        [0, 0, 0],
-        [0, 180, 0]])
+        [-90, 0, 0], # south pole
+        [0, 0, 0], # gulf of guinea, africa (null island)
+        [0, 180, 0], # pacific ocean
+        [0, 90, 0], # indian ocean
+        [0, -90, 0]]) # atlantic ocean
 
 xyzs = np.array([
-        [0, 0, em.b],
-        [0, 0, -em.b],
-        [em.a, 0, 0],
-        [-em.a, 0, 0]])
+        [0, 0, em.b], # north pole
+        [0, 0, -em.b], # south pole
+        [em.a, 0, 0], # gulf of guinea, africa
+        [-em.a, 0, 0], # pacific ocean
+        [0, em.a, 0], # indian ocean
+        [0, -em.a, 0]]) # atlantic ocean
 
 def unit_test_lla2ecef():
         
@@ -52,7 +59,14 @@ def unit_test_ecef2lla():
             return
 
     print("ecef2lla all passed!")  
+   
+
+def unit_test_xyz2grav():
     
+    for i in range(len(xyzs)):
+        xyz = xyzs[i]
+        grav = em.xyz2grav(xyz)
+        print(grav)
     
 def unit_test_lla2quat():
     
@@ -60,12 +74,22 @@ def unit_test_lla2quat():
         lla = llas[i] # north pole
         quat = em.lla2quat(lla)
         print(quat)
+        
+
+def unit_test_lla2quat():
     
+    for i in range(len(llas)):
+        lla = llas[i]
+        quat = em.lla2quat(lla)
+        print(quat)
 
     
 if __name__ == "__main__":
     
-    #unit_test_quat2atti()
     
-    unit_test_lla2ecef()
-    unit_test_ecef2lla()
+    #unit_test_lla2ecef()
+    #unit_test_ecef2lla()
+    
+    #unit_test_xyz2grav()
+    
+    unit_test_lla2quat()
