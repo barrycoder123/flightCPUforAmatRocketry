@@ -123,8 +123,9 @@ class SensorDataCollector(DataCollector):
         #    lla = read_gps_new(NUM_SATELLITES)
         print("Initial LLA:",lla)
 
-        q_e2b = read_quat()
-        
+        quat_imu = read_quat()
+        q_e2b = quat_imu
+
         r_ecef = em.lla2ecef(lla).flatten()
         v_ecef = np.zeros(3) # initially at rest
         a_ecef = np.zeros(3) # initially no accel
