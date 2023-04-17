@@ -23,7 +23,6 @@ if __name__ == "__main__":
     # Initialize the Data Collector module
     #program hangs on this line
     collector = dc.DataCollector().create()
-    print('hit')
     num_points = collector.num_points
 
     # initialize State
@@ -57,7 +56,7 @@ if __name__ == "__main__":
         # Log the values for later viewing
         logger.save_state_to_buffer(x, q_e2b_new)
 
-    logger.print_buffer_contents()
+    logger.print_position_drift()
     
  
     #logger.write_buffer_to_file()

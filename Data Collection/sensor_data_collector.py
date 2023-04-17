@@ -14,10 +14,12 @@ sys.path.append('../Flight Algorithms')
 
 import earth_model as em
 from gps_code_modified import read_gps, read_gps_new, gps
-from readsensors import read_accel, read_gyro, read_baro
+from readsensors import read_accel, read_gyro, read_baro, read_quat
 from data_collection_wrapper import DataCollector
 
 NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
+
+GPS_AT_574 = np.array([42.403061, -71.113635, 40.0])
 
 class SensorDataCollector(DataCollector):
 
@@ -116,15 +118,19 @@ class SensorDataCollector(DataCollector):
         
         # wait for GPS to warm up, then save that reading
         lla = None
-        lla = np.array([42.403061, -71.113635, 40.0])
+        lla = GPS_AT_574
         #while lla is None:
         #    lla = read_gps_new(NUM_SATELLITES)
         print("Initial LLA:",lla)
 
+        q_e2b = read_quat()
         
-        r_ecef = em.lla2ecef(lla)
+        r_ecef = em.lla2ecef(lla).flatten()
         v_ecef = np.zeros(3) # initially at rest
-        a_ecef = np.zeros(3) # initially no attitude error
-        q_e2b = em.lla2quat(lla)
-        
+        a_ecef = np.zeros(3) # initially no accel
+        print("IMU quat:",q_e2b)
+        print("compute quat:",em.lla2quat(lla))
+
+
+        print("HERE")
         return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b

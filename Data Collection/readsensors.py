@@ -31,7 +31,8 @@ period = 1/sample_rate_Hz
 # Function Definitions
 def read_accel(last_accel):
     try:
-        accel = np.array([float(item) for item in imu.acceleration])
+        #accel = np.array([0, 0, 9.81])
+        accel = np.array([float(item) for item in imu.gravity])
     except RuntimeError:
         print("error reading acceleration, using previous value")
         accel = last_accel
@@ -50,6 +51,17 @@ def read_baro(last_baro):
         print("error reading barometer, using previous value")
         baro = float(last_baro)
     return baro
+
+def read_quat():
+    try: 
+        quat = np.array(imu.quaternion)
+        print(quat, type((quat)))
+        print(quat.shape)
+    except RuntimeError:
+        print("error reading quaternion")
+        quat = None
+
+    return quat
 
 start_time = time.perf_counter()
 last_time = start_time
@@ -79,6 +91,7 @@ if __name__ == '__main__':
         print("Accelerometer (m/s^2): {}".format(accel))
         print("Gyroscope (rad/sec): {}".format(gyro))
         print("Altitude (m): {}".format(baro))
+        print("Quaternion:", read_quat())
         print("Time: (sec): {}".format(curr_time))
         print("Time step (sec): {}".format(dt))
         print()
