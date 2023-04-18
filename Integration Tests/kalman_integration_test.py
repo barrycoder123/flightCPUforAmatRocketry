@@ -55,7 +55,7 @@ if __name__ == "__main__":
     collector.start_timer()
     logger.start_timer()
     for i in range(num_points):
-
+        print("IN LOOP")
         # Read IMU
         accel, gyro, dt = collector.get_next_imu_reading()
         z_imu = np.concatenate((accel, gyro))
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         #print("here")
         #if lla is not None:
             #print("Got a GPS!")
-        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
+        #ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data
         logger.save_state_to_buffer(ekf.x, ekf.q_e2b)

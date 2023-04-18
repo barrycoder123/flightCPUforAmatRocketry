@@ -55,8 +55,6 @@ def read_baro(last_baro):
 def read_quat():
     try: 
         quat = np.array(imu.quaternion)
-        print(quat, type((quat)))
-        print(quat.shape)
     except RuntimeError:
         print("error reading quaternion")
         quat = None

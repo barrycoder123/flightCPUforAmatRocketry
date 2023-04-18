@@ -13,6 +13,7 @@ import numpy as np
 sys.path.append('../Flight Algorithms')
 
 import earth_model as em
+import quaternions as qt
 from gps_code_modified import read_gps, read_gps_new, gps
 from readsensors import read_accel, read_gyro, read_baro, read_quat
 from data_collection_wrapper import DataCollector
@@ -21,8 +22,6 @@ NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
 
 GPS_AT_574 = np.array([42.403061, -71.113635, 40.0])
 Q_E2B_CAMBRIDGE = np.array([0.901797015, -0.39979036, -0.066508461,-0.150021455])
-
-print(em.lla2quat(GPS_AT_574))
 
 class SensorDataCollector(DataCollector):
 
@@ -93,6 +92,11 @@ class SensorDataCollector(DataCollector):
          
         # update every 1.0 seconds
         lla = read_gps_new(NUM_SATELLITES, 1.0)
+        
+        if lla is not None:
+            #print("NEW GPS!!")
+            return GPS_AT_574
+        
         return lla
     
 
@@ -132,9 +136,12 @@ class SensorDataCollector(DataCollector):
         r_ecef = em.lla2ecef(lla).flatten()
         v_ecef = np.zeros(3) # initially at rest
         a_ecef = np.zeros(3) # initially no accel
-        print("IMU quat:",q_e2b)
-        print("compute quat:",em.lla2quat(lla))
+        imu_quat = read_quat()
 
+        q_e2b = qt.quatMultiply(q_e2b, qt.quat_inv(imu_quat))
 
-        print("HERE")
+        print("IMU quat:", np.array(read_quat()))
+        print("truth quat:",q_e2b)
+        
+
         return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b

@@ -236,17 +236,19 @@ def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     gps.update()
 
     # sanity check: ensure GPS has a fix before moving on
-    if not gps.has_fix:
-        print("NO GPS FIX NEW")
-        return None
+    #if not gps.has_fix:
+    #    print("NO GPS FIX NEW")
+    #    return None
 
     # if not enough time has passed, you will not get new data
     current = time.monotonic()
     dt = current - last_time
     if dt < desired_update_time:
-        return
+        return None
     last_time = current
     
+    return 0
+
     # Return None if no available data
     if not gps.has_fix:
         print("NO FIX")
