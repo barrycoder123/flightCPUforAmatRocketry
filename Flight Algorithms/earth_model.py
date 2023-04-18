@@ -64,7 +64,7 @@ def ecef2lla(xyz):
     lam = np.arctan2(y, x)
 
     N = a / np.sqrt(1.0 - e_sq * np.sin(phi) * np.sin(phi))
-    if (p == 0):
+    if (p.shape[0] == 1) and (p == 0):
         if (z > 0):
             h = z - b
         else:

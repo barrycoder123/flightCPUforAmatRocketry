@@ -20,6 +20,9 @@ from data_collection_wrapper import DataCollector
 NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
 
 GPS_AT_574 = np.array([42.403061, -71.113635, 40.0])
+Q_E2B_CAMBRIDGE = np.array([0.901797015, -0.39979036, -0.066508461,-0.150021455])
+
+print(em.lla2quat(GPS_AT_574))
 
 class SensorDataCollector(DataCollector):
 
@@ -63,10 +66,11 @@ class SensorDataCollector(DataCollector):
             - gyro_xyz: 3 x 1 Numpy array
             - dt: time step
         """
-        
+
         # extract the next acceleration and angular rotation
         self.accel_xyz = read_accel(self.accel_xyz)
         self.gyro_xyz = read_gyro(self.accel_xyz)
+
         
         # determine change in time (seconds) between last and current IMU read
         current_time = time.monotonic()
@@ -123,8 +127,7 @@ class SensorDataCollector(DataCollector):
         #    lla = read_gps_new(NUM_SATELLITES)
         print("Initial LLA:",lla)
 
-        quat_imu = read_quat()
-        q_e2b = quat_imu
+        q_e2b = Q_E2B_CAMBRIDGE
 
         r_ecef = em.lla2ecef(lla).flatten()
         v_ecef = np.zeros(3) # initially at rest
