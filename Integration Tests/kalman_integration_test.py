@@ -71,7 +71,7 @@ if __name__ == "__main__":
         ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data
-        logger.save_state_to_buffer(ekf.x, ekf.q_e2b, np.concatenate((accel,gyro)),lla)
+        logger.save_state_to_buffer(ekf.x, ekf.q_e2b, z_imu,lla)
 
     # ========================== plotting ==========================
     print("Logging results...")

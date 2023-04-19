@@ -43,8 +43,7 @@ class StateMachine:
         self.ekf = kf.EKF(x, q_true)
         
         # 5: Instantiate buffer file that data will be logged to. Populate first line of file with state vector initialization.
-        colnames = ["t", "pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "q_scalar", "q_i", "q_j", "q_k"]
-        self.data_logger = dl.DataLogger(x, q_true, colnames)
+        self.data_logger = dl.DataLogger(x, q_true)
         
     def launch_detect_pyro_arm(self):
         """
@@ -159,18 +158,18 @@ def kalman_loop_with_logging(ekf, collector, logger):
     ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
     
     # Log the data
-    logger.save_state_to_buffer(ekf.x, ekf.q_e2b)
+    logger.save_state_to_buffer(ekf.x, ekf.q_e2b, z_imu, lla)
 
 if __name__ == "__main__":
     
     fsm = StateMachine()
     
-    # ------- state 1 ------- #
+    # ------- state 1: waiting for launch ------- #
     fsm.launch_detect()
     
-    # ------- state 2 ------- #
+    # ------- state 2: start the Kalman filtering ------- #
     fsm.launch_detect_pyro_arm()
     
-    # ------- state 3 ------- #
+    # ------- state 3: rocket is in the air ------- #
     fsm.active_flight()
     

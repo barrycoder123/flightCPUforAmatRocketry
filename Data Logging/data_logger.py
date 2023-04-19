@@ -30,9 +30,9 @@ colnames = [
     "gyro_X [rad/s]",
     "gyro_Y [rad/s]",
     "gyro_Z [rad/s]",
-    "lat [deg]",
-    "long [deg]",
-    "alt [m]"]
+    "gps_lat [deg]",
+    "gps_long [deg]",
+    "gps_alt [m]"]
 
 class DataLogger:
         
@@ -43,7 +43,6 @@ class DataLogger:
         Arguments:
             initial_state_vector: array (10,1) of the form [pos, vel, atti_error]
             initial_quaternion: array (4,1)
-            colnames: array (11,1) column names for the log file
             num_points: int (optional) number of rows of the data file
         """
         width = len(colnames)
@@ -51,8 +50,8 @@ class DataLogger:
         if num_points is not None:   
             self.PVA_est = np.zeros((width, num_points+1)) # save room for columns
         else:
-            big_number = 18000 # TODO
-            self.PVA_est = np.zeros((width, big_number))
+            big_number = 2**16 # at dt=0.01, this is 11 minutes of data, should be fine 
+            self.PVA_est = np.zeros((width,big_number+1))
         
         
         # write initial conditions
@@ -78,8 +77,10 @@ class DataLogger:
         Saves one line to a buffer
         
         Arguments:
-            state_vector: array (10,1)
+            state_vector: array (10,1), pos_xyz, vel_xyz, atti_xyz
             quaternion: array (4,1)
+            imu_reading: array (6,1), accel_xyz, gyro_xyz
+            gps_reading: array (3,1), gps_lla
             
         Returns:
             none
@@ -115,7 +116,7 @@ class DataLogger:
     
     def print_position_drift(self):
         """
-        Reads the log file and plots the data in the form PVA. Helpful for debugging
+        Plots how much the data drifts by. Helpful for debugging
         """
         
         num_points = self.PVA_est.shape[1]
