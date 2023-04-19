@@ -46,16 +46,14 @@ if __name__ == "__main__":
     ekf = kf.EKF(x, q_true)
     
     # Initialize the Data Logging module
-    start_time = time.time()
-    colnames = ["t", "pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "q_scalar", "q_i", "q_j", "q_k"]
-    logger = dl.DataLogger(x, q_true, colnames, num_points)
+    logger = dl.DataLogger(x, q_true, num_points)
 
     # ========================== filter ==========================
     print("Running Extended Kalman Filter...")
+    start_time = time.time()
     collector.start_timer()
     logger.start_timer()
     for i in range(num_points):
-        print("IN LOOP")
         # Read IMU
         accel, gyro, dt = collector.get_next_imu_reading()
         z_imu = np.concatenate((accel, gyro))
@@ -75,13 +73,13 @@ if __name__ == "__main__":
         #ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data
-        logger.save_state_to_buffer(ekf.x, ekf.q_e2b)
+        logger.save_state_to_buffer(ekf.x, ekf.q_e2b, np.concatenate((accel,gyro)),lla)
 
     # ========================== plotting ==========================
     print("Logging results...")
-    #logger.write_buffer_to_file()
-    #logger.plot_file_contents()
-    logger.print_position_drift()
+    logger.write_buffer_to_file()
+    logger.plot_file_contents()
+    #logger.print_position_drift()
     
     end_time = time.time()
     

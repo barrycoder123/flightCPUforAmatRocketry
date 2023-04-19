@@ -8,13 +8,35 @@ If num_points is None, then
 """
 
 import time
+import datetime
 import numpy as np
-#import pandas as pd
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+
+colnames = [
+    "t [sec]",
+    "r_ecef_X",
+    "r_ecef_Y",
+    "r_ecef_Z",
+    "v_ecef_X",
+    "v_ecef_Y",
+    "v_ecef_Z",
+    "q_e2b_scalar",
+    "q_e2b_i",
+    "q_e2b_j",
+    "q_e2b_k",
+    "accel_X [m/s^2]",
+    "accel_Y [m/s^2]",
+    "accel_Z [m/s^2]",
+    "gyro_X [rad/s]",
+    "gyro_Y [rad/s]",
+    "gyro_Z [rad/s]",
+    "lat [deg]",
+    "long [deg]",
+    "alt [m]"]
 
 class DataLogger:
         
-    def __init__(self, initial_state_vector, initial_quaternion, colnames, num_points=None):
+    def __init__(self, initial_state_vector, initial_quaternion, num_points=None):
         """
         initializes the DataLogger class
         
@@ -24,19 +46,28 @@ class DataLogger:
             colnames: array (11,1) column names for the log file
             num_points: int (optional) number of rows of the data file
         """
+        width = len(colnames)
         
         if num_points is not None:   
-            self.PVA_est = np.zeros((11, num_points+1))
+            self.PVA_est = np.zeros((width, num_points+1)) # save room for columns
         else:
             big_number = 18000 # TODO
-            self.PVA_est = np.zeros((11, big_number))
-            
-        self.colnames = colnames   
+            self.PVA_est = np.zeros((width, big_number))
         
+        
+        # write columns to the first position
+        self.colnames = colnames
+        
+        # write initial conditions to the next position
         self.PVA_est[1:7, 0] = initial_state_vector[:6]
         self.PVA_est[7:11, 0] = initial_quaternion
         
-        self.write_pos = 1  
+        # first position to write to
+        self.write_pos = 1
+        
+        # create a formatted filename string with the date and time
+        now = datetime.datetime.now()
+        self.filename = now.strftime("data_%Y-%m-%d_%H-%M-%S.csv")
            
         
     def start_timer(self):
@@ -47,9 +78,9 @@ class DataLogger:
         """
         
         self.t_initial = time.perf_counter()
-        self.PVA_est[0, 0] = 0
+        self.PVA_est[0, 1] = 0
             
-    def save_state_to_buffer(self, state_vector, quaternion):
+    def save_state_to_buffer(self, state_vector, quaternion, imu_reading, gps_reading):
         """
         Saves one line to a buffer
         
@@ -64,6 +95,8 @@ class DataLogger:
         self.PVA_est[0, self.write_pos] = time.perf_counter() - self.t_initial
         self.PVA_est[1:7, self.write_pos] = state_vector[:6].flatten()  # store position and velocity only
         self.PVA_est[7:11, self.write_pos] = quaternion.flatten() # store the quaternion
+        self.PVA_est[11:17, self.write_pos] = imu_reading
+        self.PVA_est[17:, self.write_pos] = gps_reading
     
         self.write_pos += 1     
         
@@ -86,16 +119,23 @@ class DataLogger:
         Writes the buffer to a .csv file. Must call this after you finish saving data
         """
         
-        df_new = pd.DataFrame(self.PVA_est.T, columns=self.colnames)
-        df_new.to_csv("PVA_est.csv", index=False)
+        colnames = ','.join(self.colnames)
+        data = np.array([1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5])
+        np.savetxt(self.filename, self.PVA_est.T, delimiter=',', fmt='%s', header=colnames)
+        
+    def read_file_to_buffer(self):
+        
+        PVA_est = np.loadtxt(self.filename, delimiter=',', dtype=str).T
+        PVA_est = PVA_est.astype(float)
+        
+        return PVA_est
         
     def plot_file_contents(self):
         """
         Reads the log file and plots the data in the form PVA. Helpful for debugging
         """
         
-        df = pd.read_csv("PVA_est.csv")
-        PVA_est = df.to_numpy().T
+        PVA_est = self.read_file_to_buffer()
         
         tplot = np.arange(PVA_est.shape[1])
         self.__plotData(PVA_est[7:11, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
@@ -106,8 +146,8 @@ class DataLogger:
      
     def print_file_contents(self):
         
-        df = pd.read_csv("PVA_est.csv")
-        PVA_est = df.to_numpy().T
+        PVA_est = np.loadtxt('data.csv')
+        PVA_est.to_numpy().T
         num_points = PVA_est.shape[1]
         
         print("POSITION:")
@@ -173,6 +213,3 @@ class DataLogger:
 
         plt.tight_layout()
         return fig, axs
-        
-    
-    

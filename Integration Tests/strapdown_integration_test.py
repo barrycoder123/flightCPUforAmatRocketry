@@ -30,11 +30,11 @@ if __name__ == "__main__":
     x = np.concatenate((kalman_state[0:6], q_true))
     
     # Initialize the Data Logging module
-    colnames = ["t", "pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "q_scalar", "q_i", "q_j", "q_k"]
-    logger = dl.DataLogger(kalman_state, q_true, colnames, num_points)
+    logger = dl.DataLogger(kalman_state, q_true, num_points)
 
     # Run the strapdown for all data
     print("Running strapdown simulation")
+    start_time = time.time()
     collector.start_timer()
     logger.start_timer()
     for i in range(num_points):
@@ -54,14 +54,12 @@ if __name__ == "__main__":
         x = np.concatenate((r_ecef_new, v_ecef_new, q_e2b_new))
         
         # Log the values for later viewing
-        logger.save_state_to_buffer(x, q_e2b_new)
+        logger.save_state_to_buffer(x, q_e2b_new, np.concatenate((accel,gyro)),None)
 
-    logger.print_position_drift()
-    
- 
-    #logger.write_buffer_to_file()
+    #logger.print_position_drift()
+    logger.write_buffer_to_file()
     # print("Plotting results...")
     
-    #logger.plot_file_contents()
+    logger.plot_file_contents()
     #logger.print_file_contents()
 

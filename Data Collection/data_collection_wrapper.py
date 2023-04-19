@@ -31,7 +31,7 @@ class DataCollector:
         
         # For Zack on a Mac
         if platform.processor() == 'i386':
-            return self.__sensor_data_collector()
+            return self.__file_data_collector()
         
         if platform.system() == 'Linux':
             return self.__sensor_data_collector()
