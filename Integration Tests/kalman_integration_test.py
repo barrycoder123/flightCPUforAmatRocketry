@@ -54,6 +54,7 @@ if __name__ == "__main__":
     collector.start_timer()
     logger.start_timer()
     for i in range(num_points):
+        
         # Read IMU
         accel, gyro, dt = collector.get_next_imu_reading()
         z_imu = np.concatenate((accel, gyro))
@@ -67,20 +68,17 @@ if __name__ == "__main__":
 
         # Update
         baro = None
-        #print("here")
-        #if lla is not None:
-            #print("Got a GPS!")
-        #ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
+        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
         
         # Log the data
         logger.save_state_to_buffer(ekf.x, ekf.q_e2b, np.concatenate((accel,gyro)),lla)
 
     # ========================== plotting ==========================
     print("Logging results...")
-    logger.write_buffer_to_file()
-    logger.plot_file_contents()
-    #logger.print_position_drift()
+    filename = logger.write_buffer_to_file()
+    
+    dl.plot_file_contents(filename)
+    #dl.print_position_drift(filename)
     
     end_time = time.time()
-    
     print("EXECUTION TIME: ", end_time - start_time)

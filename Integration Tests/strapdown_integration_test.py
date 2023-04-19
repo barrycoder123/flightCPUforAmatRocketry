@@ -7,6 +7,7 @@ Created on Thu Mar 16 17:11:00 2023
 """
 
 import sys
+import time
 import numpy as np
 
 sys.path.append('../Flight Algorithms')
@@ -20,8 +21,10 @@ import data_collection_wrapper as dc
 
 # main
 if __name__ == "__main__":
+    # ========================== setup ==========================
+    print("IMU Strapdown Simulation")
+    
     # Initialize the Data Collector module
-    #program hangs on this line
     collector = dc.DataCollector().create()
     num_points = collector.num_points
 
@@ -32,8 +35,8 @@ if __name__ == "__main__":
     # Initialize the Data Logging module
     logger = dl.DataLogger(kalman_state, q_true, num_points)
 
-    # Run the strapdown for all data
-    print("Running strapdown simulation")
+    # ========================== strapdown ==========================
+    print("Running IMU strapdown...")
     start_time = time.time()
     collector.start_timer()
     logger.start_timer()
@@ -56,10 +59,12 @@ if __name__ == "__main__":
         # Log the values for later viewing
         logger.save_state_to_buffer(x, q_e2b_new, np.concatenate((accel,gyro)),None)
 
-    #logger.print_position_drift()
-    logger.write_buffer_to_file()
-    # print("Plotting results...")
+    # ========================== plotting ==========================
+    filename = logger.write_buffer_to_file()
     
-    logger.plot_file_contents()
-    #logger.print_file_contents()
+    dl.plot_file_contents(filename)
+    #dl.print_position_drift(filename)
+    
+    end_time = time.time()
+    print("EXECUTION TIME: ", end_time - start_time)
 

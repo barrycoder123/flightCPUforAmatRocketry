@@ -55,19 +55,12 @@ class DataLogger:
             self.PVA_est = np.zeros((width, big_number))
         
         
-        # write columns to the first position
-        self.colnames = colnames
-        
-        # write initial conditions to the next position
+        # write initial conditions
         self.PVA_est[1:7, 0] = initial_state_vector[:6]
         self.PVA_est[7:11, 0] = initial_quaternion
         
         # first position to write to
         self.write_pos = 1
-        
-        # create a formatted filename string with the date and time
-        now = datetime.datetime.now()
-        self.filename = now.strftime("data_%Y-%m-%d_%H-%M-%S.csv")
            
         
     def start_timer(self):
@@ -100,8 +93,30 @@ class DataLogger:
     
         self.write_pos += 1     
         
+        
+    def write_buffer_to_file(self):
+        """
+        Writes the buffer to a .csv file. Must call this after you finish saving data
+        
+        Returns:
+            filename: (str) string of the file
+        """
+        
+        # create a formatted filename string with the date and time
+        now = datetime.datetime.now()
+        filename = now.strftime("data_%Y-%m-%d_%H-%M-%S.csv")
+        
+        # write the data to the file
+        col_str = ','.join(colnames)
+        np.savetxt(filename, self.PVA_est.T, delimiter=',', fmt='%s', header=col_str)
+        
+        return filename
+        
     
     def print_position_drift(self):
+        """
+        Reads the log file and plots the data in the form PVA. Helpful for debugging
+        """
         
         num_points = self.PVA_est.shape[1]
         
@@ -112,104 +127,114 @@ class DataLogger:
             drift_xyz = self.PVA_est[1:4,i] - self.PVA_est[1:4,0]
             
             print(curr_time, drift_xyz)
-        
+ 
+"""
+The following files are separate from the DataLogger class but are helpful for 
+viewing the data after it has been written to a file
+"""
 
-    def write_buffer_to_file(self):
-        """
-        Writes the buffer to a .csv file. Must call this after you finish saving data
-        """
+def read_file_to_buffer(filename):
+    """
+    Reads the file into a numpy array
+    
+    Parameters:
+        filename: (str) name of file, returned by DataLogger.write_buffer_to_file()
+    """
+    
+    PVA_est = np.loadtxt(filename, delimiter=',', dtype=str).T
+    PVA_est = PVA_est.astype(float)
+    
+    return PVA_est
         
-        colnames = ','.join(self.colnames)
-        data = np.array([1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5])
-        np.savetxt(self.filename, self.PVA_est.T, delimiter=',', fmt='%s', header=colnames)
+def plot_file_contents(filename):
+    """
+    Plots the position, velocity, and attitude contents from the file
+    
+    Parameters:
+        filename: (str) name of file, returned by DataLogger.write_buffer_to_file()
+    """
+    
+    PVA_est = read_file_to_buffer(filename)
+    
+    tplot = np.arange(PVA_est.shape[1])
+    _plotData(PVA_est[7:11, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
+    _plotData(PVA_est[4:7, :], tplot, name='Velocity', subx0=True)
+    _plotData(PVA_est[1:4, :], tplot, subx0=True)
+    
+    plt.show()  # needed to display the figures
+ 
+def print_file_contents(filename):
+    """
+    Prints the entire scontents from the file
+    
+    Parameters:
+        filename: (str) name of file, returned by DataLogger.write_buffer_to_file()
+    """
+    
+    PVA_est = read_file_to_buffer(filename)
+    num_points = PVA_est.shape[1]
+    
+    print("POSITION:")
+    
+    for i in range(num_points):
+        print(PVA_est[0, i], PVA_est[1:4, i])
         
-    def read_file_to_buffer(self):
         
-        PVA_est = np.loadtxt(self.filename, delimiter=',', dtype=str).T
-        PVA_est = PVA_est.astype(float)
-        
-        return PVA_est
-        
-    def plot_file_contents(self):
-        """
-        Reads the log file and plots the data in the form PVA. Helpful for debugging
-        """
-        
-        PVA_est = self.read_file_to_buffer()
-        
-        tplot = np.arange(PVA_est.shape[1])
-        self.__plotData(PVA_est[7:11, ::10], tplot[::10], axes=['A', 'B', 'C', 'D'], name='Quaternion', unit=None)
-        self.__plotData(PVA_est[4:7, :], tplot, name='Velocity', subx0=True)
-        self.__plotData(PVA_est[1:4, :], tplot, subx0=True)
-        
-        plt.show()  # needed to display the figures
      
-    def print_file_contents(self):
-        
-        PVA_est = np.loadtxt('data.csv')
-        PVA_est.to_numpy().T
-        num_points = PVA_est.shape[1]
-        
-        print("POSITION:")
-        
-        for i in range(num_points):
-            print(PVA_est[0, i], PVA_est[1:4, i])
-        
-        
-     
-    def __plotData(self, x, t, cov=None, name='Position', unit='m', subx0=False, decim_fact=1, tEnd=None, axes=None):
-        """
-        TODO
+def _plotData(x, t, cov=None, name='Position', unit='m', subx0=False, decim_fact=1, tEnd=None, axes=None):
+    """
+    Private helper function which plots everything very nicely
+    Credit: Tyler Klein
 
-        Parameters
-        ----------
-        x : (M,N) ndarray
-            matrix of measured values, where ``x[:,i]`` is the vector of measured quantities at time `i`
-        x_true : (M,N) ndarray
-            matrix of truth values, where ``x_true[:,i]`` is the vector of true values at time `i`. Same shape as ``x``
-        t : (N,) ndarray
-            time vector [seconds]
-        cov : (M, M, N) ndarray
-            if provided, specifies the covariance for the data. This will be plotted in the error graphs
-        name : str, default='Position'
-            plot name to appear in titles and axis labels
-        unit : str, default='m'
-            unit string for axis labels
-        subx0 : bool, default=False
-            if True, the true value at the first time will be subtracted from both vectors. This is useful when plotting quantities with a large offset,
-            such as ECEF position
-        decim_fact : int, default=1
-            decimation factor for plotting
-        tEnd : float
-            if provided, the xlim will be set to end at this time
-        axes : list
-            axis names. Default is ['x', 'y', 'z']. Length match x.shape[0]
-        """
-        
-        
-        if axes is None:
-            axes = ['X', 'Y', 'Z']
+    Parameters
+    ----------
+    x : (M,N) ndarray
+        matrix of measured values, where ``x[:,i]`` is the vector of measured quantities at time `i`
+    x_true : (M,N) ndarray
+        matrix of truth values, where ``x_true[:,i]`` is the vector of true values at time `i`. Same shape as ``x``
+    t : (N,) ndarray
+        time vector [seconds]
+    cov : (M, M, N) ndarray
+        if provided, specifies the covariance for the data. This will be plotted in the error graphs
+    name : str, default='Position'
+        plot name to appear in titles and axis labels
+    unit : str, default='m'
+        unit string for axis labels
+    subx0 : bool, default=False
+        if True, the true value at the first time will be subtracted from both vectors. This is useful when plotting quantities with a large offset,
+        such as ECEF position
+    decim_fact : int, default=1
+        decimation factor for plotting
+    tEnd : float
+        if provided, the xlim will be set to end at this time
+    axes : list
+        axis names. Default is ['x', 'y', 'z']. Length match x.shape[0]
+    """
+    
+    
+    if axes is None:
+        axes = ['X', 'Y', 'Z']
 
-        if len(axes) != x.shape[0]:
-            raise ValueError('len(axes) != x.shape[0]')
+    if len(axes) != x.shape[0]:
+        raise ValueError('len(axes) != x.shape[0]')
 
-        x0_use = x[:, 0] if subx0 else np.zeros((len(axes),))
+    x0_use = x[:, 0] if subx0 else np.zeros((len(axes),))
 
-        fig, axs = plt.subplots(len(axes), 1, sharex=True, figsize=(13, 8))
-        plt.suptitle(name, fontsize='xx-large', fontweight='black')
+    fig, axs = plt.subplots(len(axes), 1, sharex=True, figsize=(13, 8))
+    plt.suptitle(name, fontsize='xx-large', fontweight='black')
 
-        tplot = t[::decim_fact]
-        for i, row in enumerate(axs):
-            data = x[i, ::decim_fact]
-            row.plot(tplot, data - x0_use[i])
-            row.set_xlabel('Time [sec]')
-            row.set_ylabel(f'[{unit}]')
-            row.set_title(f"{axes[i]}")
-            row.grid(True)
+    tplot = t[::decim_fact]
+    for i, row in enumerate(axs):
+        data = x[i, ::decim_fact]
+        row.plot(tplot, data - x0_use[i])
+        row.set_xlabel('Time [sec]')
+        row.set_ylabel(f'[{unit}]')
+        row.set_title(f"{axes[i]}")
+        row.grid(True)
 
 
-            if tEnd is not None:
-                row.set_xlim([0, tEnd])
+        if tEnd is not None:
+            row.set_xlim([0, tEnd])
 
-        plt.tight_layout()
-        return fig, axs
+    plt.tight_layout()
+    return fig, axs
