@@ -1,9 +1,9 @@
-README
+README: Data Collection
 Team Celestial Blue
 Senior Design Project
 Tufts University, 2023
 
-The code in this repository implements data collection for our Flight Computer. This README explains the purpose of each file. See each file for more specifics. 
+The code in this directory implements data collection for our Flight Computer. This README explains the purpose of each file. See each file for more specifics. 
 
 ---------------------------------------------------------------------------------------------------
 

@@ -1,9 +1,9 @@
-README
+README: Test Data
 Team Celestial Blue
 Senior Design Project
 Tufts University, 2023
 
-The code in this repository contains test data for validating our Flight Computer. This README explains the purpose of each file. See each file for more specifics. 
+The code in this directory contains test data for validating our Flight Computer. This README explains the purpose of each file. See each file for more specifics. 
 
 ---------------------------------------------------------------------------------------------------
 
