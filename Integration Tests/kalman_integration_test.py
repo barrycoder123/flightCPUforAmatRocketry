@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
         # Update
         baro = None
-        ekf.update(lla, baro, sigma_gps=5, sigma_baro=10) # try variance = 10
+        ekf.update(lla, baro, sigma_gps=2, sigma_baro=10) # try variance = 10
         
         # Log the data
         logger.save_state_to_buffer(ekf.x, ekf.q_e2b, np.concatenate((accel,gyro)), lla)

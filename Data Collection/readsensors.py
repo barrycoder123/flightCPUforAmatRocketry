@@ -109,7 +109,7 @@ def read_accel(last_accel):
         
     except RuntimeError:
         print("error reading acceleration, using previous value")
-        calibrated_accel = None
+        calibrated_accel = None #np.array([0, 0, 9.81])
         
 
     return calibrated_accel
@@ -132,7 +132,7 @@ def read_gyro(last_gyro):
         
     except RuntimeError:
         print("error reading gyro, using previous value")
-        calibrated_gyro = None
+        calibrated_gyro = None #np.zeros(3)
 
     return calibrated_gyro
 
@@ -194,10 +194,10 @@ if __name__ == '__main__':
         
         # print the data
         print('=' * 40)
-        #print("Accelerometer (m/s^2): {}".format(accel))
+        print("Accelerometer (m/s^2): {}".format(accel))
         print("Gyroscope (rad/sec): {}".format(gyro))
-        #print("Altitude (m): {}".format(baro))
-        #print("Quaternion:", read_quat())
+        print("Altitude (m): {}".format(baro))
+        print("Quaternion:", read_quat())
         print("Time: (sec): {}".format(curr_time))
         #print("Time step (sec): {}".format(dt))
         print()

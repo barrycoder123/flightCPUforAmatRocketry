@@ -27,16 +27,18 @@ class AvgBuf():
     
     def __init__(self):
         
-        self.prevAccel = np.zeros([3, 3])
+        self.N = 10
+        
+        self.prevAccel = np.zeros([3, self.N])
         self.index = 0
         self.movingXYZ = np.zeros(3)
     
     def update(self, xyz):
         self.movingXYZ += xyz - self.prevAccel[:, self.index]
         self.prevAccel[:, self.index] = xyz
-        self.index = (self.index + 1) % 3
+        self.index = (self.index + 1) % self.N
     def getAvg(self):
-        return self.movingXYZ / 3
+        return self.movingXYZ / self.N
 
 
 class SensorDataCollector(DataCollector):
@@ -96,11 +98,13 @@ class SensorDataCollector(DataCollector):
         if self.accel_xyz is None:
             # do the moving average
             self.accel_xyz = self.accel_buf.getAvg()
+            print(self.accel_xyz)
         else:
             self.accel_buf.update(self.accel_xyz)
         
         if self.gyro_xyz is None:
             self.gyro_xyz = self.gyro_buf.getAvg()
+            print(self.gyro_xyz)
         else:
             self.gyro_buf.update(self.gyro_xyz)
 
@@ -110,7 +114,8 @@ class SensorDataCollector(DataCollector):
         dt = current_time - self.last_imu_time
         self.last_imu_time = current_time
         
-        self.gyro_xyz = np.zeros((3))
+        #self.gyro_xyz = np.zeros((3))
+        #self.accel_xyz = np.array([0, 0, 9.81])
         
         return self.accel_xyz, self.gyro_xyz, dt
     
