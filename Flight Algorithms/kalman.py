@@ -162,11 +162,9 @@ def f(x, q_e2b, z_imu, dt):
 
     # grab next IMU reading
     accel, gyro = z_imu[0:3], z_imu[3:6]
-    dV_b_imu = accel * dt
-    dTh_b_imu = gyro * dt
 
     # Run the IMU strapdown, get predictions including attitude (q_e2b_new)
-    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt)
+    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, accel, gyro, dt)
 
     # Update state matrix
     x_new = np.concatenate((r_ecef_new, v_ecef_new, np.zeros(r_ecef.shape))).reshape(-1,1)

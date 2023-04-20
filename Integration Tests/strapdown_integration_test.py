@@ -44,14 +44,12 @@ if __name__ == "__main__":
 
         # get the next IMU reading
         accel, gyro, dt = collector.get_next_imu_reading()
-        dV_b_imu = accel * dt
-        dTh_b_imu = gyro * dt
 
         # grab our current PVA estimate
         r_ecef, v_ecef, q_e2b = x[0:3], x[3:6], x[6:10]
 
         # Run an iteration of the strapdown
-        r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt)
+        r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, accel, gyro, dt)
 
         # Write values back to estimation matrix
         x = np.concatenate((r_ecef_new, v_ecef_new, q_e2b_new))
@@ -60,7 +58,7 @@ if __name__ == "__main__":
         logger.save_state_to_buffer(x, q_e2b_new, np.concatenate((accel,gyro)), None)
 
     # ========================== plotting ==========================
-    filename = logger.write_buffer_to_file()
+    #filename = logger.write_buffer_to_file()
     
     #dl.plot_file_contents(filename)
     logger.print_position_drift()

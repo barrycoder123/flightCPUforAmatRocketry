@@ -12,6 +12,7 @@ import numpy as np
 sys.path.append('../Flight Algorithms')
 
 import earth_model as em
+import quaternions as qt
 
 # X-axis: points towards intersection of equator and prime meridian
 # Y-axis: points towards equator and 90-degrees meridian
@@ -69,19 +70,24 @@ def unit_test_xyz2grav():
         print(grav)
         
 
-def unit_test_lla2quat():
+def unit_test_quat_init():
     
-    for i in range(len(llas)):
-        lla = llas[i]
-        quat = em.lla2quat(lla)
-        print(quat)
-
+    q_imu = [0.99993896, 0.00927734, -0.00268555, 0]
+    q_cambridge = [0.901797015, -0.39979036, -0.066508461, -0.150021455]
+    
+    print(qt.quatMultiply(q_imu, qt.quat_inv(q_cambridge)))
+    print(qt.quatMultiply(qt.quat_inv(q_imu), q_cambridge))
+    
+    print(qt.quatMultiply(q_cambridge, qt.quat_inv(q_imu)))
+    print(qt.quatMultiply(qt.quat_inv(q_cambridge), q_imu))
     
 if __name__ == "__main__":
     
-    
+    """
     unit_test_lla2ecef()
     unit_test_ecef2lla()
     unit_test_xyz2grav()
     
     unit_test_lla2quat()
+    """
+    unit_test_quat_init()

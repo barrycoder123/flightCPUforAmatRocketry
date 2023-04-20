@@ -56,8 +56,6 @@ if __name__ == "__main__":
 
         # simulate getting the next IMU reading
         accel, gyro, dt = dc.get_next_imu_reading()
-        dV_b_imu = accel * dt
-        dTh_b_imu = gyro * dt
 
         # grab our current PVA estimate
         r_ecef = PVA_est[0:3, i]  # ECEF position [m]
@@ -65,7 +63,7 @@ if __name__ == "__main__":
         q_e2b = PVA_est[6:10, i]  # ECEF-to-body Quaternion
 
         # Run an iteration of the strapdown
-        r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt)
+        r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, accel, gyro, dt)
 
         # Write values back to estimation matrix
         PVA_est[0:3, i + 1] = r_ecef_new
