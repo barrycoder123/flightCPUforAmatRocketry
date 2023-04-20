@@ -52,7 +52,7 @@ gyro_offsets = np.zeros(3)
 
 def calibrate_imu():
     """
-    Calibrates the IMU
+    Calibrates the IMU after powerup
     
     Effects:
         Sets accel_offsets and gyro_offsets global variables
@@ -83,6 +83,9 @@ def calibrate_imu():
     print('IMU has been calibrated!')
     accel_offsets = [float(data) for data in imu.offsets_accelerometer]
     gyro_offsets = [float(data) for data in imu.offsets_accelerometer]
+    
+    print("Acceleration offsets:",accel_offsets)
+    print("Gyroscope offsets:",gyro_offsets)
             
             
 def read_accel(last_accel):
