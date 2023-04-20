@@ -90,7 +90,7 @@ def calibrate_imu():
             
 def read_accel(last_accel):
     """
-    Read the acceleration vector from the IMU and subtract the calbiration offsets
+    Read and return the acceleration vector from the IMU
     
     Parameters:
         last_accel: (3,) previous accel reading, assume it has been calibrated
@@ -99,8 +99,8 @@ def read_accel(last_accel):
         calibrated_accel: (3,) current calibrated accel reading
     """
     try:
-        accel_reading = [float(data) for data in imu.acceleration]
-        calibrated_accel = accel_reading - accel_offsets
+        calibrated_accel = [float(data) for data in imu.acceleration]
+        #calibrated_accel = accel_reading - accel_offsets
         calibrated_accel = np.array(calibrated_accel)
         
     except RuntimeError:
@@ -112,7 +112,7 @@ def read_accel(last_accel):
 
 def read_gyro(last_gyro):
     """
-    Read the gyro vector from the IMU and subtract the calbiration offsets
+    Read and return the gyro vector from the IMU
     
     Parameters:
         last_gyro: (3,) previous gyro reading, assume it has been calibrated
@@ -121,8 +121,8 @@ def read_gyro(last_gyro):
         calibrated_gyro: (3,) current calibrated gyro reading
     """
     try:
-        gyro_reading = [float(data) for data in imu.gyro]
-        calibrated_gyro = gyro_reading - gyro_offsets
+        calibrated_gyro = [float(data) for data in imu.gyro]
+        #calibrated_gyro = gyro_reading - gyro_offsets
         calibrated_gyro = np.array(calibrated_gyro)
         
     except RuntimeError:
