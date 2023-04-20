@@ -15,7 +15,7 @@ sys.path.append('../Flight Algorithms')
 import earth_model as em
 import quaternions as qt
 from gps_code_modified import read_gps, read_gps_new, gps
-from readsensors import calibrate_imu, read_accel, read_gyro, read_baro, read_quat
+from readsensors import calibrate_imu_2, read_accel, read_gyro, read_baro, read_quat
 from data_collection_wrapper import DataCollector
 
 NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
@@ -39,14 +39,18 @@ class AvgBuf():
             if reading is not None:
                 self.prevAccel[:,i] = reading
                 i += 1
-            
+        print(self.prevAccel)        
     
     def update(self, xyz):
-        self.movingXYZ += xyz - self.prevAccel[:, self.index]
-        self.prevAccel[:, self.index] = xyz
-        self.index = (self.index + 1) % self.N
+
+        #print(self.prevAccel.shape)
+        self.prevAccel = np.append(self.prevAccel,xyz.reshape(-1,1),axis=1)
+        #print(self.prevAccel.shape)
+        self.prevAccel = np.delete(self.prevAccel,0,axis=1)
+        #print(self.prevAccel.shape)
+    
     def getAvg(self):
-        return self.movingXYZ / self.N
+        return np.mean(self.prevAccel,axis=1)
 
 
 class SensorDataCollector(DataCollector):
@@ -65,7 +69,8 @@ class SensorDataCollector(DataCollector):
         self.three_baros = np.zeros(3)
         
         #calibrate_imu()
-        time.sleep(3)
+
+        calibrate_imu_2()
 
         self.accel_buf = AvgBuf(read_accel)
         self.gyro_buf = AvgBuf(read_gyro)
@@ -102,8 +107,9 @@ class SensorDataCollector(DataCollector):
         """
 
         # extract the next acceleration and angular rotation
-        self.accel_xyz = read_accel(self.accel_xyz)
-        self.gyro_xyz = read_gyro(self.accel_xyz)
+        time.sleep(0.05)
+        self.accel_xyz = read_accel()
+        self.gyro_xyz = read_gyro()
 
         if self.accel_xyz is None:
             # do the moving average
