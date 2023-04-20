@@ -48,7 +48,6 @@ period = 1/sample_rate_Hz
 accel_offsets = np.zeros(3)
 gyro_offsets = np.zeros(3)
 
-# Function Definitions
 
 def calibrate_imu():
     """
@@ -67,6 +66,9 @@ def calibrate_imu():
     print('Calibrating the IMU sensor...')
     while True:
         sys, gyro, accel, mag = imu.calibration_status
+        print("gyro level:",gyro)
+        print("accel level:",accel)
+        """
         if gyro == 3 and accel == 3:
             break
         elif gyro == 3:
@@ -77,6 +79,7 @@ def calibrate_imu():
             print("Keep the sensor steady to calibrate gyroscope...")
         else:
             print("Neither accel/gyro have been calibrated...")
+        """
         
         time.sleep(0.5)
             
@@ -149,6 +152,7 @@ def read_baro(last_baro):
         baro = float(last_baro)
     return baro
 
+
 def read_quat():
     try: 
         quat = np.array(imu.quaternion)
@@ -157,6 +161,7 @@ def read_quat():
         quat = None
 
     return quat
+
 
 start_time = time.perf_counter()
 last_time = start_time
