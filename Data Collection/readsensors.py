@@ -73,6 +73,8 @@ def read_gyro(last_gyro):
         print("error reading gyroscope, using previous value")
         gyro = last_gyro
     return gyro
+
+
 def read_baro(last_baro):
     try:
         baro = float(readALT())
