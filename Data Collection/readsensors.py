@@ -35,7 +35,7 @@ config.read(path / 'barometer.txt')
 # setSLP(int(config.get('Barometer', 'sealevelpressure')))
 
 # Setup initial sensor values
-last_val = 0xFFFF
+last_val = 0
 accel = np.array([last_val,last_val,last_val])
 gyro = np.array([last_val,last_val,last_val])
 baro = last_val
@@ -65,23 +65,24 @@ def calibrate_imu():
     # Collect calibration data for each position
     print('Calibrating the IMU sensor...')
     while True:
-        sys, gyro, accel, mag = imu.calibration_status
-        print("gyro level:",gyro)
-        print("accel level:",accel)
-        """
+        try:
+            sys, gyro, accel, mag = imu.calibration_status
+        except RuntimeError:
+            gyro = -1
+            accel = -1
+        
         if gyro == 3 and accel == 3:
             break
         elif gyro == 3:
             print("Gyroscope calibrated!")
-            print("Move the sensor in different positions to calibrate accelerometer...")
+            print("Accel:",accel) #print("Move the sensor in different positions to calibrate accelerometer...")
         elif accel == 3:
             print("Accelerometer calibrated!")
-            print("Keep the sensor steady to calibrate gyroscope...")
+            print("Gyro:",gyro) #print("Keep the sensor steady to calibrate gyroscope...")
         else:
             print("Neither accel/gyro have been calibrated...")
-        """
         
-        time.sleep(0.5)
+        time.sleep(1)
             
     print('IMU has been calibrated!')
     accel_offsets = [float(data) for data in imu.offsets_accelerometer]
@@ -108,8 +109,9 @@ def read_accel(last_accel):
         
     except RuntimeError:
         print("error reading acceleration, using previous value")
-        calibrated_accel = last_accel
+        calibrated_accel = None
         
+
     return calibrated_accel
 
 
@@ -130,7 +132,7 @@ def read_gyro(last_gyro):
         
     except RuntimeError:
         print("error reading gyro, using previous value")
-        calibrated_gyro = last_gyro
+        calibrated_gyro = None
 
     return calibrated_gyro
 
@@ -182,8 +184,9 @@ def collectdata(gyro, accel, baro):
 
 if __name__ == '__main__':
     
-    calibrate_imu()
+    #calibrate_imu()
     
+
     while True:
 
         # gather the data
@@ -191,12 +194,12 @@ if __name__ == '__main__':
         
         # print the data
         print('=' * 40)
-        print("Accelerometer (m/s^2): {}".format(accel))
+        #print("Accelerometer (m/s^2): {}".format(accel))
         print("Gyroscope (rad/sec): {}".format(gyro))
-        print("Altitude (m): {}".format(baro))
-        print("Quaternion:", read_quat())
+        #print("Altitude (m): {}".format(baro))
+        #print("Quaternion:", read_quat())
         print("Time: (sec): {}".format(curr_time))
-        print("Time step (sec): {}".format(dt))
+        #print("Time step (sec): {}".format(dt))
         print()
 
         # wait for 1 sec so we don't get flooded with data

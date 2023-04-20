@@ -15,7 +15,7 @@ sys.path.append('../Flight Algorithms')
 import earth_model as em
 import quaternions as qt
 from gps_code_modified import read_gps, read_gps_new, gps
-from readsensors import read_accel, read_gyro, read_baro, read_quat
+from readsensors import calibrate_imu, read_accel, read_gyro, read_baro, read_quat
 from data_collection_wrapper import DataCollector
 
 NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
@@ -38,6 +38,12 @@ class SensorDataCollector(DataCollector):
         self.gyro_xyz = np.zeros(3)
         self.three_baros = np.zeros(3)
         
+        #calibrate_imu()
+        time.sleep(3)
+
+        self.accel_buf = AvgBuf()
+        self.gyro_buf = AvgBuf()
+
         # Wait for GPS to warm up
         #lla = None
         #while lla is None:
@@ -55,6 +61,22 @@ class SensorDataCollector(DataCollector):
         t_initial = time.monotonic()
         self.last_imu_time = t_initial
     
+
+    class AvgBuf:
+        
+        prevAccel = np.zeros([3, 3])
+        index = 0
+        movingXYZ = np.zeros(3)
+        
+        def update(xyz):
+            movingXYZ += xyz - prevAccel[:, index]
+            prevAccel[:, index] = xyz
+            index = (index + 1) % 3
+        def getAvg():
+            return movingXYZ / 3
+
+
+
     def get_next_imu_reading(self):
         """
         gets the next IMU reading  (acceleration, angular rotation)
@@ -70,11 +92,24 @@ class SensorDataCollector(DataCollector):
         self.accel_xyz = read_accel(self.accel_xyz)
         self.gyro_xyz = read_gyro(self.accel_xyz)
 
+        if self.accel_xyz is None:
+            # do the moving average
+            self.accel_xyz = self.accel_buf.getAvg()
+        else:
+            self.accel_buf.update(self.accel_xyz)
+        
+        if self.gyro_xyz is None:
+            self.gyro_xyz = self.gyro_buf.getAvg()
+        else:
+            self.gyro_buf.update(self.gyro_xyz)
+
         
         # determine change in time (seconds) between last and current IMU read
         current_time = time.monotonic()
         dt = current_time - self.last_imu_time
         self.last_imu_time = current_time
+        
+        self.gyro_xyz = np.zeros((3))
         
         return self.accel_xyz, self.gyro_xyz, dt
     
@@ -138,7 +173,7 @@ class SensorDataCollector(DataCollector):
         a_ecef = np.zeros(3) # initially no accel
         imu_quat = read_quat()
 
-        q_e2b = qt.quatMultiply(qt.quat_inv(imu_quat), q_e2b)
+        #q_e2b = qt.quatMultiply(qt.quat_inv(imu_quat), q_e2b)
 
         print("IMU quat:", np.array(read_quat()))
         print("truth quat:",q_e2b)
