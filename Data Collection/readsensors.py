@@ -42,7 +42,7 @@ def read_gyro(last_gyro):
         gyro = np.array([float(item) for item in imu.gyro])
     except RuntimeError:
         print("error reading gyroscope, using previous value")
-        gyro = last_gyro
+        gyro = np.zeros((3))
     return gyro
 def read_baro(last_baro):
     try:

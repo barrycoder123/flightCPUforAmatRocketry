@@ -138,7 +138,7 @@ class SensorDataCollector(DataCollector):
         a_ecef = np.zeros(3) # initially no accel
         imu_quat = read_quat()
 
-        q_e2b = qt.quatMultiply(q_e2b, qt.quat_inv(imu_quat))
+        q_e2b = qt.quatMultiply(qt.quat_inv(imu_quat), q_e2b)
 
         print("IMU quat:", np.array(read_quat()))
         print("truth quat:",q_e2b)

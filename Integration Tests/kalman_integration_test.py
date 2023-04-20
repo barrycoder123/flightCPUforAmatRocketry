@@ -75,10 +75,10 @@ if __name__ == "__main__":
 
     # ========================== plotting ==========================
     print("Logging results...")
-    filename = logger.write_buffer_to_file()
+    #filename = logger.write_buffer_to_file()
     
-    dl.plot_file_contents(filename)
-    #dl.print_position_drift(filename)
+    #dl.plot_file_contents(filename)
+    logger.print_position_drift()
     
     end_time = time.time()
     print("EXECUTION TIME: ", end_time - start_time)
