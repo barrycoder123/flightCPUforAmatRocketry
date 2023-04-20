@@ -25,13 +25,21 @@ Q_E2B_CAMBRIDGE = np.array([0.901797015, -0.39979036, -0.066508461,-0.150021455]
 
 class AvgBuf():
     
-    def __init__(self):
+    def __init__(self, read_func):
         
         self.N = 10
         
         self.prevAccel = np.zeros([3, self.N])
         self.index = 0
         self.movingXYZ = np.zeros(3)
+        
+        i = 0
+        while i < self.N:
+            reading = read_func()
+            if reading is not None:
+                self.prevAccel[:,i] = reading
+                i += 1
+            
     
     def update(self, xyz):
         self.movingXYZ += xyz - self.prevAccel[:, self.index]
@@ -59,8 +67,10 @@ class SensorDataCollector(DataCollector):
         #calibrate_imu()
         time.sleep(3)
 
-        self.accel_buf = AvgBuf()
-        self.gyro_buf = AvgBuf()
+        self.accel_buf = AvgBuf(read_accel)
+        self.gyro_buf = AvgBuf(read_gyro)
+        
+        
 
         # Wait for GPS to warm up
         #lla = None
