@@ -328,11 +328,10 @@ def lla_jacobian(r_ecef, HAE=True):
 
 if __name__ == "__main__":
     
-    xyz = np.array([1527850.153, -4464959.009,4276353.59])
-    lla = ecef2lla(xyz)
-    quat = lla2quat(lla)
+    lla = np.array([42.403061, -71.113635, 40.0])
+    xyz = lla2ecef(lla)
+    g = xyz2grav(xyz)
+    #np.norm(g)
     
-    expected_quat = [0.901797015,-0.39979036,	-0.066508461,-0.150021455]
-    
-    print("Computed quat:",quat)
-    print("Expected quat:",expected_quat)
+    print(g)
+

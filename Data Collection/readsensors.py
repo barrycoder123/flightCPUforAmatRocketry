@@ -90,9 +90,38 @@ def calibrate_imu():
     
     print("Acceleration offsets:",accel_offsets)
     print("Gyroscope offsets:",gyro_offsets)
+   
+
+def calibrate_imu_2():
+    
+    global accel_offsets, gyro_offsets
+    
+    moving_accel_avg = np.zeros(3)
+    moving_gyro_avg = np.zeros(3)
+        
+    accel_count = 0
+    gyro_count = 0
+    
+    for i in range(25):
+        accel = read_accel()
+        gyro = read_gyro()
+        
+        if accel is not None:
+            moving_accel_avg += accel
+            accel_count += 1
+            
+        if gyro is not None:
+            moving_gyro_avg += gyro
+            gyro_count += 1
+            
+    desired_accel = [0, 0, 9.8223133]
+    desired_gyro = [0, 0, 0]
+            
+    accel_offsets = desired_accel - (moving_accel_avg / accel_count)
+    gyro_offsets = desired_gyro - (moving_gyro_avg / gyro_count)
             
             
-def read_accel(last_accel):
+def read_accel():
     """
     Read and return the acceleration vector from the IMU
     
@@ -103,8 +132,8 @@ def read_accel(last_accel):
         calibrated_accel: (3,) current calibrated accel reading
     """
     try:
-        calibrated_accel = [float(data) for data in imu.acceleration]
-        #calibrated_accel = accel_reading - accel_offsets
+        accel_reading = [float(data) for data in imu.acceleration]
+        calibrated_accel = accel_reading + accel_offsets
         calibrated_accel = np.array(calibrated_accel)
         
     except RuntimeError:
@@ -115,7 +144,7 @@ def read_accel(last_accel):
     return calibrated_accel
 
 
-def read_gyro(last_gyro):
+def read_gyro():
     """
     Read and return the gyro vector from the IMU
     
@@ -126,8 +155,8 @@ def read_gyro(last_gyro):
         calibrated_gyro: (3,) current calibrated gyro reading
     """
     try:
-        calibrated_gyro = [float(data) for data in imu.gyro]
-        #calibrated_gyro = gyro_reading - gyro_offsets
+        gyro_reading = [float(data) for data in imu.gyro]
+        calibrated_gyro = gyro_reading + gyro_offsets
         calibrated_gyro = np.array(calibrated_gyro)
         
     except RuntimeError:
@@ -170,8 +199,8 @@ last_time = start_time
 def collectdata(gyro, accel, baro):
      global last_time
     
-     gyro = read_gyro(gyro)
-     accel = read_accel(accel)
+     gyro = read_gyro()
+     accel = read_accel()
      # last_baro = read_baro(last_baro)
      baro = 0
      current_time = time.perf_counter() - start_time

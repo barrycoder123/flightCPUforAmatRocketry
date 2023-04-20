@@ -10,7 +10,7 @@ If num_points is None, then
 import time
 import datetime
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 colnames = [
     "t [sec]",
@@ -239,3 +239,12 @@ def _plotData(x, t, cov=None, name='Position', unit='m', subx0=False, decim_fact
 
     plt.tight_layout()
     return fig, axs
+
+
+if __name__ == "__main__":
+    
+    print("HERE")
+    
+    file = "../Integration Tests/data_2023-04-20_20-11-37.csv"
+    
+    plot_file_contents(file)
