@@ -34,47 +34,111 @@ config.read(path / 'barometer.txt')
 
 # setSLP(int(config.get('Barometer', 'sealevelpressure')))
 
+# Setup initial sensor values
 last_val = 0xFFFF
-# set up initial sensor values
 accel = np.array([last_val,last_val,last_val])
 gyro = np.array([last_val,last_val,last_val])
 baro = last_val
 
+# Setup sample rate
 sample_rate_Hz = 50
 period = 1/sample_rate_Hz
 
-
+# Setup calibration offsets
+accel_offsets = np.zeros(3)
+gyro_offsets = np.zeros(3)
 
 # Function Definitions
 
 def calibrate_imu():
-    print('Calibrating the BNO055 sensor...')
+    """
+    Calibrates the IMU
     
-    imu.get_calibration()
+    Effects:
+        Sets accel_offsets and gyro_offsets global variables
+    """
+    global accel_offsets, gyro_offsets
     
-    while not imu.is_fully_calibrated():
-        sys, gyro, accel, mag = imu.calibrate(timeout=5)
-        print("Waiting to calibrate IMU")
+    # Only needs to be calibrated once upon powerup
+    if imu.calibrated:
+        return
+    
+    # Collect calibration data for each position
+    print('Calibrating the IMU sensor...')
+    while True:
+        sys, gyro, accel, mag = imu.calibration_status
+        if gyro == 3 and accel == 3:
+            break
+        elif gyro == 3:
+            print("Gyroscope calibrated!")
+            print("Move the sensor in different positions to calibrate accelerometer...")
+        elif accel == 3:
+            print("Accelerometer calibrated!")
+            print("Keep the sensor steady to calibrate gyroscope...")
+        else:
+            print("Neither accel/gyro have been calibrated...")
+        
+        time.sleep(0.5)
+            
+    print('IMU has been calibrated!')
+    accel_offsets = [float(data) for data in imu.offsets_accelerometer]
+    gyro_offsets = [float(data) for data in imu.offsets_accelerometer]
             
             
 def read_accel(last_accel):
+    """
+    Read the acceleration vector from the IMU and subtract the calbiration offsets
+    
+    Parameters:
+        last_accel: (3,) previous accel reading, assume it has been calibrated
+        
+    Returns:
+        calibrated_accel: (3,) current calibrated accel reading
+    """
     try:
-        #accel = np.array([0, 0, 9.81])
-        accel = np.array([float(item) for item in imu.gravity])
+        accel_reading = [float(data) for data in imu.acceleration]
+        calibrated_accel = accel_reading - accel_offsets
+        calibrated_accel = np.array(calibrated_accel)
+        
     except RuntimeError:
         print("error reading acceleration, using previous value")
-        accel = last_accel
-    return accel
+        calibrated_accel = last_accel
+        
+    return calibrated_accel
+
+
 def read_gyro(last_gyro):
+    """
+    Read the gyro vector from the IMU and subtract the calbiration offsets
+    
+    Parameters:
+        last_gyro: (3,) previous gyro reading, assume it has been calibrated
+        
+    Returns:
+        calibrated_gyro: (3,) current calibrated gyro reading
+    """
     try:
-        gyro = np.array([float(item) for item in imu.gyro])
+        gyro_reading = [float(data) for data in imu.gyro]
+        calibrated_gyro = gyro_reading - gyro_offsets
+        calibrated_gyro = np.array(calibrated_gyro)
+        
     except RuntimeError:
-        print("error reading gyroscope, using previous value")
-        gyro = last_gyro
-    return gyro
+        print("error reading gyro, using previous value")
+        calibrated_gyro = last_gyro
+
+    return calibrated_gyro
 
 
 def read_baro(last_baro):
+    """
+    Read the barometer
+    
+    Parameters:
+        last_baro: (float) previous baro reading
+        
+    Returns:
+        baro: (float) current baro reading
+    """
     try:
         baro = float(readALT())
     except RuntimeError:
@@ -110,7 +174,7 @@ def collectdata(gyro, accel, baro):
 
 if __name__ == '__main__':
     
-    #calibrate_imu()
+    calibrate_imu()
     
     while True:
 
