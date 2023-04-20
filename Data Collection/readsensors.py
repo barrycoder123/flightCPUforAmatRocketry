@@ -35,14 +35,14 @@ def read_accel(last_accel):
         accel = np.array([float(item) for item in imu.gravity])
     except RuntimeError:
         print("error reading acceleration, using previous value")
-        accel = None
+        accel = last_accel
     return accel
 def read_gyro(last_gyro):
     try:
         gyro = np.array([float(item) for item in imu.gyro])
     except RuntimeError:
         print("error reading gyroscope, using previous value")
-        gyro = None
+        gyro = last_gyro
     return gyro
 def read_baro(last_baro):
     try:

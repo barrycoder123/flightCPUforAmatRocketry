@@ -61,13 +61,12 @@ if __name__ == "__main__":
 
         # Read IMU
         accel, gyro, dt = collector.get_next_imu_reading()
-        z_imu = np.concatenate((accel, gyro))
         
         # Prediction
-        ekf.predict(z_imu, dt)
+        ekf.predict(accel, gyro, dt)
 
         # Read GPS and barometer -- these return None if no new data
-        baro = collector.get_next_barometer_reading()
+        #baro = collector.get_next_barometer_reading()
         lla = collector.get_next_gps_reading()
 
         # Update

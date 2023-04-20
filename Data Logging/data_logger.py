@@ -10,7 +10,7 @@ If num_points is None, then
 import time
 import datetime
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 colnames = [
     "t [sec]",

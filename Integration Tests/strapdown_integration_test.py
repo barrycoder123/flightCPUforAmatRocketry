@@ -55,13 +55,13 @@ if __name__ == "__main__":
         x = np.concatenate((r_ecef_new, v_ecef_new, q_e2b_new))
         
         # Log the values for later viewing
-        logger.save_state_to_buffer(x, q_e2b_new, np.concatenate((accel,gyro)), None)
+        logger.save_state_to_buffer(x, q_e2b_new, np.concatenate((accel, gyro)), None)
 
     # ========================== plotting ==========================
-    #filename = logger.write_buffer_to_file()
+    filename = logger.write_buffer_to_file()
     
-    #dl.plot_file_contents(filename)
-    logger.print_position_drift()
+    dl.plot_file_contents(filename)
+    #logger.print_position_drift()
     
     end_time = time.time()
     print("EXECUTION TIME: ", end_time - start_time)
