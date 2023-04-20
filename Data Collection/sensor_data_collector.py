@@ -23,6 +23,22 @@ NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
 GPS_AT_574 = np.array([42.403061, -71.113635, 40.0])
 Q_E2B_CAMBRIDGE = np.array([0.901797015, -0.39979036, -0.066508461,-0.150021455])
 
+class AvgBuf():
+    
+    def __init__(self):
+        
+        self.prevAccel = np.zeros([3, 3])
+        self.index = 0
+        self.movingXYZ = np.zeros(3)
+    
+    def update(self, xyz):
+        self.movingXYZ += xyz - self.prevAccel[:, self.index]
+        self.prevAccel[:, self.index] = xyz
+        self.index = (self.index + 1) % 3
+    def getAvg(self):
+        return self.movingXYZ / 3
+
+
 class SensorDataCollector(DataCollector):
 
     def __init__(self):
@@ -60,21 +76,6 @@ class SensorDataCollector(DataCollector):
         
         t_initial = time.monotonic()
         self.last_imu_time = t_initial
-    
-
-    class AvgBuf:
-        
-        prevAccel = np.zeros([3, 3])
-        index = 0
-        movingXYZ = np.zeros(3)
-        
-        def update(xyz):
-            movingXYZ += xyz - prevAccel[:, index]
-            prevAccel[:, index] = xyz
-            index = (index + 1) % 3
-        def getAvg():
-            return movingXYZ / 3
-
 
 
     def get_next_imu_reading(self):
