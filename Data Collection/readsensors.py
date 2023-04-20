@@ -49,13 +49,12 @@ period = 1/sample_rate_Hz
 
 def calibrate_imu():
     print('Calibrating the BNO055 sensor...')
-    while True:
-        sys, gyro, accel, mag = imu.get_calibration_status()
-        if gyro == 3 and accel == 3:
-            break
-        else:
-            print('Move the sensor in different positions...')
-            time.sleep(1)
+    
+    imu.get_calibration()
+    
+    while not imu.is_fully_calibrated():
+        sys, gyro, accel, mag = imu.calibrate(timeout=5)
+        print("Waiting to calibrate IMU")
             
             
 def read_accel(last_accel):
@@ -111,7 +110,7 @@ def collectdata(gyro, accel, baro):
 
 if __name__ == '__main__':
     
-    calibrate_imu()
+    #calibrate_imu()
     
     while True:
 
