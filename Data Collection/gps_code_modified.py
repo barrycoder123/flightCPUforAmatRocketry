@@ -246,8 +246,6 @@ def read_gps_new(num_desired_satellites=0, desired_update_time=GPS_UPDATE_TIME):
     if dt < desired_update_time:
         return None
     last_time = current
-    
-    return 0
 
     # Return None if no available data
     if not gps.has_fix:
@@ -273,7 +271,7 @@ if __name__ == "__main__":
     while True:
         
         #lla = read_gps(num_desired_satellites=4, desired_update_time=1.0)
-        lla = read_gps_new(num_desired_satellites=4, desired_update_time=1.0)
+        lla = read_gps_new(num_desired_satellites=6, desired_update_time=1.0)
 
         # print data if we got some!
         if (lla is not None):
