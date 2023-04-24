@@ -18,7 +18,7 @@ from gps_code_modified import read_gps, read_gps_new, gps
 from readsensors import calibrate_imu_2, read_accel, read_gyro, read_baro, read_quat
 from data_collection_wrapper import DataCollector
 
-NUM_SATELLITES = 4 # number of satellites requested for each GPS fix
+NUM_SATELLITES = 6 # number of satellites requested for each GPS fix
 
 GPS_AT_574 = np.array([42.403061, -71.113635, 40.0])
 Q_E2B_CAMBRIDGE = np.array([0.901797015, -0.39979036, -0.066508461,-0.150021455])
@@ -81,7 +81,7 @@ class SensorDataCollector(DataCollector):
         #lla = None
         #while lla is None:
         #    lla = read_gps_new(NUM_SATELLITES)
-            
+           
         print("Exited while loop")
     
     def start_timer(self):
@@ -151,8 +151,8 @@ class SensorDataCollector(DataCollector):
         lla = read_gps_new(NUM_SATELLITES, 1.0)
         
         if lla is not None:
-            #print("NEW GPS!!")
-            return GPS_AT_574
+            lla = np.array(lla)
+            print(lla)
         
         return lla
     
@@ -183,9 +183,10 @@ class SensorDataCollector(DataCollector):
         
         # wait for GPS to warm up, then save that reading
         lla = None
-        lla = GPS_AT_574
-        #while lla is None:
-        #    lla = read_gps_new(NUM_SATELLITES)
+        #lla = GPS_AT_574
+        while lla is None:
+            lla = read_gps_new(NUM_SATELLITES)
+        lla = np.array(lla)
         print("Initial LLA:",lla)
 
         q_e2b = Q_E2B_CAMBRIDGE
@@ -200,5 +201,4 @@ class SensorDataCollector(DataCollector):
         print("IMU quat:", np.array(read_quat()))
         print("truth quat:",q_e2b)
         
-
         return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b
