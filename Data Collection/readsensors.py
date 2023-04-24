@@ -140,7 +140,7 @@ def read_accel():
         calibrated_accel = np.array(calibrated_accel)
         
     except RuntimeError:
-        print("error reading acceleration, using previous value")
+        print("error reading acceleration")
         calibrated_accel = None #np.array([0, 0, 9.81])
         
 
@@ -163,28 +163,30 @@ def read_gyro():
         calibrated_gyro = np.array(calibrated_gyro)
         
     except RuntimeError:
-        print("error reading gyro, using previous value")
+        print("error reading gyro")
         calibrated_gyro = None #np.zeros(3)
 
     return calibrated_gyro
 
 
-def read_baro(last_baro):
-    """
-    Read the barometer
-    
-    Parameters:
-        last_baro: (float) previous baro reading
-        
-    Returns:
-        baro: (float) current baro reading
-    """
-    try:
-        baro = float(readALT())
-    except RuntimeError:
-        print("error reading barometer, using previous value")
-        baro = float(last_baro)
-    return baro
+# =============================================================================
+# def read_baro(last_baro):
+#     """
+#     Read the barometer
+#     
+#     Parameters:
+#         last_baro: (float) previous baro reading
+#         
+#     Returns:
+#         baro: (float) current baro reading
+#     """
+#     try:
+#         baro = float(readALT())
+#     except RuntimeError:
+#         print("error reading barometer, using previous value")
+#         baro = float(last_baro)
+#     return baro
+# =============================================================================
 
 
 def read_quat():

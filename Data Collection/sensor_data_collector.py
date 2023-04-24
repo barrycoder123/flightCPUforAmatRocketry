@@ -38,8 +38,7 @@ class AvgBuf():
             reading = read_func()
             if reading is not None:
                 self.prevAccel[:,i] = reading
-                i += 1
-        print(self.prevAccel)        
+                i += 1       
     
     def update(self, xyz):
 
@@ -82,7 +81,6 @@ class SensorDataCollector(DataCollector):
         #while lla is None:
         #    lla = read_gps_new(NUM_SATELLITES)
            
-        print("Exited while loop")
     
     def start_timer(self):
         """
@@ -108,21 +106,21 @@ class SensorDataCollector(DataCollector):
 
         # extract the next acceleration and angular rotation
         time.sleep(0.05)
-        self.accel_xyz = read_accel()
-        self.gyro_xyz = read_gyro()
+        accel_xyz = read_accel()
+        gyro_xyz = read_gyro()
 
-        if self.accel_xyz is None:
+        if accel_xyz is None:
             # do the moving average
-            self.accel_xyz = self.accel_buf.getAvg()
+            accel_xyz = self.accel_buf.getAvg()
             print(self.accel_xyz)
         else:
             self.accel_buf.update(self.accel_xyz)
         
-        if self.gyro_xyz is None:
-            self.gyro_xyz = self.gyro_buf.getAvg()
-            print(self.gyro_xyz)
+        if gyro_xyz is None:
+            gyro_xyz = self.gyro_buf.getAvg()
+            print(gyro_xyz)
         else:
-            self.gyro_buf.update(self.gyro_xyz)
+            self.gyro_buf.update(gyro_xyz)
 
         
         # determine change in time (seconds) between last and current IMU read
