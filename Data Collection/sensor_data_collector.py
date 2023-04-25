@@ -18,7 +18,7 @@ from gps_code_modified import read_gps, read_gps_new, gps
 from readsensors import calibrate_imu_2, read_accel, read_gyro, read_quat
 from data_collection_wrapper import DataCollector
 
-NUM_SATELLITES = 6 # number of satellites requested for each GPS fix
+NUM_SATELLITES = 8 # number of satellites requested for each GPS fix
 
 GPS_AT_574 = np.array([42.403061, -71.113635, 40.0])
 Q_E2B_CAMBRIDGE = np.array([0.901797015, -0.39979036, -0.066508461,-0.150021455])
@@ -39,7 +39,9 @@ class AvgBuf():
             if reading is not None:
                 self.prevAccel[:,i] = reading
                 i += 1       
-    
+        print(self.prevAccel)
+
+
     def update(self, xyz):
 
         #print(self.prevAccel.shape)
@@ -64,10 +66,6 @@ class SensorDataCollector(DataCollector):
         if choose_points == True:
             print("Please choose the number of data points you'd like to collect")
             self.num_points = int(input(">> "))
-        
-        self.accel_xyz = np.zeros(3)
-        self.gyro_xyz = np.zeros(3)
-        self.three_baros = np.zeros(3)
         
         #calibrate_imu()
 
@@ -108,9 +106,9 @@ class SensorDataCollector(DataCollector):
         if accel_xyz is None:
             # do the moving average
             accel_xyz = self.accel_buf.getAvg()
-            print(self.accel_xyz)
+            print(accel_xyz)
         else:
-            self.accel_buf.update(self.accel_xyz)
+            self.accel_buf.update(accel_xyz)
         
         if gyro_xyz is None:
             gyro_xyz = self.gyro_buf.getAvg()
@@ -127,7 +125,7 @@ class SensorDataCollector(DataCollector):
         #self.gyro_xyz = np.zeros((3))
         #self.accel_xyz = np.array([0, 0, 9.81])
         
-        return self.accel_xyz, self.gyro_xyz, dt
+        return accel_xyz, gyro_xyz, dt
     
 
     def get_next_gps_reading(self):        

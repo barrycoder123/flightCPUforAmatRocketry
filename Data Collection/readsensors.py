@@ -120,8 +120,8 @@ def calibrate_imu_2():
     accel_offsets = desired_accel - (moving_accel_avg / accel_count)
     gyro_offsets = desired_gyro - (moving_gyro_avg / gyro_count)
             
-    print(accel_offsets)
-    print(gyro_offsets)
+    #print(accel_offsets)
+    #print(gyro_offsets)
 
             
 def read_accel():

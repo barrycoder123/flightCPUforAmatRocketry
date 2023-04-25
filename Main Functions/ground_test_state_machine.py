@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # Initialize the Data Collector module
     collector = dc.SensorDataCollector(False)
-    
+        
     # Initialize the Extended Kalman Filter module
     x, q_true = collector.get_initial_state_and_quaternion()
     #x = np.zeros(6)
@@ -73,12 +73,12 @@ if __name__ == "__main__":
 
         # Read GPS and barometer -- these return None if no new data
         # baro = collector.get_next_barometer_reading()
-        #lla = collector.get_next_gps_reading()
-        lla = None
+        lla = collector.get_next_gps_reading()
+        #lla = None
 
         # Update
         baro = None
-        #ekf.update(lla, baro, sigma_gps=0.1, sigma_baro=10) # try variance = 10
+        ekf.update(lla, baro, sigma_gps=0.1, sigma_baro=10) # try variance = 10
         
         # Log the data
         logger.save_state_to_buffer(ekf.x, ekf.q_e2b, np.concatenate((accel,gyro)), lla)
