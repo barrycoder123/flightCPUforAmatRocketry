@@ -46,11 +46,14 @@ class DataLogger:
             num_points: int (optional) number of rows of the data file
         """
         width = len(colnames)
+        avg_dt = 0.0876 # experimentally determined
         
         if num_points is not None:   
             self.PVA_est = np.zeros((width, num_points+1)) # save room for columns
+            
         else:
-            big_number = 2**16 # at dt=0.01, this is 11 minutes of data, should be fine 
+            big_number = 2**14 # at dt=0.01, this is 11 minutes of data, should be fine 
+            print("will record for",big_number * avg_dt / 60,"minutes")
             self.PVA_est = np.zeros((width,big_number+1))
         
         
@@ -106,6 +109,9 @@ class DataLogger:
         # create a formatted filename string with the date and time
         now = datetime.datetime.now()
         filename = now.strftime("data_%Y-%m-%d_%H-%M-%S.csv")
+        
+        # truncate array
+        self.PVA_est = self.PVA_est[:,:self.write_pos]
         
         # write the data to the file
         col_str = ','.join(colnames)
