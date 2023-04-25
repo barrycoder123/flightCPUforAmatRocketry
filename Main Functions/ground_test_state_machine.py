@@ -42,7 +42,9 @@ if __name__ == "__main__":
     collector = dc.DataCollector(choose_points=False)
     
     # Initialize the Extended Kalman Filter module
-    x, q_true = collector.get_initial_state_and_quaternion()
+    #x, q_true = collector.get_initial_state_and_quaternion()
+    x = np.zeros(6)
+    q_true = np.zeros(4)
     ekf = kf.EKF(x, q_true)
     
     # Initialize the Data Logging module
@@ -71,7 +73,8 @@ if __name__ == "__main__":
 
         # Read GPS and barometer -- these return None if no new data
         # baro = collector.get_next_barometer_reading()
-        lla = collector.get_next_gps_reading()
+        #lla = collector.get_next_gps_reading()
+        lla = None
 
         # Update
         baro = None
