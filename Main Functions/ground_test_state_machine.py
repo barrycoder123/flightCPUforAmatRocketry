@@ -39,7 +39,7 @@ if __name__ == "__main__":
     print("Kalman Filtering Simulation")
 
     # Initialize the Data Collector module
-    collector = dc.DataCollector().create()
+    collector = dc.DataCollector(choose_points=False)
     
     # Initialize the Extended Kalman Filter module
     x, q_true = collector.get_initial_state_and_quaternion()

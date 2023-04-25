@@ -54,14 +54,16 @@ class AvgBuf():
 
 class SensorDataCollector(DataCollector):
 
-    def __init__(self):
+    def __init__(self, choose_points=True):
         
         """
         Initializes arrays and waits for GPS to warm up
         """
+
         gps.readline() #read and ignore first line
-        print("Please choose the number of data points you'd like to collect")
-        self.num_points = int(input(">> "))
+        if choose_points == True:
+            print("Please choose the number of data points you'd like to collect")
+            self.num_points = int(input(">> "))
         
         self.accel_xyz = np.zeros(3)
         self.gyro_xyz = np.zeros(3)
@@ -74,12 +76,6 @@ class SensorDataCollector(DataCollector):
         self.accel_buf = AvgBuf(read_accel)
         self.gyro_buf = AvgBuf(read_gyro)
         
-        
-
-        # Wait for GPS to warm up
-        #lla = None
-        #while lla is None:
-        #    lla = read_gps_new(NUM_SATELLITES)
            
     
     def start_timer(self):
