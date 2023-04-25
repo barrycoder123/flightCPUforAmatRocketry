@@ -39,12 +39,12 @@ if __name__ == "__main__":
     print("Kalman Filtering Simulation")
 
     # Initialize the Data Collector module
-    collector = dc.DataCollector(choose_points=False)
+    collector = dc.SensorDataCollector(False)
     
     # Initialize the Extended Kalman Filter module
-    #x, q_true = collector.get_initial_state_and_quaternion()
-    x = np.zeros(6)
-    q_true = np.zeros(4)
+    x, q_true = collector.get_initial_state_and_quaternion()
+    #x = np.zeros(6)
+    #q_true = np.zeros(4)
     ekf = kf.EKF(x, q_true)
     
     # Initialize the Data Logging module
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     # ========================== filter ==========================
     print("Press the button to start the Kalman Filter")
     button_status = False
-    while button_status:
-        button_status = button_pressed()
+    while not button_pressed():
+        pass
         
     print("Running Extended Kalman Filter...")
     print("Press the button again to stop collecting!")
@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
         # Update
         baro = None
-        ekf.update(lla, baro, sigma_gps=0.1, sigma_baro=10) # try variance = 10
+        #ekf.update(lla, baro, sigma_gps=0.1, sigma_baro=10) # try variance = 10
         
         # Log the data
         logger.save_state_to_buffer(ekf.x, ekf.q_e2b, np.concatenate((accel,gyro)), lla)
