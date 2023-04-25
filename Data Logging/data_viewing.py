@@ -29,8 +29,20 @@ def read_file_to_buffer(filename):
     
     PVA_est = np.loadtxt(filename, delimiter=',', dtype=str).T
     PVA_est = PVA_est.astype(float)
+    #print(PVA_est.shape)
+    
+    # cuts out the really bad data ...
+    if filename == "fells_loop.csv":
+        PVA_est = np.concatenate((PVA_est[:, 660:2100], PVA_est[:, 2315:]), axis=1)
+       
+    if filename == "capen_street.csv":
+        PVA_est = np.concatenate((PVA_est[:,1400:2020], PVA_est[:,2033:]), axis=1)
     
     return PVA_est
+
+    # BAD SECTIONS:
+        
+    # [450, 660]     [2100,2315]
         
 def plot_file_contents(filename):
     """
@@ -131,6 +143,7 @@ def plot_results_on_map(test_name):
     
     data_file = test_name + ".csv"
     image_file = test_name + ".png"
+    #image_file = "fells_loop.png"
     
     #BBox = ((df.longitude.min(),   df.longitude.max(), df.latitude.min(), df.latitude.max())
             
@@ -162,8 +175,10 @@ def plot_results_on_map(test_name):
     
 if __name__ == "__main__":
     
-    plot_results_on_map("track_straight")
-    plot_results_on_map("track_loop")
-    plot_results_on_map("walk_to_track")
+    day_1 = ["track_straight", "track_loop", "walk_to_track"]
+    day_2 = ["first_drive", "capen_street", "fells_loop"]
+    
+    for log in day_2:
+        plot_results_on_map(log)
     
     
