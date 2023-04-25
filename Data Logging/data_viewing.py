@@ -32,8 +32,8 @@ def read_file_to_buffer(filename):
     #print(PVA_est.shape)
     
     # cuts out the really bad data ...
-    if filename == "fells_loop.csv":
-        PVA_est = np.concatenate((PVA_est[:, 660:2100], PVA_est[:, 2315:]), axis=1)
+    if filename == "fells_loop.csv": #2100
+        PVA_est = np.concatenate((PVA_est[:, 660:2000], PVA_est[:, 2315:]), axis=1)
        
     if filename == "capen_street.csv":
         PVA_est = np.concatenate((PVA_est[:,1400:2020], PVA_est[:,2033:]), axis=1)
