@@ -15,7 +15,7 @@ sys.path.append('../Flight Algorithms')
 import earth_model as em
 import quaternions as qt
 from gps_code_modified import read_gps, read_gps_new, gps
-from readsensors import calibrate_imu_2, read_accel, read_gyro, read_baro, read_quat
+from readsensors import calibrate_imu_2, read_accel, read_gyro, read_quat
 from data_collection_wrapper import DataCollector
 
 NUM_SATELLITES = 6 # number of satellites requested for each GPS fix

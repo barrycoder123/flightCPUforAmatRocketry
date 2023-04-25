@@ -6,7 +6,7 @@
 # Uses the GPS to send some commands, then reads directly from the GPS
 import time
 import board
-import busio
+#import busio
 
 import adafruit_gps
 
@@ -25,7 +25,7 @@ UART.setup("UART2")
 # might need to change the timeout
 # gps defaults to 9600 baud, don't change it
 import serial
-import select
+#import select
 uart = serial.Serial("/dev/ttyO2", baudrate=9600, timeout=1)
 
 # Create a GPS module instance.
