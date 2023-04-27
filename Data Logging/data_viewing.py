@@ -7,12 +7,15 @@ Created on Mon Apr 24 13:48:37 2023
 """
 
 import sys
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append('../Flight Algorithms')
 
 import earth_model as em
+import data_logger as dl
+
 
 """
 The following files are separate from the DataLogger class but are helpful for 
@@ -29,20 +32,9 @@ def read_file_to_buffer(filename):
     
     PVA_est = np.loadtxt(filename, delimiter=',', dtype=str).T
     PVA_est = PVA_est.astype(float)
-    #print(PVA_est.shape)
-    
-    # cuts out the really bad data ...
-    if filename == "fells_loop.csv": #2100
-        PVA_est = np.concatenate((PVA_est[:, 660:2000], PVA_est[:, 2315:]), axis=1)
-       
-    if filename == "capen_street.csv":
-        PVA_est = np.concatenate((PVA_est[:,1400:2020], PVA_est[:,2033:]), axis=1)
     
     return PVA_est
 
-    # BAD SECTIONS:
-        
-    # [450, 660]     [2100,2315]
         
 def plot_file_contents(filename):
     """
@@ -61,6 +53,7 @@ def plot_file_contents(filename):
     
     plt.show()  # needed to display the figures
  
+    
 def print_file_contents(filename):
     """
     Prints the entire scontents from the file
@@ -78,7 +71,6 @@ def print_file_contents(filename):
         print(PVA_est[0, i], PVA_est[1:4, i])
         
         
-     
 def _plotData(x, t, cov=None, name='Position', unit='m', subx0=False, decim_fact=1, tEnd=None, axes=None):
     """
     Private helper function which plots everything very nicely
@@ -144,8 +136,6 @@ def plot_results_on_map(test_name):
     data_file = test_name + ".csv"
     image_file = test_name + ".png"
     #image_file = "fells_loop.png"
-    
-    #BBox = ((df.longitude.min(),   df.longitude.max(), df.latitude.min(), df.latitude.max())
             
     PVA_est = read_file_to_buffer(data_file)
     position_est = PVA_est[1:4,:]
@@ -165,20 +155,97 @@ def plot_results_on_map(test_name):
     
     fig, ax = plt.subplots(figsize = (8,7))
     ax.scatter(longitude, latitude, zorder=1, alpha= 0.2, c='b', s=10)
-    ax.set_title('Plotting GPS Data on Map')
+    ax.set_title('Recording ' + test_name)
+    ax.set_xlabel('Longitude')
+    ax.set_ylabel('Latitude')
     ax.set_xlim(BBox[0],BBox[1])
     ax.set_ylim(BBox[2],BBox[3])
     ax.imshow(image, zorder=0, extent = BBox, aspect= 'equal')
+    
+    
+def determine_track_distances():
+    
+    # ==================== get data from files ====================
+    data_file = "track_straight.csv"
+    image_file = "track_straight.png"
+    
+    # unpack data
+    PVA_est = read_file_to_buffer(data_file)
+    min_time = PVA_est[0,0]
+    max_time = PVA_est[0,-1]
+    num_points = PVA_est.shape[1]
+    ten = 10 # r/programminghorror would be proud
+    time_list = list(range(int(min_time),int(max_time),ten))
 
-    #plot_file_contents(file)
-
+    # ==================== get the real data we need ====================
+    r_ecef_ten_meters = np.zeros((3, ten))
+    r_ecef_ten_meters[:,0] = PVA_est[1:4,0]
+    
+    t_idx = 1
+    for i in range(num_points):
+        col = PVA_est[:,i]
+        
+        # find the point at which we stopped on the track
+        if (col[0] > time_list[t_idx]) and (col[0] < time_list[t_idx] + 1):
+            if col[17] is not np.nan: # find the measurement corresponding to a GPS update
+            
+                print("Found col",col[0])
+                real_col = PVA_est[:,i+10] #the next col has the best update
+                r_ecef_ten_meters[:,t_idx] = real_col[1:4]
+                t_idx = t_idx + 1
+        
+        if t_idx >= ten: # only need 10 points
+            break
+        
+    # ==================== plot on a map ====================
+    lla_est = em.ecef2lla(r_ecef_ten_meters)
+    latitude = lla_est[0]
+    longitude = lla_est[1]
+    
+    min_lon = min(longitude) - 5e-5
+    max_lon = max(longitude) + 5e-5
+    min_lat = min(latitude) - 5e-5
+    max_lat = max(latitude) + 5e-5
+    
+    BBox = ((min_lon, max_lon, min_lat, max_lat))
+    print(BBox)
+    image = plt.imread(image_file)
+    
+    fig, ax = plt.subplots(figsize = (8,7))
+    ax.scatter(longitude, latitude, zorder=1, alpha= 0.8, c='r', s=25)
+    ax.set_title('Recording at 8.5 meter spacings on a running track')
+    ax.set_xlabel('Longitude')
+    ax.set_ylabel('Latitude')
+    ax.set_xlim(BBox[0],BBox[1])
+    ax.set_ylim(BBox[2],BBox[3])
+    for i in range(10):
+        txt = "Point " + str(i+1)
+        ax.annotate(txt, (longitude[i], latitude[i]))
+    ax.imshow(image, zorder=0, extent = BBox, aspect= 'equal')
+    
+    # ==================== determine distance (meters) between each data ====================
+    actual_distance = 8.5
+    prev_pos = r_ecef_ten_meters[:,0]
+    error_diff_accum = 0
+    for i in range(ten):
+        pos = r_ecef_ten_meters[:,i]
+        diff_xyz = pos - prev_pos
+        diff_abs = round(np.linalg.norm(diff_xyz),2)
+        error_diff = round(abs(diff_abs - actual_distance * i),2)
+        print(round(diff_abs,2), actual_distance * i, error_diff)
+        error_diff_accum += error_diff
+    print("Average error:",error_diff_accum/10)
+    
     
 if __name__ == "__main__":
     
     day_1 = ["track_straight", "track_loop", "walk_to_track"]
-    day_2 = ["first_drive", "capen_street", "fells_loop"]
+    day_2 = ["first_drive", "fells_loop_1", "fells_loop_2"]
     
-    for log in day_2:
-        plot_results_on_map(log)
-    
+    # plot each test from a particular day
+    for res in day_1:
+        plot_results_on_map(res)
+        
+    # this determines distances on a track
+    #determine_track_distances()
     
