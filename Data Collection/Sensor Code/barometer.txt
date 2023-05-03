@@ -1,0 +1,2 @@
+[Barometer]
+sealevelpressure = 101940

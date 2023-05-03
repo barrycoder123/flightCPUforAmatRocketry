@@ -11,11 +11,12 @@ import time
 import numpy as np
 
 sys.path.append('../Flight Algorithms')
+sys.path.append('../Data Collection/')
 
 import earth_model as em
-import quaternions as qt
-from gps_code_modified import read_gps, read_gps_new, gps
-from readsensors import calibrate_imu_2, read_accel, read_gyro, read_quat
+from read_gps import read_gps_lla
+from read_imu import calibrate_imu, read_accel, read_gyro, read_quat
+from read_baro import read_baro_alt
 from data_collection_wrapper import DataCollector
 
 NUM_SATELLITES = 8 # number of satellites requested for each GPS fix
@@ -62,14 +63,13 @@ class SensorDataCollector(DataCollector):
         Initializes arrays and waits for GPS to warm up
         """
 
-        gps.readline() #read and ignore first line
         if choose_points == True:
             print("Please choose the number of data points you'd like to collect")
             self.num_points = int(input(">> "))
         
         #calibrate_imu()
 
-        calibrate_imu_2()
+        calibrate_imu()
 
         self.accel_buf = AvgBuf(read_accel)
         self.gyro_buf = AvgBuf(read_gyro)
@@ -140,7 +140,7 @@ class SensorDataCollector(DataCollector):
         """
          
         # update every 1.0 seconds
-        lla = read_gps_new(NUM_SATELLITES, 1.0)
+        lla = read_gps_lla(NUM_SATELLITES, 1.0)
         
         if lla is not None:
             lla = np.array(lla)
@@ -157,9 +157,9 @@ class SensorDataCollector(DataCollector):
             - reading: (3,1) or (3,) numpy array of three readings [baro1, baro2, baro3]
         """
         
-        self.three_baros[0] = read_baro(self.three_baros[0])
-        self.three_baros[1] = read_baro(self.three_baros[1])
-        self.three_baros[2] = read_baro(self.three_baros[2])
+        self.three_baros[0] = read_baro_alt(self.three_baros[0])
+        self.three_baros[1] = read_baro_alt(self.three_baros[1])
+        self.three_baros[2] = read_baro_alt(self.three_baros[2])
 
         return self.three_baros
     
@@ -177,7 +177,7 @@ class SensorDataCollector(DataCollector):
         lla = None
         #lla = GPS_AT_574
         while lla is None:
-            lla = read_gps_new(NUM_SATELLITES)
+            lla = read_gps_lla(NUM_SATELLITES)
         lla = np.array(lla)
         print("Initial LLA:",lla)
 
@@ -186,11 +186,5 @@ class SensorDataCollector(DataCollector):
         r_ecef = em.lla2ecef(lla).flatten()
         v_ecef = np.zeros(3) # initially at rest
         a_ecef = np.zeros(3) # initially no accel
-        imu_quat = read_quat()
 
-        #q_e2b = qt.quatMultiply(qt.quat_inv(imu_quat), q_e2b)
-
-        print("IMU quat:", np.array(read_quat()))
-        print("truth quat:",q_e2b)
-        
         return np.concatenate((r_ecef, v_ecef, a_ecef)), q_e2b
