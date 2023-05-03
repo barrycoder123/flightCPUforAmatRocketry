@@ -13,5 +13,8 @@ data_logger.py
 data_viewing.py
 - Can be used to view the contents of a data file after navigation. The flight computer does not support plotting, so you'd want to copy the data file from the Flight Computer to your own PC, and then view it with this python script.
 
-Results
-- Folder which contains results from our previous tests. CSV files and PNG files (aerial photos)
+first_drive.csv and first_drive.png
+- These are included as an example for you to run data_viewing.py. It will take the data from the .csv file and plot it over the map image in the .png file.
+
+Test Results
+- Folder which contains other CSV files and PNG files from our previous tests.
