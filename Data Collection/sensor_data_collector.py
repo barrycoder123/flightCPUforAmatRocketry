@@ -11,20 +11,24 @@ import time
 import numpy as np
 
 sys.path.append('../Flight Algorithms')
-sys.path.append('../Data Collection/')
+sys.path.append('../Data Collection')
 
 import earth_model as em
 from read_gps import read_gps_lla
-from read_imu import calibrate_imu, read_accel, read_gyro, read_quat
+from read_imu import calibrate_imu, read_imu_accel, read_imu_gyro
 from read_baro import read_baro_alt
 from data_collection_wrapper import DataCollector
 
-NUM_SATELLITES = 8 # number of satellites requested for each GPS fix
+NUM_SATELLITES = 8 # number of satellites requested for each GPS fix. Variable
 
+# hard-coded initial conditions
 GPS_AT_574 = np.array([42.403061, -71.113635, 40.0])
 Q_E2B_CAMBRIDGE = np.array([0.901797015, -0.39979036, -0.066508461,-0.150021455])
 
 class AvgBuf():
+    """
+    Class allows us to take a moving average of previous accel or gyro readings
+    """
     
     def __init__(self, read_func):
         
@@ -71,8 +75,8 @@ class SensorDataCollector(DataCollector):
 
         calibrate_imu()
 
-        self.accel_buf = AvgBuf(read_accel)
-        self.gyro_buf = AvgBuf(read_gyro)
+        self.accel_buf = AvgBuf(read_imu_accel)
+        self.gyro_buf = AvgBuf(read_imu_gyro)
         
            
     
@@ -100,8 +104,8 @@ class SensorDataCollector(DataCollector):
 
         # extract the next acceleration and angular rotation
         time.sleep(0.05)
-        accel_xyz = read_accel()
-        gyro_xyz = read_gyro()
+        accel_xyz = read_imu_accel()
+        gyro_xyz = read_imu_gyro()
 
         if accel_xyz is None:
             # do the moving average
@@ -154,14 +158,13 @@ class SensorDataCollector(DataCollector):
         gets the next barometer reading
             
         Returns:
-            - reading: (3,1) or (3,) numpy array of three readings [baro1, baro2, baro3]
+            - reading: single barometer reading in altitude
+            
+        Note:
+            - does not work
         """
-        
-        self.three_baros[0] = read_baro_alt(self.three_baros[0])
-        self.three_baros[1] = read_baro_alt(self.three_baros[1])
-        self.three_baros[2] = read_baro_alt(self.three_baros[2])
 
-        return self.three_baros
+        return read_baro_alt()
     
     
     def get_initial_state_and_quaternion(self):

@@ -4,6 +4,20 @@
 Created on Mon Apr 24 13:48:37 2023
 
 @author: zrummler
+
+This file lets you view your .csv data overlayed on a map.
+
+How to run:
+    - Assume you have a .csv file called "test_name.csv" ... call the function 
+    plot_results_on_map("test_name"). The function prints min and max latitude 
+    and longitude values. It will fail because you don't have a map image to 
+    plot it against.
+    - To create the map image, head to openstreetmap.com. Create a map with 
+    these exact min and max lat/long values. Export it as a PNG image called
+    "test_name.png" (the exact same name as your .csv file)
+    - Now you should be able to run the same code again and it will plot the
+    results on the map you just created online.
+    - Enjoy!!
 """
 
 import sys
@@ -243,9 +257,5 @@ if __name__ == "__main__":
     day_2 = ["first_drive", "fells_loop_1", "fells_loop_2"]
     
     # plot each test from a particular day
-    for res in day_1:
-        plot_results_on_map(res)
-        
-    # this determines distances on a track
-    #determine_track_distances()
+    plot_results_on_map(day_2[0])
     

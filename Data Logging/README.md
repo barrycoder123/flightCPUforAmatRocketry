@@ -8,11 +8,10 @@ The code in this directory implements data logging for our Flight Computer. This
 ---------------------------------------------------------------------------------------------------
 
 data_logger.py
-- Implements a data logging class which writes output data to a file. Supports plotting as well
+- Implements a data logging class which writes output data to a file.
 
-data_viewer.py
-- Can be used to view the contents of a data file after navigation. Ideally you'd copy the data file from the Flgiht Computer to your own PC, and then view it with this python script.
-- TODO: not yet implemented
+data_viewing.py
+- Can be used to view the contents of a data file after navigation. The flight computer does not support plotting, so you'd want to copy the data file from the Flight Computer to your own PC, and then view it with this python script.
 
-old files
-- Folder which contains old files, not needed anymore
+Results
+- Folder which contains results from our previous tests. CSV files and PNG files (aerial photos)

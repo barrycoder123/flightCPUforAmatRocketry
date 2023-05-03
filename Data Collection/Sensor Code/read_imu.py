@@ -6,8 +6,8 @@ To use:
     
 Functions:
     calibrate_imu()
-    read_accel()
-    read_gyro()
+    read_imu_accel()
+    read_imu_gyro()
 """
 
 
@@ -121,7 +121,7 @@ def calibrate_imu():
     #print(gyro_offsets)
 
             
-def read_accel():
+def read_imu_accel():
     """
     Read and return the acceleration vector from the IMU
     
@@ -144,7 +144,7 @@ def read_accel():
     return calibrated_accel
 
 
-def read_gyro():
+def read_imu_gyro():
     """
     Read and return the gyro vector from the IMU
     
@@ -178,11 +178,11 @@ def read_quat():
 
 start_time = time.perf_counter()
 last_time = start_time
-def collectdata(gyro, accel, baro):
+def collectdata():
      global last_time
     
-     gyro = read_gyro()
-     accel = read_accel()
+     gyro = read_imu_gyro()
+     accel = read_imu_accel()
      # last_baro = read_baro(last_baro)
      baro = 0
      current_time = time.perf_counter() - start_time
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     while True:
 
         # gather the data
-        gyro, accel, baro, curr_time, dt = collectdata(gyro, accel, baro)
+        gyro, accel, baro, curr_time, dt = collectdata()
         
         # print the data
         print('=' * 40)

@@ -1,3 +1,11 @@
+"""
+Involves reading from the barometer
+
+Note that this code may not work.
+
+For more information, contact George Eng
+"""
+
 import board
 import pathlib
 import configparser
@@ -8,7 +16,7 @@ baro = adafruit_mpl3115a2.MPL3115A2(i2c)
 
 path = pathlib.Path().resolve()
 config = configparser.ConfigParser()
-config.read(path / 'barometer.txt')
+config.read(path / 'barometer_config.txt')
 
 # setSLP(int(config.get('Barometer', 'sealevelpressure')))
 
@@ -23,13 +31,10 @@ def readALT():
     return baro.altitude
 
 
-def read_baro(last_baro):
+def read_baro_alt():
     """
     Read the barometer
     
-    Parameters:
-        last_baro: (float) previous baro reading
-        
     Returns:
         baro: (float) current baro reading
     """
@@ -37,5 +42,5 @@ def read_baro(last_baro):
         baro = float(readALT())
     except RuntimeError:
         print("error reading barometer, using previous value")
-        baro = float(last_baro)
+        baro = None
     return baro
