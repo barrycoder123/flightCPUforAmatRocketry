@@ -60,12 +60,13 @@ class EKF:
         self.q_e2b = q0_e2b
         self.P, self.Q = init_ekf_matrices(x0, q0_e2b)
 
-    def predict(self, z_imu, dt):
+    def predict(self, accel_imu, gyro_imu, dt):
         """
         EKF state prediction - run this when you have a new IMU reading
         
         Arguments:
-            - z_imu: (6,1) or (6,) IMU reading [accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z]
+            - accel_imu: (3,1) or (3,) IMU reading [accel_x, accel_y, accel_z]
+            - gyro_imu: (3,1) or (3,) IMU reading [gyro_x, gyro_y, gyro_z]
             - dt: time step since last reading, seconds
             
         Returns:
@@ -77,7 +78,7 @@ class EKF:
 
 
         # predict state estimate
-        self.x, self.q_e2b, phi = f(self.x, self.q_e2b, z_imu, dt)
+        self.x, self.q_e2b, phi = f(self.x, self.q_e2b, accel_imu, gyro_imu, dt)
 
         # predict state covariance
         self.P = phi @ self.P @ phi.T + self.Q
@@ -140,7 +141,7 @@ class EKF:
         self.x[6:9] = 0  # reset attitude error
 
 
-def f(x, q_e2b, z_imu, dt):
+def f(x, q_e2b, accel_imu, gyro_imu, dt):
     """
     This function updates the state vector and global quaternion via IMU strapdown. 
     It also updates the state transiction matrix (9 x 9)
@@ -148,6 +149,9 @@ def f(x, q_e2b, z_imu, dt):
     Arguments:
         - x: (9,1) state vector, [pos_x, ... vel_x, ... roll_error, ...]
         - q_e2b: (4,1) global quaternion [q_scalar, qi, qj, qk]
+        - accel_imu: (3,1) or (3,) IMU reading [accel_x, accel_y, accel_z]
+        - gyro_imu: (3,1) or (3,) IMU reading [gyro_x, gyro_y, gyro_z]
+        - dt: )(float) time step since last predict step
 
     Returns:
         - x_new: (9,1) updated state vector
@@ -160,19 +164,14 @@ def f(x, q_e2b, z_imu, dt):
     
     r_ecef, v_ecef = x[0:3], x[3:6]  # extract ECEF states for convenience
 
-    # grab next IMU reading
-    accel, gyro = z_imu[0:3], z_imu[3:6]
-    dV_b_imu = accel * dt
-    dTh_b_imu = gyro * dt
-
     # Run the IMU strapdown, get predictions including attitude (q_e2b_new)
-    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt)
+    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, accel_imu, gyro_imu, dt)
 
     # Update state matrix
     x_new = np.concatenate((r_ecef_new, v_ecef_new, np.zeros(r_ecef.shape))).reshape(-1,1)
 
     # compute linearized state transition matrix
-    phi = compute_state_transition_matrix(dt, x, q_e2b, accel, gyro)
+    phi = compute_state_transition_matrix(dt, x, q_e2b, accel_imu, gyro_imu)
     return x_new, q_e2b_new.reshape(-1,1), phi
 
 
