@@ -13,8 +13,8 @@ import pandas as pd  # for reading CSV
 import matplotlib.pyplot as plt
 import argparse
 
-sys.path.append(os.path.join('..', 'Flight Algorithms'))
-sys.path.append(os.path.join('..', 'Simulations'))
+sys.path.append(os.path.join('../..', 'Flight Algorithms'))
+sys.path.append(os.path.join('../..', 'Testing & Validation'))
 
 import earth_model as em
 from misc import get_ecef_column_names  # for later user
@@ -24,7 +24,7 @@ dt = 1  # GPS data arrives every second
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-f', '--filename', help='trajectory .csv file', default='traj_raster_30mins_20221115_160156.csv')
-    parser.add_argument('-g', '--gps_sigma', help='position error standard deviation [m]', default=0, type=float)
+    parser.add_argument('-g', '--gps_sigma', help='position error standard deviation [m]', default=1, type=float)
     parser.add_argument('-b', '--baro_sigma', help='altitude error standard deviation [m]', default=10, type=float)
     args = parser.parse_args()
 

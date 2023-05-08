@@ -21,5 +21,16 @@ Testing & Validation:
 Main Functions:
 - Contains code that should be run actual flight computer for final usage
 
+Documentation & Results:
+- Contains a bit of documentation on the EKF
+- Contains screenshots of our final results
+- Contains diagrams of our system and our software architecture
+- Contains our team's Final Project Report ... check this file out for good info!!
+
 Unit Tests:
 - Contains a few unit tests
+
+For all questions related to this repository, do not hesitate to contact:
+Zack Rummler
+- 603-957-7227
+- zrummler@yahoo.com
