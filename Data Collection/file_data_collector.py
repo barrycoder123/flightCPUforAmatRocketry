@@ -7,9 +7,12 @@ Created on Thu Mar 16 12:25:45 2023
 """
 
 import os
+import sys
 import numpy as np
 import pandas as pd
 from data_collection_wrapper import DataCollector
+
+sys.path.append('./Test Data')
 
 class FileDataCollector(DataCollector):
     
@@ -21,13 +24,13 @@ class FileDataCollector(DataCollector):
         self.baro_reading_number = 0
         
         # reading IMU data
-        file_path = "../Test Data/traj_raster_30mins_20221115_160156.csv"
+        file_path = "../Data Collection/Test Data/traj_raster_30mins_20221115_160156.csv"
         self.imu_file_data = pd.read_csv(file_path).to_numpy();  
         self.IMU_data = self.imu_file_data[:, 11:17];
         self.IMU_t_sec = self.imu_file_data[:, 0]
             
         # reading GPS data
-        file_path = "../Test Data/gps_and_barometer_data.csv"
+        file_path = "../Data Collection/Test Data/gps_and_barometer_data.csv"
         self.gps_file_data = pd.read_csv(file_path).to_numpy();
         self.GPS_data = self.gps_file_data[:, 1:4]
         self.baro_data = self.gps_file_data[:, 4:7]
@@ -68,23 +71,21 @@ class FileDataCollector(DataCollector):
         
         Returns:
             - lla: 3 x 1 Numpy array [lat, long, atti]
-            - satellites: number of satellites used to determine lat, long, atti
             
         Notes:
-            - Returns None, 0 if no reading can be made
+            - Returns None if no reading can be made
         """
         
         if np.isnan(self.GPS_data[self.gps_reading_number, 0]):
             self.gps_reading_number += 1
-            return None, 0
+            return None
         
         # read from the GPS    
         reading = self.GPS_data[self.gps_reading_number, 0:3]
-        satellites = 8
         
         self.gps_reading_number += 1
         
-        return reading, satellites
+        return reading
     
 
     def get_next_barometer_reading(self):
@@ -102,12 +103,9 @@ class FileDataCollector(DataCollector):
         return reading
     
     
-    def get_initial_state_and_quaternion(self, lla=None):
+    def get_initial_state_and_quaternion(self):
         """
         returns the initial state vector and initial Quaternion
-        
-        Arguments:
-            - lla (not used for file_data_collector)
         
         Returns:
             - state vector (9,)
@@ -119,3 +117,6 @@ class FileDataCollector(DataCollector):
         a_ecef = np.zeros(3)
         
         return np.concatenate((r_ecef, v_ecef, a_ecef)), self.imu_file_data[0, 7:11] 
+
+    def start_timer(self):
+        pass

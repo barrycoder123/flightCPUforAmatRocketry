@@ -52,20 +52,21 @@ class EKF:
         Initializes the EKF object
 
         Arguments:
-            - x0: (9,1) or (9,) initial state vector [r_ecef, v_ecef, roll_error, pitch_error, yaw_error]
+            - x0: (9,1) initial state vector [r_ecef, v_ecef, roll_error, pitch_error, yaw_error]
             - q0: initial best estimate of quaternion, 4 x 1,
         """
 
-        self.x = x0.flatten()
+        self.x = x0.reshape(-1,1)
         self.q_e2b = q0_e2b
         self.P, self.Q = init_ekf_matrices(x0, q0_e2b)
 
-    def predict(self, z_imu, dt):
+    def predict(self, accel_imu, gyro_imu, dt):
         """
         EKF state prediction - run this when you have a new IMU reading
         
         Arguments:
-            - z_imu: (6,1) or (6,) IMU reading [accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z]
+            - accel_imu: (3,1) or (3,) IMU reading [accel_x, accel_y, accel_z]
+            - gyro_imu: (3,1) or (3,) IMU reading [gyro_x, gyro_y, gyro_z]
             - dt: time step since last reading, seconds
             
         Returns:
@@ -75,8 +76,9 @@ class EKF:
             - Requires an initialized EKF object
         """
 
+
         # predict state estimate
-        self.x, self.q_e2b, phi = f(self.x.flatten(), self.q_e2b, z_imu, dt)
+        self.x, self.q_e2b, phi = f(self.x, self.q_e2b, accel_imu, gyro_imu, dt)
 
         # predict state covariance
         self.P = phi @ self.P @ phi.T + self.Q
@@ -129,48 +131,48 @@ class EKF:
         # generic EKF update equations
         S = H @ self.P @ H.T + R  # innovation covariance
         K = self.P @ H.T @ np.linalg.inv(S)  # Kalman gain
-        self.x = self.x.reshape(-1, 1) + K @ nu  # update state vector
+        self.x = self.x + K @ nu  # update state vector
         IKH = np.eye(self.x.shape[0]) - K.dot(H)  # intermediate variable
         self.P = IKH.dot(self.P).dot(IKH.T) + K.dot(R).dot(K.T)  # update state covariance (9 x 9)
-        self.x = self.x.flatten()  # ensure x is 1D
 
         # Reset the attitude state.  Move attitude correction from x to q
-        q_error = qt.deltaAngleToDeltaQuat(-self.x[6:9])
+        q_error = qt.deltaAngleToDeltaQuat(-self.x[6:9].flatten())
         self.q_e2b = qt.quatMultiply(q_error, self.q_e2b).flatten()
         self.x[6:9] = 0  # reset attitude error
 
 
-def f(x, q_e2b, z_imu, dt):
+def f(x, q_e2b, accel_imu, gyro_imu, dt):
     """
     This function updates the state vector and global quaternion via IMU strapdown. 
     It also updates the state transiction matrix (9 x 9)
 
     Arguments:
-        - x: (9,1) or (9,) state vector, [pos_x, ... vel_x, ... roll_error, ...]
-        - q_eqb: (4,1) or (4,) global quaternion [q_scalar, qi, qj, qk]
+        - x: (9,1) state vector, [pos_x, ... vel_x, ... roll_error, ...]
+        - q_e2b: (4,1) global quaternion [q_scalar, qi, qj, qk]
+        - accel_imu: (3,1) or (3,) IMU reading [accel_x, accel_y, accel_z]
+        - gyro_imu: (3,1) or (3,) IMU reading [gyro_x, gyro_y, gyro_z]
+        - dt: )(float) time step since last predict step
 
     Returns:
-        - x_new: updated state vector
-        - q_new: updated global quaternion 
+        - x_new: (9,1) updated state vector
+        - q_new: (4,1) updated global quaternion 
         - phi: (9,9) updated state propagation matrix
     """
 
+    x = x.flatten()
+    q_e2b = q_e2b.flatten()
+    
     r_ecef, v_ecef = x[0:3], x[3:6]  # extract ECEF states for convenience
 
-    # grab next IMU reading
-    accel, gyro = z_imu[0:3], z_imu[3:6]
-    dV_b_imu = accel * dt
-    dTh_b_imu = gyro * dt
-
     # Run the IMU strapdown, get predictions including attitude (q_e2b_new)
-    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, dV_b_imu, dTh_b_imu, dt)
+    r_ecef_new, v_ecef_new, q_e2b_new = sd.strapdown(r_ecef, v_ecef, q_e2b, accel_imu, gyro_imu, dt)
 
     # Update state matrix
-    x_new = np.concatenate((r_ecef_new, v_ecef_new, np.zeros(r_ecef.shape)))
+    x_new = np.concatenate((r_ecef_new, v_ecef_new, np.zeros(r_ecef.shape))).reshape(-1,1)
 
     # compute linearized state transition matrix
-    phi = compute_state_transition_matrix(dt, x, q_e2b, accel, gyro)
-    return x_new, q_e2b_new, phi
+    phi = compute_state_transition_matrix(dt, x, q_e2b, accel_imu, gyro_imu)
+    return x_new, q_e2b_new.reshape(-1,1), phi
 
 
 # Credit: Tyler Klein
@@ -251,9 +253,6 @@ def get_position_measurement(x, z, sigma=15):
         measurement covariance matrix
 
     """
-
-    if np.ndim(x) == 2:
-        x = x[:, 0]  # reduce dimension
 
     nu = (z - x[:3]).reshape(3, 1)  # measurement innovation
     R = sigma * sigma * np.eye(3)  # measurement covariance matrix

@@ -42,9 +42,10 @@ def ecef2lla(xyz):
 
     Returns:
     - lla: (3,N) dimensional GPS lla position [lat (deg), lon (deg), alt (meters)]
-    - alt is height above sea level, as opposed to center of earth
+    - alt is height above ellipsoid, as opposed to center of earth
 
     """
+    
     if xyz.ndim < 2:  # force 2D
         xyz = xyz.reshape(-1, 1)  # forces vector to a column if 1D
 
@@ -57,18 +58,25 @@ def ecef2lla(xyz):
     e_sq = f * (2 - f)
     eps = e_sq / (1.0 - e_sq)
 
-    p = np.sqrt(np.multiply(x, x) + np.multiply(y, y))
+    p = np.sqrt(x ** 2 + y ** 2)
     q = np.arctan2((z * a), (p * b))
     phi = np.arctan2((z + eps * b * np.sin(q) ** 3), (p - e_sq * a * np.cos(q) ** 3))
     lam = np.arctan2(y, x)
 
-    v = a / np.sqrt(1.0 - e_sq * np.sin(phi) * np.sin(phi))
-    h = (p / np.cos(phi)) - v
+    N = a / np.sqrt(1.0 - e_sq * np.sin(phi) * np.sin(phi))
+    if (p.shape[0] == 1) and (p == 0):
+        if (z > 0):
+            h = z - b
+        else:
+            h = z + b
+    else:
+        h = (p / np.cos(phi)) - N
 
     lat = np.degrees(phi)
     lon = np.degrees(lam)
 
     return np.vstack([lat, lon, h])
+    
 
 
 def lla2ecef(lla):
@@ -76,12 +84,14 @@ def lla2ecef(lla):
     Converts xyz position to GPS position
 
     Args:
-    - lla: 3-dimensional GPS lla position [lat (deg), lon (deg), alt (meters)]
-    - atti is height above sea level, as opposed to center of earth
+    - lla: (3,N) position [lat (deg), lon (deg), alt (meters, HAE)]
 
     Returns:
-    - xyz: 3-dimensional ECEF xyz position [x, y, z]
+    - xyz: (3,N) 3-dimensional ECEF xyz position [x, y, z]
     """
+
+    if lla.ndim < 2:  # force 2D
+        lla = lla.reshape(-1, 1)  # forces vector to a column if 1D
 
     lat, lon, h = lla
 
@@ -101,9 +111,9 @@ def lla2ecef(lla):
     x = (N + h) * cos_phi * np.cos(lam)
     y = (N + h) * cos_phi * np.sin(lam)
     z = (N * (1 - e_sq) + h) * sin_phi
+    
 
     return np.array([x, y, z])
-
 
 # alt2pres
 #
@@ -152,16 +162,22 @@ def alt2pres(altitude):
     return press
 
 
-def xyz2grav(x, y, z):
+def xyz2grav(xyz):
     """
     Ellipsoid Earth gravity model
 
     Args:
-    - x, y, z: three-dimensional ECEF position
+    - xyz: (3,) three-dimensional ECEF position (meters)
     
     Returns:
-    - g: gravity vector [gx, gy, gz]
+    - g: (3,) gravity vector [gx, gy, gz]
     """
+    
+    if xyz.ndim > 1:  # force 2D
+        xyz = xyz.flatten()  # forces vector to a column if 1D
+        
+    x, y, z = xyz
+        
 
     j2 = 0.00108263
     mu = 3.986004418e14
@@ -182,26 +198,26 @@ def xyz2grav(x, y, z):
 # grav_gradient
 #
 # Calculate the 3x3 gradient of gravity
-def grav_gradient(r_ecef, eps=1e-6):
+def grav_gradient(xyz, eps=1e-6):
     """
     Ellipsoid Earth gravity model
 
     Args:
-    - r_ecef: 3-D ECEF position, [x, y, z]
+    - xyz: (3,) 3-D ECEF position, [x, y, z]
     
     Returns:
     - gradient: 3-D gravity gradient [gx, gy, gz]
     """
 
-    x, y, z = r_ecef
+    x, y, z = xyz
 
     # Initialize the gradient vector
     gradient = np.zeros((3, 3))
 
     # Compute the partial derivatives using finite differences
-    gradient[:, 0] = (xyz2grav(x + eps, y, z) - xyz2grav(x - eps, y, z)) / (2 * eps)
-    gradient[:, 1] = (xyz2grav(x, y + eps, z) - xyz2grav(x, y - eps, z)) / (2 * eps)
-    gradient[:, 2] = (xyz2grav(x, y, z + eps) - xyz2grav(x, y, z - eps)) / (2 * eps)
+    gradient[:, 0] = (xyz2grav(np.array([x + eps, y, z])) - xyz2grav(np.array([x - eps, y, z]))) / (2 * eps)
+    gradient[:, 1] = (xyz2grav(np.array([x, y + eps, z])) - xyz2grav(np.array([x, y - eps, z]))) / (2 * eps)
+    gradient[:, 2] = (xyz2grav(np.array([x, y, z + eps])) - xyz2grav(np.array([x, y, z - eps]))) / (2 * eps)
 
     return gradient
 
@@ -221,17 +237,16 @@ def lla2quat(lla):
     - quat: 4-dimensional quaternion, [qs, qi, qj, qk]
     """
     
-    lat, lon, alt = lla
-
     # Convert LLA coordinates to ECEF coordinates
-    x, y, z = lla2ecef(lat, lon, alt)
+    xyz = lla2ecef(lla)
 
     # Calculate the gravitational acceleration vector in the ECEF frame
-    grav = xyz2grav(x, y, z)
+    grav = xyz2grav(xyz)
 
     # Assume that the body is pointing straight away from the gravity vector
     # Body-frame x-axis is aligned with negative gravity vector in ECEF frame
     body_x = -grav / np.linalg.norm(grav)
+    body_x = body_x.squeeze()
     ecef_x = np.array([1, 0, 0])  # ECEF x-axis
 
     # Calculate the rotation axis and angle between ECEF x-axis and body x-axis
@@ -310,3 +325,13 @@ def lla_jacobian(r_ecef, HAE=True):
 
     J = np.vstack((grad_lat, grad_lon, grad_alt))
     return J
+
+if __name__ == "__main__":
+    
+    lla = np.array([42.403061, -71.113635, 40.0])
+    xyz = lla2ecef(lla)
+    g = xyz2grav(xyz)
+    #np.norm(g)
+    
+    print(g)
+

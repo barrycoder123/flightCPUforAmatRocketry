@@ -1,40 +1,45 @@
-README
+README: Data Collection
 Team Celestial Blue
 Senior Design Project
 Tufts University, 2023
 
-The code in this repository implements data collection for our Flight Computer. This README explains the purpose of each file. See each file for more specifics. 
+The code in this directory implements data collection for our Flight Computer. This README explains the purpose of each file. See each file for more specifics. 
+
+
+We have some higher-level classes which get data from one of two places: sensors or .csv files. We have a base class which exhibits polymorphism by calling one of two subclasses:
+
+sensor_data_collector.py
+- Implements a data collection subclass which reads from sensors in the "Sensor Code" folder.
+
+file_data_collector.py
+- Implements a data collection subclass which reads from .csv test files in the "Test Data" folder.
+
+data_collection_wrapper.py
+- Implements a data collection base class. The class can either reference file_data_collector.py if you want to read from test files, or sensor_data_collector.py if you want to read from your sensors. In the final product, we will omit file_data_collector.py, but it's nice to have for development.
 
 ---------------------------------------------------------------------------------------------------
 
-We have three files which deal with reading directly from the sensors:
+Sensor Code Folder:
 
-gps_code_modified:
+We have these files which deal with reading directly from the sensors:
+
+read_gps.py
 - Deals with reading directly from the GPS
 
-readsensors.py
-- Deals with reading directly from the barometer and IMU
+read_imu.py
+- Deals with reading directly from the IMU
 
-barometer.py:
-- Helper file for readsensors.py
+read_baro.py:
+- Deals with reading directly from the barometer (not implemented)
 
 barometer.txt:
 - A config file for calibrating the barometer
 
 ---------------------------------------------------------------------------------------------------
 
-Additionally, we have some higher-level classes which act as wrappers for the functions listed above. We have a base class which exhibits polymorphism by calling one of two subclasses:
+Test Data Folder:
 
-sensor_data_collector.py
-- Implements a data collection subclass which reads from sensors. 
-
-file_data_collector.py
-- Implements a data collection subclass which reads from test files.
-
-data_collection_wrapper.py
-- Implements a data collection base class. The class can either reference file_data_collector.py if you want to read from test files, or sensor_data_collector.py if you want to read from your sensors. In the final product, we will omit file_data_collector.py, but it's nice to have for development.
-
-I am thinking about combining the three of these into one file for simplicity.
+This folder contains .csv files which store all of our test data.
 
 ---------------------------------------------------------------------------------------------------
 
